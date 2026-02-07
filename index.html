@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Clinical Gaze Simulator - Dr. Robert Burke</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4cc9f0;
+      --primary-dark: #3aa8cf;
+      --primary-light: #6dd5f7;
+      --secondary: #7209b7;
+      --danger: #ff4d6d;
+      --warning: #ffb703;
+      --success: #06ffa5;
+      --bg-dark: #0a0a0f;
+      --bg-card: rgba(20, 20, 30, 0.95);
+      --bg-card-hover: rgba(30, 30, 45, 0.98);
+      --border: rgba(76, 201, 240, 0.2);
+      --border-bright: rgba(76, 201, 240, 0.6);
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.7);
+      --text-dim: rgba(255, 255, 255, 0.4);
+      --glass-bg: rgba(15, 15, 25, 0.85);
+      --glass-border: rgba(255, 255, 255, 0.1);
+    }
+
+    * { 
+      box-sizing: border-box; 
+      margin: 0;
+      padding: 0;
+    }
+    
+    html, body { 
+      margin: 0; 
+      height: 100%; 
+      overflow: hidden; 
+      background: radial-gradient(ellipse at top, #1a1a2e 0%, var(--bg-dark) 100%);
+      color: var(--text-primary);
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      touch-action: none;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Ambient background animation */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: 
+        radial-gradient(circle at 20% 50%, rgba(76, 201, 240, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(114, 9, 183, 0.05) 0%, transparent 50%);
+      animation: ambientPulse 8s ease-in-out infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    @keyframes ambientPulse {
+      0%, 100% { opacity: 0.5; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.1); }
+    }
+
+    #app { 
+      position: fixed; 
+      inset: 0; 
+      z-index: 1; 
+    }
+    
+    /* Enhanced branding */
+    #dr-credit {
+      position: fixed; 
+      bottom: 15px; 
+      right: 20px;
+      font-size: 11px; 
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      color: var(--primary);
+      opacity: 0.6;
+      z-index: 100; 
+      pointer-events: none;
+      text-shadow: 0 0 10px rgba(76, 201, 240, 0.3);
+    }
+
+    /* Enhanced start prompt with glassmorphism */
+    #start-prompt {
+      position: fixed; 
+      inset: 0; 
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(10px);
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      z-index: 3000; 
+      pointer-events: none; 
+      transition: opacity 0.6s ease-out;
+    }
+    
+    .prompt-box {
+      padding: 24px 40px; 
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      border: 1.5px solid var(--border-bright);
+      border-radius: 20px;
+      color: var(--primary);
+      font-weight: 600; 
+      text-transform: uppercase;
+      letter-spacing: 1.5px; 
+      box-shadow: 
+        0 8px 32px rgba(76, 201, 240, 0.2),
+        0 0 60px rgba(76, 201, 240, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      text-align: center; 
+      font-size: 13px;
+      animation: pulseGlow 2s ease-in-out infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 8px 32px rgba(76, 201, 240, 0.2), 0 0 60px rgba(76, 201, 240, 0.1); }
+      50% { box-shadow: 0 8px 32px rgba(76, 201, 240, 0.4), 0 0 80px rgba(76, 201, 240, 0.2); }
+    }
+
+    /* Enhanced mobile HUD */
+    #mobile-hud {
+      position: fixed; 
+      top: 15px; 
+      left: 15px; 
+      right: 15px;
+      z-index: 1000; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 12px;
+      pointer-events: auto;
+    }
+
+    .menu-btn {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      color: var(--primary);
+      padding: 14px 18px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+      text-align: center;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .menu-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-bright);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(76, 201, 240, 0.2);
+    }
+
+    .menu-btn:active {
+      transform: translateY(0);
+    }
+
+    .triangle {
+      width: 0; 
+      height: 0; 
+      border-left: 5px solid transparent; 
+      border-right: 5px solid transparent;
+      border-top: 7px solid var(--primary);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .open .triangle { 
+      transform: rotate(180deg); 
+    }
+
+    .dropdown-content {
+      display: none; 
+      background: var(--glass-bg);
+      backdrop-filter: blur(30px);
+      border-radius: 12px; 
+      border: 1px solid var(--glass-border);
+      padding: 15px; 
+      max-height: 50vh; 
+      overflow-y: auto;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .dropdown-content::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .dropdown-content::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+    }
+
+    .dropdown-content::-webkit-scrollbar-thumb {
+      background: var(--primary);
+      border-radius: 4px;
+    }
+
+    .grid-2 { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 10px; 
+    }
+    
+    .grid-3 { 
+      display: grid; 
+      grid-template-columns: repeat(3, 1fr); 
+      gap: 8px; 
+    }
+
+    /* Enhanced side panels */
+    #side-hud {
+      position: fixed; 
+      inset: 0;
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center;
+      padding: 0 40px; 
+      pointer-events: none; 
+      z-index: 500;
+    }
+
+    .muscle-panel {
+      width: 460px; 
+      background: var(--glass-bg);
+      backdrop-filter: blur(30px);
+      padding: 20px;
+      border-radius: 16px; 
+      border: 1px solid var(--glass-border);
+      pointer-events: auto;
+      box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      transition: all 0.3s ease;
+    }
+
+    .muscle-panel:hover {
+      border-color: var(--border);
+      box-shadow: 
+        0 12px 40px rgba(0, 0, 0, 0.5),
+        0 0 30px rgba(76, 201, 240, 0.1);
+    }
+
+    @media (max-width: 900px) {
+      #side-hud { 
+        flex-direction: column; 
+        justify-content: flex-end; 
+        bottom: 50px; 
+        top: auto; 
+        padding: 15px; 
+        gap: 10px; 
+      }
+      .muscle-panel { 
+        width: 100%; 
+        font-size: 11px; 
+        padding: 12px; 
+      }
+    }
+
+    /* Enhanced pills with better states */
+    .pill { 
+      padding: 12px 8px; 
+      border-radius: 8px; 
+      border: 1.5px solid var(--primary); 
+      background: rgba(76, 201, 240, 0.08); 
+      font-weight: 600; 
+      font-size: 11px; 
+      color: var(--primary); 
+      text-align: center; 
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pill::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(76, 201, 240, 0.1) 0%, transparent 100%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .pill:hover::before {
+      opacity: 1;
+    }
+
+    .pill:hover {
+      background: rgba(76, 201, 240, 0.15);
+      border-color: var(--primary-light);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(76, 201, 240, 0.3);
+    }
+
+    .pill:active {
+      transform: translateY(0);
+    }
+
+    .pill.active-path {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
+      color: #000 !important;
+      border: 1.5px solid var(--primary-light) !important;
+      box-shadow: 
+        0 0 20px rgba(76, 201, 240, 0.6),
+        0 4px 12px rgba(76, 201, 240, 0.4);
+      font-weight: 700;
+    }
+
+    /* Enhanced gaze dot */
+    #gaze-dot {
+      position: absolute; 
+      width: 28px; 
+      height: 28px;
+      background: radial-gradient(circle, rgba(255, 0, 0, 0.7) 0%, rgba(255, 0, 0, 0.3) 70%);
+      border: 2.5px solid white;
+      border-radius: 50%; 
+      pointer-events: none; 
+      z-index: 2000;
+      display: none; 
+      transform: translate(-50%, -50%);
+      box-shadow: 
+        0 0 20px rgba(255, 0, 0, 0.5),
+        0 4px 12px rgba(0, 0, 0, 0.3);
+      animation: gazePulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes gazePulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); }
+      50% { transform: translate(-50%, -50%) scale(1.1); }
+    }
+
+    /* State styling */
+    .paresis { 
+      color: var(--warning) !important; 
+      border-color: var(--warning) !important; 
+      background: rgba(255, 183, 3, 0.15) !important;
+    }
+    
+    .paralysis { 
+      color: var(--danger) !important; 
+      border-color: var(--danger) !important; 
+      text-decoration: line-through; 
+      background: rgba(255, 77, 109, 0.15) !important;
+    }
+    
+    /* Enhanced muscle display rows */
+    .row { 
+      display: grid; 
+      grid-template-columns: 45px 1fr 50px; 
+      gap: 12px; 
+      align-items: center; 
+      margin-bottom: 8px;
+      padding: 4px 0;
+    }
+    
+    .barWrap { 
+      height: 10px; 
+      background: rgba(255,255,255,0.06); 
+      border-radius: 6px; 
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    .bar { 
+      height: 100%; 
+      width: 0%; 
+      background: var(--primary);
+      transition: width 0.15s ease, background 0.2s ease;
+      box-shadow: 0 0 10px rgba(76, 201, 240, 0.5);
+      position: relative;
+    }
+
+    .bar::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+      animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    
+    .pct { 
+      font-family: 'SF Mono', 'Monaco', 'Courier New', monospace; 
+      font-size: 11px; 
+      font-weight: 600;
+      text-align: right;
+      color: var(--text-secondary);
+    }
+
+    .m-label {
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+      font-weight: 600;
+      text-align: center;
+      border: 1.5px solid var(--border);
+      background: rgba(76, 201, 240, 0.05);
+    }
+
+    .m-label:hover {
+      background: rgba(76, 201, 240, 0.15);
+      border-color: var(--primary);
+      transform: scale(1.05);
+    }
+
+    /* Enhanced modal */
+    #side-modal {
+      display: none; 
+      position: fixed; 
+      inset: 0; 
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(10px);
+      z-index: 10000; 
+      align-items: center; 
+      justify-content: center; 
+      pointer-events: auto;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal-content {
+      background: var(--bg-card);
+      backdrop-filter: blur(30px);
+      padding: 30px; 
+      border-radius: 20px; 
+      text-align: center; 
+      border: 1.5px solid var(--border-bright);
+      width: 90%; 
+      max-width: 420px;
+      box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.6),
+        0 0 100px rgba(76, 201, 240, 0.2);
+      animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    #modal-disease-name {
+      color: var(--primary);
+      margin-top: 0;
+      margin-bottom: 24px;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin: 24px 0;
+    }
+
+    .cancel-btn {
+      color: var(--danger);
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      letter-spacing: 0.5px;
+    }
+
+    .cancel-btn:hover {
+      background: rgba(255, 77, 109, 0.1);
+      transform: scale(1.02);
+    }
+
+    /* Section headers */
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin: 16px 0 8px 0;
+    }
+
+    .panel-title {
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    /* Reset button enhancement */
+    .reset-btn {
+      background: linear-gradient(135deg, var(--danger) 0%, #d63a54 100%) !important;
+      color: #fff !important;
+      border: none !important;
+      box-shadow: 0 4px 16px rgba(255, 77, 109, 0.3);
+      font-weight: 700;
+    }
+
+    .reset-btn:hover {
+      background: linear-gradient(135deg, #ff6080 0%, var(--danger) 100%) !important;
+      box-shadow: 0 6px 20px rgba(255, 77, 109, 0.4);
+      transform: translateY(-2px);
+    }
+
+    /* Loading animation */
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .loading {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-dark);
+      z-index: 9999;
+    }
+
+    .loading::after {
+      content: '';
+      width: 50px;
+      height: 50px;
+      border: 4px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: rotate 1s linear infinite;
+    }
+  </style>
+</head>
+<body>
+  <div id="dr-credit">Developed by Dr. Robert Burke</div>
+  <div id="start-prompt">
+    <div class="prompt-box">
+      <span id="prompt-text">Move mouse to guide eye gaze</span>
+    </div>
+  </div>
+  
+  <div id="app"></div>
+  <div id="gaze-dot"></div>
+
+  <div id="mobile-hud">
+    <div id="path-header" class="menu-btn" onclick="toggleMenu('path-menu', 'path-header')">
+      <span>PATHOLOGY LIBRARY</span>
+      <div class="triangle"></div>
+    </div>
+    <div id="path-menu" class="dropdown-content">
+      <button class="menu-btn reset-btn" style="width:100%; margin-bottom:12px;" onclick="resetSystem(); collapseAllMenus();">
+        RESET ALL SYSTEMS
+      </button>
+      <div id="pathology-grid" class="grid-2"></div>
+    </div>
+
+    <div id="cn-header" class="menu-btn" onclick="toggleMenu('cn-menu', 'cn-header')">
+      <span>CRANIAL NERVES</span>
+      <div class="triangle"></div>
+    </div>
+    <div id="cn-menu" class="dropdown-content">
+      <button class="menu-btn reset-btn" style="width:100%; margin-bottom:12px;" onclick="resetSystem(); collapseAllMenus();">
+        RESET ALL SYSTEMS
+      </button>
+      <div class="section-label">Right Eye (OD)</div>
+      <div class="grid-3">
+        <div class="pill" id="R-CN3" onclick="toggleState('R-CN3')">CN III</div>
+        <div class="pill" id="R-CN4" onclick="toggleState('R-CN4')">CN IV</div>
+        <div class="pill" id="R-CN6" onclick="toggleState('R-CN6')">CN VI</div>
+      </div>
+      <div class="section-label">Left Eye (OS)</div>
+      <div class="grid-3">
+        <div class="pill" id="L-CN3" onclick="toggleState('L-CN3')">CN III</div>
+        <div class="pill" id="L-CN4" onclick="toggleState('L-CN4')">CN IV</div>
+        <div class="pill" id="L-CN6" onclick="toggleState('L-CN6')">CN VI</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="side-hud">
+    <div class="muscle-panel" id="musclesR"></div>
+    <div class="muscle-panel" id="musclesL"></div>
+  </div>
+
+  <div id="side-modal">
+    <div class="modal-content">
+      <h3 id="modal-disease-name">SELECT LATERALITY</h3>
+      <div class="modal-buttons">
+        <div class="pill" onclick="applyPathology('right')">RIGHT (OD)</div>
+        <div class="pill" onclick="applyPathology('left')">LEFT (OS)</div>
+        <div class="pill" onclick="applyPathology('both')">BILATERAL</div>
+      </div>
+      <div class="cancel-btn" onclick="document.getElementById('side-modal').style.display='none'">
+        CANCEL
+      </div>
+    </div>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module" src="./main.js"></script>
+  <script>
+    // Detect if device has touch capability
+    const isTouchDevice = ('ontouchstart' in window) || 
+                         (navigator.maxTouchPoints > 0) || 
+                         (navigator.msMaxTouchPoints > 0);
+    
+    const promptText = document.getElementById('prompt-text');
+    if (promptText) {
+      promptText.innerHTML = isTouchDevice 
+        ? 'Touch and drag on screen<br>to guide eye gaze'
+        : 'Move mouse to guide eye gaze';
+    }
+
+    window.toggleMenu = (menuId, headerId) => {
+      const menu = document.getElementById(menuId);
+      const header = document.getElementById(headerId);
+      const isVisible = menu.style.display === 'block';
+      
+      collapseAllMenus();
+
+      if (!isVisible) {
+        menu.style.display = 'block';
+        header.classList.add('open');
+      }
+    }
+
+    window.collapseAllMenus = () => {
+      document.querySelectorAll('.dropdown-content').forEach(d => d.style.display = 'none');
+      document.querySelectorAll('.menu-btn').forEach(h => h.classList.remove('open'));
+    }
+  </script>
+</body>
+</html>
