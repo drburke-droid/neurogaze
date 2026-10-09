@@ -1,667 +1,398 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Clinical Gaze Simulator - Dr. Robert Burke</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Interactive Gaze Simulator: Cranial Nerve Palsies and Eye Movement Disorders</title>
+  <meta name="description" content="Free interactive 3D simulator of the six extraocular muscles and cranial nerves III, IV and VI. Explore sixth, fourth and third nerve palsy, INO, thyroid eye disease, Brown and Duane syndrome in the nine diagnostic positions of gaze. Created by Dr Robert Burke, optometrist.">
+  <meta name="author" content="Dr Robert Burke">
+  <meta name="theme-color" content="#0b0d12">
+  <!-- Update these three URLs if the simulator lives at a different address -->
+  <link rel="canonical" href="https://calgaryvisioncentre.com/gaze/">
+  <meta property="og:url" content="https://calgaryvisioncentre.com/gaze/">
+  <meta property="og:image" content="https://calgaryvisioncentre.com/gaze/og-image.jpg">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Calgary Vision Centre">
+  <meta property="og:title" content="Interactive Gaze Simulator: see a cranial nerve palsy in 3D">
+  <meta property="og:description" content="Move the target and watch each extraocular muscle work. Apply a sixth nerve palsy, INO, thyroid eye disease and more. Free, in the browser.">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="3D face with a right sixth nerve palsy: the right eye cannot turn outward when looking right.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="modulepreload" href="vendor/three/three.module.min.js">
+  <link rel="preload" href="head_eyes_v2.glb" as="fetch" crossorigin>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": ["WebApplication", "LearningResource"],
+    "name": "Interactive Gaze Simulator",
+    "url": "https://calgaryvisioncentre.com/gaze/",
+    "description": "Interactive 3D teaching model of the extraocular muscles and cranial nerves III, IV and VI, with nerve palsies, INO, restrictive and supranuclear disorders shown in the nine diagnostic positions of gaze.",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Any (web browser with WebGL)",
+    "isAccessibleForFree": true,
+    "inLanguage": "en",
+    "educationalLevel": "Professional and student (optometry, ophthalmology, neurology)",
+    "learningResourceType": "Simulation",
+    "teaches": ["Extraocular muscle actions", "Cranial nerve palsies", "Diagnostic positions of gaze", "Hering's law"],
+    "author": { "@type": "Person", "name": "Dr Robert Burke", "jobTitle": "Optometrist", "affiliation": { "@type": "Organization", "name": "Calgary Vision Centre", "url": "https://calgaryvisioncentre.com/" } },
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CAD" }
+  }
+  </script>
   <style>
     :root {
-      --primary: #4cc9f0;
-      --primary-dark: #3aa8cf;
-      --primary-light: #6dd5f7;
-      --secondary: #7209b7;
-      --danger: #ff4d6d;
-      --warning: #ffb703;
-      --success: #06ffa5;
-      --bg-dark: #0a0a0f;
-      --bg-card: rgba(20, 20, 30, 0.95);
-      --bg-card-hover: rgba(30, 30, 45, 0.98);
-      --border: rgba(76, 201, 240, 0.2);
-      --border-bright: rgba(76, 201, 240, 0.6);
-      --text-primary: #ffffff;
-      --text-secondary: rgba(255, 255, 255, 0.7);
-      --text-dim: rgba(255, 255, 255, 0.4);
-      --glass-bg: rgba(15, 15, 25, 0.85);
-      --glass-border: rgba(255, 255, 255, 0.1);
+      --bg: #0b0d12;
+      --panel: #12151c;
+      --panel-2: #181c25;
+      --line: #262c39;
+      --text: #e9edf4;
+      --muted: #a9b2c3;
+      --accent: #4cc9f0;
+      --accent-ink: #062330;
+      --paresis: #ffb703;
+      --palsy: #ff6b85;
+      --restricted: #c9a0ff;
+      --fatigue: #7ee0b5;
+      --radius: 10px;
+      --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      color-scheme: dark;
     }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 var(--font); }
+    a { color: var(--accent); }
+    h1, h2, h3 { line-height: 1.25; margin: 0; }
+    button { font: inherit; color: inherit; }
+    :focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+    .visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .skip { position: absolute; left: 8px; top: -60px; background: var(--accent); color: var(--accent-ink); padding: 8px 12px; border-radius: 6px; z-index: 10; }
+    .skip:focus { top: 8px; }
 
-    * { 
-      box-sizing: border-box; 
-      margin: 0;
-      padding: 0;
-    }
-    
-    html, body { 
-      margin: 0; 
-      height: 100%; 
-      overflow: hidden; 
-      background: radial-gradient(ellipse at top, #1a1a2e 0%, var(--bg-dark) 100%);
-      color: var(--text-primary);
-      font-family: 'Inter', 'Segoe UI', sans-serif;
-      touch-action: none;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
+    /* ── Header ─────────────────────────────────────── */
+    .topbar { display: flex; align-items: center; gap: 16px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+    .brand { min-width: 0; flex: 1; }
+    .brand h1 { font-size: 18px; font-weight: 700; }
+    .brand p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; min-height: 40px; cursor: pointer; text-decoration: none; color: var(--text); display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+    .btn:hover { border-color: var(--accent); }
+    .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
 
-    /* Ambient background animation */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background: 
-        radial-gradient(circle at 20% 50%, rgba(76, 201, 240, 0.05) 0%, transparent 50%),
-        radial-gradient(circle at 80% 80%, rgba(114, 9, 183, 0.05) 0%, transparent 50%);
-      animation: ambientPulse 8s ease-in-out infinite;
-      pointer-events: none;
-      z-index: 0;
-    }
+    /* ── App layout ─────────────────────────────────── */
+    .app { display: grid; grid-template-columns: 270px minmax(0, 1fr) 340px; height: calc(100dvh - 63px); min-height: 560px; }
+    .rail, .info { overflow-y: auto; padding: 14px; background: var(--panel); }
+    .rail { border-right: 1px solid var(--line); }
+    .info { border-left: 1px solid var(--line); }
+    .center { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+    .section-title { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+    .rail .section-title:not(:first-child) { margin-top: 18px; }
+    .hint { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
 
-    @keyframes ambientPulse {
-      0%, 100% { opacity: 0.5; transform: scale(1); }
-      50% { opacity: 0.8; transform: scale(1.1); }
-    }
+    /* Case list */
+    .case-list { display: grid; gap: 4px; }
+    .case-btn { display: block; width: 100%; text-align: left; background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 7px 10px; cursor: pointer; }
+    .case-btn:hover { background: var(--panel-2); }
+    .case-btn[aria-pressed="true"] { background: var(--panel-2); border-color: var(--accent); }
+    .case-btn .name { display: block; font-weight: 600; font-size: 14px; }
+    .case-btn .sub { display: block; color: var(--muted); font-size: 12.5px; }
+    .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+    .seg button { background: transparent; border: 0; padding: 7px 11px; min-height: 38px; cursor: pointer; font-size: 13.5px; }
+    .seg button + button { border-left: 1px solid var(--line); }
+    .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+    .seg button:disabled { opacity: .35; cursor: not-allowed; }
+    .side-row { margin-top: 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .side-row .label { color: var(--muted); font-size: 13px; }
 
-    #app { 
-      position: fixed; 
-      inset: 0; 
-      z-index: 1; 
-    }
-    
-    /* Enhanced branding */
-    #dr-credit {
-      position: fixed; 
-      bottom: 15px; 
-      right: 20px;
-      font-size: 11px; 
-      font-weight: 500;
-      letter-spacing: 0.5px;
-      color: var(--primary);
-      opacity: 0.6;
-      z-index: 100; 
-      pointer-events: none;
-      text-shadow: 0 0 10px rgba(76, 201, 240, 0.3);
-    }
+    /* Nerve table */
+    .nerves { width: 100%; border-collapse: collapse; }
+    .nerves th { font-size: 12.5px; color: var(--muted); font-weight: 600; text-align: left; padding: 4px 2px; }
+    .nerves td { padding: 3px 2px; }
+    .nerve-btn { width: 100%; min-height: 40px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); cursor: pointer; font-size: 13px; }
+    .nerve-btn .st { display: block; font-size: 11.5px; color: var(--muted); }
+    .nerve-btn[data-state="paresis"] { border-color: var(--paresis); }
+    .nerve-btn[data-state="paresis"] .st { color: var(--paresis); }
+    .nerve-btn[data-state="palsy"] { border-color: var(--palsy); }
+    .nerve-btn[data-state="palsy"] .st { color: var(--palsy); }
+    .reset { margin-top: 12px; width: 100%; justify-content: center; }
 
-    /* Enhanced start prompt with glassmorphism */
-    #start-prompt {
-      position: fixed; 
-      inset: 0; 
-      background: rgba(0,0,0,0.7);
-      backdrop-filter: blur(10px);
-      display: flex; 
-      align-items: center; 
-      justify-content: center;
-      z-index: 3000; 
-      pointer-events: none; 
-      transition: opacity 0.6s ease-out;
-    }
-    
-    .prompt-box {
-      padding: 24px 40px; 
-      background: var(--glass-bg);
-      backdrop-filter: blur(20px);
-      border: 1.5px solid var(--border-bright);
-      border-radius: 20px;
-      color: var(--primary);
-      font-weight: 600; 
-      text-transform: uppercase;
-      letter-spacing: 1.5px; 
-      box-shadow: 
-        0 8px 32px rgba(76, 201, 240, 0.2),
-        0 0 60px rgba(76, 201, 240, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
-      text-align: center; 
-      font-size: 13px;
-      animation: pulseGlow 2s ease-in-out infinite;
-    }
+    /* Stage */
+    .stage { position: relative; flex: 1; min-height: 0; background: radial-gradient(ellipse at 50% 40%, #171b25 0%, var(--bg) 70%); touch-action: none; overflow: hidden; cursor: crosshair; }
+    .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .chip { position: absolute; background: rgba(11, 13, 18, .82); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 13.5px; pointer-events: none; max-width: calc(100% - 24px); }
+    .case-chip { top: 12px; left: 12px; font-weight: 600; }
+    .case-chip .gz { display: block; font-weight: 400; color: var(--muted); font-size: 12.5px; }
+    .dev-chip { bottom: 12px; left: 12px; font-family: var(--mono); font-size: 13px; }
+    .credit { position: absolute; right: 12px; bottom: 12px; background: rgba(11, 13, 18, .82); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 13px; font-weight: 600; color: var(--text); text-decoration: none; }
+    .credit:hover { border-color: var(--accent); }
+    #target { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 2px rgba(0,0,0,.6), 0 0 12px rgba(255, 244, 224, .9); background: rgba(255, 244, 224, .9); pointer-events: none; }
+    .loader { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: var(--muted); padding: 20px; }
+    .loader[hidden] { display: none; }
 
-    @keyframes pulseGlow {
-      0%, 100% { box-shadow: 0 8px 32px rgba(76, 201, 240, 0.2), 0 0 60px rgba(76, 201, 240, 0.1); }
-      50% { box-shadow: 0 8px 32px rgba(76, 201, 240, 0.4), 0 0 80px rgba(76, 201, 240, 0.2); }
-    }
+    /* Controls under the stage */
+    .controls { display: flex; gap: 16px; align-items: center; padding: 10px 14px; border-top: 1px solid var(--line); background: var(--panel); flex-wrap: wrap; }
+    .pad { display: grid; grid-template-columns: repeat(3, 40px); gap: 4px; }
+    .pad button { width: 40px; height: 40px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); cursor: pointer; font-size: 16px; line-height: 1; }
+    .pad button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .options { display: flex; gap: 10px 14px; flex-wrap: wrap; align-items: center; flex: 1; min-width: 0; }
+    .opt { display: flex; flex-direction: column; gap: 3px; }
+    .opt .label { font-size: 12px; color: var(--muted); }
+    .toggle[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
 
-    /* Enhanced mobile HUD */
-    #mobile-hud {
-      position: fixed; 
-      top: 15px; 
-      left: 15px; 
-      right: 15px;
-      z-index: 1000; 
-      display: flex; 
-      flex-direction: column; 
-      gap: 12px;
-      pointer-events: auto;
-    }
+    /* Card */
+    .card h2 { font-size: 19px; }
+    .badge { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); margin: 6px 0 8px; }
+    .badge[data-mech="Restrictive"] { color: var(--restricted); border-color: var(--restricted); }
+    .badge[data-mech="Nerve palsy"] { color: var(--paresis); border-color: var(--paresis); }
+    .badge[data-mech="Supranuclear"], .badge[data-mech="Congenital miswiring"] { color: var(--accent); border-color: var(--accent); }
+    .badge[data-mech="Neuromuscular junction"] { color: var(--fatigue); border-color: var(--fatigue); }
+    .card p { margin: 0 0 10px; }
+    .card h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 14px 0 6px; }
+    .card ul { margin: 0; padding-left: 18px; }
+    .card li { margin: 2px 0; }
+    .redflag { border-left: 3px solid var(--palsy); padding: 6px 10px; background: rgba(255, 107, 133, .07); border-radius: 0 8px 8px 0; font-size: 14px; }
+    .card .go { margin-top: 10px; }
 
-    .menu-btn {
-      background: var(--bg-card);
-      backdrop-filter: blur(20px);
-      border: 1px solid var(--border);
-      color: var(--primary);
-      padding: 14px 18px;
-      border-radius: 12px;
-      font-weight: 600;
-      font-size: 13px;
-      letter-spacing: 0.5px;
-      text-align: center;
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-    }
+    /* Muscles */
+    .muscles { margin-top: 22px; }
+    .legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 12.5px; color: var(--muted); margin: 4px 0 10px; }
+    .legend i { display: inline-block; width: 18px; height: 8px; border-radius: 3px; vertical-align: middle; margin-right: 4px; }
+    .eye-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+    .eye-table caption { text-align: left; font-weight: 700; font-size: 14px; padding: 4px 0; }
+    .eye-table th { text-align: left; font-weight: 600; font-size: 13px; padding: 3px 6px 3px 0; white-space: nowrap; width: 1%; }
+    .eye-table th small { display: block; color: var(--muted); font-weight: 400; font-size: 11.5px; }
+    .eye-table td { padding: 3px 0; }
+    .meter { position: relative; height: 12px; border-radius: 6px; background: #2a303d; overflow: hidden; }
+    .meter .force { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--accent); border-radius: 6px; }
+    .meter .effort { position: absolute; top: 0; bottom: 0; width: 0; border-right: 2px solid #fff; left: 0; }
+    tr[data-state="paresis"] .force { background: var(--paresis); }
+    tr[data-state="palsy"] .force { background: var(--palsy); }
+    tr[data-state="restricted"] .force { background: var(--restricted); }
+    .eye-table .val { font-family: var(--mono); font-size: 12px; color: var(--muted); text-align: right; width: 3.6em; padding-left: 6px; }
+    .eye-table .st { font-size: 11.5px; padding-left: 6px; width: 5.5em; }
+    tr[data-state="paresis"] .st { color: var(--paresis); }
+    tr[data-state="palsy"] .st { color: var(--palsy); }
+    tr[data-state="restricted"] .st { color: var(--restricted); }
+    tr[data-state="normal"] .st { color: var(--muted); }
 
-    .menu-btn:hover {
-      background: var(--bg-card-hover);
-      border-color: var(--border-bright);
-      transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(76, 201, 240, 0.2);
-    }
+    /* Content below the app */
+    .content { max-width: 860px; margin: 0 auto; padding: 36px 16px 20px; }
+    .content h2 { font-size: 22px; margin: 28px 0 10px; }
+    .content h3 { font-size: 17px; margin: 18px 0 6px; }
+    .content p, .content li { color: #d3d9e4; }
+    .content table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .content th, .content td { text-align: left; border-bottom: 1px solid var(--line); padding: 6px 8px 6px 0; vertical-align: top; }
+    .disclaimer { border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; background: var(--panel); }
+    footer { border-top: 1px solid var(--line); padding: 18px 16px 28px; color: var(--muted); font-size: 13.5px; text-align: center; }
+    .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 8px; font-weight: 600; z-index: 20; }
+    .toast[hidden] { display: none; }
 
-    .menu-btn:active {
-      transform: translateY(0);
+    /* ── Tablet / phone ─────────────────────────────── */
+    @media (max-width: 1080px) {
+      .app { grid-template-columns: 250px minmax(0, 1fr); grid-template-rows: auto auto; height: auto; }
+      .center { height: min(78dvh, 720px); align-self: start; position: sticky; top: 0; }
+      .info { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+      .muscles { margin-top: 0; }
     }
-
-    .triangle {
-      width: 0; 
-      height: 0; 
-      border-left: 5px solid transparent; 
-      border-right: 5px solid transparent;
-      border-top: 7px solid var(--primary);
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    @media (max-width: 760px) {
+      .topbar { flex-wrap: wrap; padding: 8px 12px calc(8px) 12px; }
+      .brand h1 { font-size: 16px; }
+      .brand p { display: none; }
+      .actions .btn { min-height: 36px; padding: 6px 10px; font-size: 13px; }
+      .app { display: flex; flex-direction: column; }
+      .center { order: -1; height: auto; }
+      .stage { position: sticky; top: 0; z-index: 2; flex: none; height: 46dvh; min-height: 260px; }
+      .controls { padding: 10px 12px; }
+      .rail { border-right: 0; border-top: 1px solid var(--line); }
+      .case-list { grid-template-columns: 1fr 1fr; }
+      .info { display: block; }
+      .muscles { margin-top: 22px; }
+      .chip, .credit { font-size: 12px; padding: 4px 8px; }
+      .case-chip { top: 8px; left: 8px; }
+      .dev-chip { bottom: 8px; left: 8px; }
+      .credit { bottom: 8px; right: 8px; }
     }
-    
-    .open .triangle { 
-      transform: rotate(180deg); 
-    }
-
-    .dropdown-content {
-      display: none; 
-      background: var(--glass-bg);
-      backdrop-filter: blur(30px);
-      border-radius: 12px; 
-      border: 1px solid var(--glass-border);
-      padding: 15px; 
-      max-height: 50vh; 
-      overflow-y: auto;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-      animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    @keyframes slideDown {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .dropdown-content::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    .dropdown-content::-webkit-scrollbar-track {
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 4px;
-    }
-
-    .dropdown-content::-webkit-scrollbar-thumb {
-      background: var(--primary);
-      border-radius: 4px;
-    }
-
-    .grid-2 { 
-      display: grid; 
-      grid-template-columns: 1fr 1fr; 
-      gap: 10px; 
-    }
-    
-    .grid-3 { 
-      display: grid; 
-      grid-template-columns: repeat(3, 1fr); 
-      gap: 8px; 
-    }
-
-    /* Enhanced side panels */
-    #side-hud {
-      position: fixed; 
-      inset: 0;
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center;
-      padding: 0 40px; 
-      pointer-events: none; 
-      z-index: 500;
-    }
-
-    .muscle-panel {
-      width: 460px; 
-      background: var(--glass-bg);
-      backdrop-filter: blur(30px);
-      padding: 20px;
-      border-radius: 16px; 
-      border: 1px solid var(--glass-border);
-      pointer-events: auto;
-      box-shadow: 
-        0 8px 32px rgba(0, 0, 0, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.05);
-      transition: all 0.3s ease;
-    }
-
-    .muscle-panel:hover {
-      border-color: var(--border);
-      box-shadow: 
-        0 12px 40px rgba(0, 0, 0, 0.5),
-        0 0 30px rgba(76, 201, 240, 0.1);
-    }
-
-    @media (max-width: 900px) {
-      #side-hud { 
-        flex-direction: column; 
-        justify-content: flex-end; 
-        bottom: 50px; 
-        top: auto; 
-        padding: 15px; 
-        gap: 10px; 
-      }
-      .muscle-panel { 
-        width: 100%; 
-        font-size: 11px; 
-        padding: 12px; 
-      }
-    }
-
-    /* Enhanced pills with better states */
-    .pill { 
-      padding: 12px 8px; 
-      border-radius: 8px; 
-      border: 1.5px solid var(--primary); 
-      background: rgba(76, 201, 240, 0.08); 
-      font-weight: 600; 
-      font-size: 11px; 
-      color: var(--primary); 
-      text-align: center; 
-      cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .pill::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, rgba(76, 201, 240, 0.1) 0%, transparent 100%);
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-
-    .pill:hover::before {
-      opacity: 1;
-    }
-
-    .pill:hover {
-      background: rgba(76, 201, 240, 0.15);
-      border-color: var(--primary-light);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(76, 201, 240, 0.3);
-    }
-
-    .pill:active {
-      transform: translateY(0);
-    }
-
-    .pill.active-path {
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
-      color: #000 !important;
-      border: 1.5px solid var(--primary-light) !important;
-      box-shadow: 
-        0 0 20px rgba(76, 201, 240, 0.6),
-        0 4px 12px rgba(76, 201, 240, 0.4);
-      font-weight: 700;
-    }
-
-    /* Enhanced gaze dot */
-    #gaze-dot {
-      position: absolute; 
-      width: 28px; 
-      height: 28px;
-      background: radial-gradient(circle, rgba(255, 0, 0, 0.7) 0%, rgba(255, 0, 0, 0.3) 70%);
-      border: 2.5px solid white;
-      border-radius: 50%; 
-      pointer-events: none; 
-      z-index: 2000;
-      display: none; 
-      transform: translate(-50%, -50%);
-      box-shadow: 
-        0 0 20px rgba(255, 0, 0, 0.5),
-        0 4px 12px rgba(0, 0, 0, 0.3);
-      animation: gazePulse 1.5s ease-in-out infinite;
-    }
-
-    @keyframes gazePulse {
-      0%, 100% { transform: translate(-50%, -50%) scale(1); }
-      50% { transform: translate(-50%, -50%) scale(1.1); }
-    }
-
-    /* State styling */
-    .paresis { 
-      color: var(--warning) !important; 
-      border-color: var(--warning) !important; 
-      background: rgba(255, 183, 3, 0.15) !important;
-    }
-    
-    .paralysis { 
-      color: var(--danger) !important; 
-      border-color: var(--danger) !important; 
-      text-decoration: line-through; 
-      background: rgba(255, 77, 109, 0.15) !important;
-    }
-    
-    /* Enhanced muscle display rows */
-    .row { 
-      display: grid; 
-      grid-template-columns: 45px 1fr 50px; 
-      gap: 12px; 
-      align-items: center; 
-      margin-bottom: 8px;
-      padding: 4px 0;
-    }
-    
-    .barWrap { 
-      height: 10px; 
-      background: rgba(255,255,255,0.06); 
-      border-radius: 6px; 
-      overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
-    }
-    
-    .bar { 
-      height: 100%; 
-      width: 0%; 
-      background: var(--primary);
-      transition: width 0.15s ease, background 0.2s ease;
-      box-shadow: 0 0 10px rgba(76, 201, 240, 0.5);
-      position: relative;
-    }
-
-    .bar::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
-      animation: shimmer 2s infinite;
-    }
-
-    @keyframes shimmer {
-      0% { transform: translateX(-100%); }
-      100% { transform: translateX(100%); }
-    }
-    
-    .pct { 
-      font-family: 'SF Mono', 'Monaco', 'Courier New', monospace; 
-      font-size: 11px; 
-      font-weight: 600;
-      text-align: right;
-      color: var(--text-secondary);
-    }
-
-    .m-label {
-      cursor: pointer;
-      padding: 6px;
-      border-radius: 6px;
-      transition: all 0.2s ease;
-      font-weight: 600;
-      text-align: center;
-      border: 1.5px solid var(--border);
-      background: rgba(76, 201, 240, 0.05);
-    }
-
-    .m-label:hover {
-      background: rgba(76, 201, 240, 0.15);
-      border-color: var(--primary);
-      transform: scale(1.05);
-    }
-
-    /* Enhanced modal */
-    #side-modal {
-      display: none; 
-      position: fixed; 
-      inset: 0; 
-      background: rgba(0,0,0,0.85);
-      backdrop-filter: blur(10px);
-      z-index: 10000; 
-      align-items: center; 
-      justify-content: center; 
-      pointer-events: auto;
-      animation: fadeIn 0.3s ease;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    .modal-content {
-      background: var(--bg-card);
-      backdrop-filter: blur(30px);
-      padding: 30px; 
-      border-radius: 20px; 
-      text-align: center; 
-      border: 1.5px solid var(--border-bright);
-      width: 90%; 
-      max-width: 420px;
-      box-shadow: 
-        0 20px 60px rgba(0, 0, 0, 0.6),
-        0 0 100px rgba(76, 201, 240, 0.2);
-      animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(30px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    #modal-disease-name {
-      color: var(--primary);
-      margin-top: 0;
-      margin-bottom: 24px;
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-    }
-
-    .modal-buttons {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin: 24px 0;
-    }
-
-    .cancel-btn {
-      color: var(--danger);
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 16px;
-      padding: 12px;
-      border-radius: 8px;
-      transition: all 0.2s ease;
-      letter-spacing: 0.5px;
-    }
-
-    .cancel-btn:hover {
-      background: rgba(255, 77, 109, 0.1);
-      transform: scale(1.02);
-    }
-
-    /* Section headers */
-    .section-label {
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      color: var(--text-dim);
-      margin: 16px 0 8px 0;
-    }
-
-    .panel-title {
-      color: var(--primary);
-      font-weight: 700;
-      font-size: 14px;
-      margin-bottom: 12px;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-    }
-
-    /* Reset button enhancement */
-    .reset-btn {
-      background: linear-gradient(135deg, var(--danger) 0%, #d63a54 100%) !important;
-      color: #fff !important;
-      border: none !important;
-      box-shadow: 0 4px 16px rgba(255, 77, 109, 0.3);
-      font-weight: 700;
-    }
-
-    .reset-btn:hover {
-      background: linear-gradient(135deg, #ff6080 0%, var(--danger) 100%) !important;
-      box-shadow: 0 6px 20px rgba(255, 77, 109, 0.4);
-      transform: translateY(-2px);
-    }
-
-    /* Loading animation */
-    @keyframes rotate {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-
-    .loading {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--bg-dark);
-      z-index: 9999;
-    }
-
-    .loading::after {
-      content: '';
-      width: 50px;
-      height: 50px;
-      border: 4px solid var(--border);
-      border-top-color: var(--primary);
-      border-radius: 50%;
-      animation: rotate 1s linear infinite;
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
     }
   </style>
 </head>
 <body>
-  <div id="dr-credit">Developed by Dr. Robert Burke</div>
-  <div id="start-prompt">
-    <div class="prompt-box">
-      <span id="prompt-text">Move mouse to guide eye gaze</span>
-    </div>
-  </div>
-  
-  <div id="app"></div>
-  <div id="gaze-dot"></div>
+  <a class="skip" href="#stage">Skip to the simulator</a>
 
-  <div id="mobile-hud">
-    <div id="path-header" class="menu-btn" onclick="toggleMenu('path-menu', 'path-header')">
-      <span>PATHOLOGY LIBRARY</span>
-      <div class="triangle"></div>
+  <header class="topbar">
+    <div class="brand">
+      <h1>Interactive Gaze Simulator</h1>
+      <p>A 3D teaching model of the six extraocular muscles and cranial nerves III, IV and VI.</p>
     </div>
-    <div id="path-menu" class="dropdown-content">
-      <button class="menu-btn reset-btn" style="width:100%; margin-bottom:12px;" onclick="resetSystem(); collapseAllMenus();">
-        RESET ALL SYSTEMS
-      </button>
-      <div id="pathology-grid" class="grid-2"></div>
+    <div class="actions">
+      <button class="btn" id="copy-link" type="button">Copy link</button>
+      <button class="btn" id="save-image" type="button">Save image</button>
+      <a class="btn" href="#about">About</a>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="app">
+      <aside class="rail" aria-label="Cases and cranial nerves">
+        <h2 class="section-title" id="cases-title">Cases</h2>
+        <div class="case-list" id="case-list" aria-labelledby="cases-title"></div>
+        <div class="side-row" id="side-row">
+          <span class="label" id="side-label">Affected side</span>
+          <div class="seg" id="side-picker" role="group" aria-labelledby="side-label">
+            <button type="button" data-side="R">Right OD</button>
+            <button type="button" data-side="L">Left OS</button>
+            <button type="button" data-side="B">Both</button>
+          </div>
+        </div>
+
+        <h2 class="section-title" id="nerves-title">Cranial nerves</h2>
+        <table class="nerves" aria-labelledby="nerves-title">
+          <thead><tr><th scope="col"></th><th scope="col">Right OD</th><th scope="col">Left OS</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">CN III</th><td><button class="nerve-btn" type="button" data-eye="R" data-nerve="3"></button></td><td><button class="nerve-btn" type="button" data-eye="L" data-nerve="3"></button></td></tr>
+            <tr><th scope="row">CN IV</th><td><button class="nerve-btn" type="button" data-eye="R" data-nerve="4"></button></td><td><button class="nerve-btn" type="button" data-eye="L" data-nerve="4"></button></td></tr>
+            <tr><th scope="row">CN VI</th><td><button class="nerve-btn" type="button" data-eye="R" data-nerve="6"></button></td><td><button class="nerve-btn" type="button" data-eye="L" data-nerve="6"></button></td></tr>
+          </tbody>
+        </table>
+        <p class="hint">Tap a nerve to cycle normal → paresis → palsy.</p>
+        <button class="btn reset" id="reset" type="button">Reset to normal</button>
+      </aside>
+
+      <section class="center" aria-label="Simulator">
+        <div class="stage" id="stage" tabindex="0" aria-label="Simulator view. Arrow keys move the gaze; keys 1 to 9 jump to the nine diagnostic positions.">
+          <canvas id="view" role="img" aria-label="3D face showing the current eye position."></canvas>
+          <div class="loader" id="loader">Loading the 3D model… <span id="load-pct"></span></div>
+          <div class="chip case-chip" id="case-chip" aria-hidden="true"></div>
+          <div class="chip dev-chip" id="dev-chip" aria-hidden="true"></div>
+          <div id="target" aria-hidden="true"></div>
+          <a class="credit" href="https://calgaryvisioncentre.com/" rel="author">Created by Dr Robert Burke</a>
+        </div>
+        <div class="controls">
+          <div class="pad" id="pad" role="group" aria-label="Nine diagnostic positions of gaze"></div>
+          <div class="options">
+            <div class="opt"><span class="label" id="fix-label">Fixing eye</span>
+              <div class="seg" id="fix-picker" role="group" aria-labelledby="fix-label">
+                <button type="button" data-fix="R">Right</button><button type="button" data-fix="L">Left</button>
+              </div></div>
+            <div class="opt"><span class="label" id="target-label">Target</span>
+              <div class="seg" id="near-picker" role="group" aria-labelledby="target-label">
+                <button type="button" data-near="0">Distance</button><button type="button" data-near="1">Near</button>
+              </div></div>
+            <div class="opt"><span class="label" id="view-label">View</span>
+              <div class="seg" id="view-picker" role="group" aria-labelledby="view-label">
+                <button type="button" data-view="face">Face</button><button type="button" data-view="eyes">Eyes</button>
+              </div></div>
+            <div class="opt"><span class="label">&nbsp;</span>
+              <div style="display:flex; gap:6px; flex-wrap:wrap">
+                <button class="btn" id="compare" type="button" title="Hold to see a healthy patient in the same gaze (or hold N)">Hold: compare normal</button>
+                <button class="btn toggle" id="lock" type="button" aria-pressed="false" title="Stop the eyes following the pointer (or press L)">Lock gaze</button>
+              </div></div>
+          </div>
+          <p class="hint" style="flex-basis:100%; margin:0">Move the pointer over the face (drag on touch), or use the pad or keys 1–9. Positions are shown as you, the examiner, see the patient.</p>
+        </div>
+      </section>
+
+      <aside class="info" aria-label="Case details and muscle activity">
+        <article class="card" id="card" aria-live="polite"></article>
+        <section class="muscles" aria-labelledby="muscles-title">
+          <h2 class="section-title" id="muscles-title">Muscle activity</h2>
+          <div class="legend">
+            <span><i style="background:var(--accent)"></i>Force</span>
+            <span><i style="background:transparent;border-right:2px solid #fff;border-radius:0"></i>Effort sent</span>
+            <span><i style="background:var(--paresis)"></i>Paresis</span>
+            <span><i style="background:var(--palsy)"></i>Palsy</span>
+            <span><i style="background:var(--restricted)"></i>Restricted</span>
+          </div>
+          <div id="muscle-tables"></div>
+          <p class="hint">Effort is the command sent to the muscle. Both eyes get the same command (Hering's law), so a weak muscle shows high effort but little force, and its yoke in the other eye over-acts.</p>
+        </section>
+      </aside>
     </div>
 
-    <div id="cn-header" class="menu-btn" onclick="toggleMenu('cn-menu', 'cn-header')">
-      <span>CRANIAL NERVES</span>
-      <div class="triangle"></div>
-    </div>
-    <div id="cn-menu" class="dropdown-content">
-      <button class="menu-btn reset-btn" style="width:100%; margin-bottom:12px;" onclick="resetSystem(); collapseAllMenus();">
-        RESET ALL SYSTEMS
-      </button>
-      <div class="section-label">Right Eye (OD)</div>
-      <div class="grid-3">
-        <div class="pill" id="R-CN3" onclick="toggleState('R-CN3')">CN III</div>
-        <div class="pill" id="R-CN4" onclick="toggleState('R-CN4')">CN IV</div>
-        <div class="pill" id="R-CN6" onclick="toggleState('R-CN6')">CN VI</div>
-      </div>
-      <div class="section-label">Left Eye (OS)</div>
-      <div class="grid-3">
-        <div class="pill" id="L-CN3" onclick="toggleState('L-CN3')">CN III</div>
-        <div class="pill" id="L-CN4" onclick="toggleState('L-CN4')">CN IV</div>
-        <div class="pill" id="L-CN6" onclick="toggleState('L-CN6')">CN VI</div>
-      </div>
-    </div>
-  </div>
+    <section class="content" id="about">
+      <h2>About this simulator</h2>
+      <p>The Interactive Gaze Simulator shows how the six extraocular muscles and three cranial nerves move the eyes, and what happens when one of them fails. Move the fixation target and watch both eyes follow. Then apply a nerve palsy, a restrictive disorder or a supranuclear lesion and compare the eyes in the nine diagnostic positions of gaze.</p>
+      <p>It is built for optometry, ophthalmology and neurology students and for clinicians explaining double vision to patients.</p>
 
-  <div id="side-hud">
-    <div class="muscle-panel" id="musclesR"></div>
-    <div class="muscle-panel" id="musclesL"></div>
-  </div>
+      <h2>How to use it</h2>
+      <ul>
+        <li><strong>Look around:</strong> move the pointer over the face, drag with a finger, or use the 3×3 pad. Keys 1–9 match a numeric keypad; arrow keys nudge the gaze.</li>
+        <li><strong>Pick a case</strong> from the list and choose the affected side. The card explains the signs and the red flags.</li>
+        <li><strong>Fixing eye:</strong> switch fixation to the affected eye to see the larger secondary deviation predicted by Hering's law.</li>
+        <li><strong>Near target:</strong> shows convergence, which is spared in internuclear ophthalmoplegia.</li>
+        <li><strong>Hold "compare normal"</strong> (or the N key) to flip to a healthy patient in the same gaze.</li>
+        <li><strong>Share:</strong> the address bar always holds the current case and gaze, so "Copy link" opens exactly what you see. "Save image" downloads a labelled picture.</li>
+      </ul>
 
-  <div id="side-modal">
-    <div class="modal-content">
-      <h3 id="modal-disease-name">SELECT LATERALITY</h3>
-      <div class="modal-buttons">
-        <div class="pill" onclick="applyPathology('right')">RIGHT (OD)</div>
-        <div class="pill" onclick="applyPathology('left')">LEFT (OS)</div>
-        <div class="pill" onclick="applyPathology('both')">BILATERAL</div>
+      <h2>The six extraocular muscles</h2>
+      <table>
+        <thead><tr><th>Muscle</th><th>Nerve</th><th>Main action</th><th>Tested by looking</th></tr></thead>
+        <tbody>
+          <tr><td>Lateral rectus (LR)</td><td>VI (abducens)</td><td>Abduction</td><td>Out (temporally)</td></tr>
+          <tr><td>Medial rectus (MR)</td><td>III (oculomotor)</td><td>Adduction</td><td>In (nasally)</td></tr>
+          <tr><td>Superior rectus (SR)</td><td>III</td><td>Elevation, best in abduction</td><td>Up and out</td></tr>
+          <tr><td>Inferior rectus (IR)</td><td>III</td><td>Depression, best in abduction</td><td>Down and out</td></tr>
+          <tr><td>Inferior oblique (IO)</td><td>III</td><td>Elevation in adduction; extorsion</td><td>Up and in</td></tr>
+          <tr><td>Superior oblique (SO)</td><td>IV (trochlear)</td><td>Depression in adduction; intorsion</td><td>Down and in</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Conditions in the simulator</h2>
+      <h3><a href="#case=cn6&amp;side=R&amp;gaze=4">Sixth nerve (abducens) palsy</a></h3>
+      <p>The eye cannot turn outward. Esotropia is largest when looking toward the affected side and small looking away. Check for papilloedema: raised intracranial pressure can cause it.</p>
+      <h3><a href="#case=cn4&amp;side=R&amp;gaze=3">Fourth nerve (trochlear) palsy</a></h3>
+      <p>The affected eye sits higher, most of all when looking down and toward the nose. Patients tilt the head to the opposite shoulder. The Parks–Bielschowsky three-step test confirms it.</p>
+      <h3><a href="#case=cn3&amp;side=R&amp;gaze=5">Third nerve (oculomotor) palsy</a></h3>
+      <p>The eye rests down and out, with limited adduction, elevation and depression, usually with ptosis. A dilated pupil or pain suggests an aneurysm and needs urgent imaging.</p>
+      <h3><a href="#case=ino&amp;side=R&amp;gaze=6">Internuclear ophthalmoplegia (INO)</a></h3>
+      <p>An MLF lesion stops the eye on the lesion side from adducting on side gaze, with nystagmus of the abducting eye. Convergence is usually spared. Often multiple sclerosis in the young, stroke in older patients.</p>
+      <h3><a href="#case=ted&amp;side=R&amp;gaze=7">Thyroid eye disease</a></h3>
+      <p>Tight, enlarged muscles restrict movement away from them. The inferior and medial recti are most often involved, limiting elevation and abduction.</p>
+      <h3><a href="#case=blowout&amp;side=R&amp;gaze=8">Orbital floor (blowout) fracture</a></h3>
+      <p>Entrapment of the inferior rectus limits elevation. A child with entrapment, nausea and a slow heart rate needs urgent surgical review.</p>
+      <h3><a href="#case=brown&amp;side=R&amp;gaze=9">Brown syndrome</a></h3>
+      <p>A tight superior oblique tendon stops the eye elevating when it is turned in. Elevation looking outward is near normal.</p>
+      <h3><a href="#case=duane&amp;side=L&amp;gaze=6">Duane syndrome</a></h3>
+      <p>A congenital miswiring: the eye cannot abduct, and on adduction it retracts into the orbit. Double vision is rare.</p>
+      <h3><a href="#case=mg&amp;side=B&amp;gaze=8">Myasthenia gravis</a></h3>
+      <p>Weakness that worsens with use and recovers with rest, mimicking any palsy. Hold a gaze in the simulator and watch it fade.</p>
+      <h3><a href="#case=mfs&amp;side=B&amp;gaze=4">Miller Fisher syndrome</a></h3>
+      <p>A Guillain–Barré variant with ophthalmoplegia, ataxia and areflexia, usually after an infection.</p>
+      <h3><a href="#case=skew&amp;side=R&amp;gaze=5">Skew deviation (Wallenberg syndrome)</a></h3>
+      <p>A supranuclear vertical misalignment: the eye on the side of a lateral medullary stroke sits lower, by about the same amount in every gaze. Acute vertical diplopia with vertigo is a stroke until proven otherwise.</p>
+
+      <h2>What the model does and does not show</h2>
+      <p>This is a qualitative teaching model, not a biomechanical simulation. It limits eye movements to physiological ranges, separates weak muscles (paresis) from tight ones (restriction), applies Hering's law through a selectable fixing eye, and treats MLF and skew lesions as supranuclear. It does not model eyelids, pupils, torsion, head tilt or saccade velocities, and the numbers it displays are illustrative.</p>
+
+      <h2>Author</h2>
+      <p>Created by <a href="https://calgaryvisioncentre.com/" rel="author">Dr Robert Burke</a>, optometrist, Calgary Vision Centre, Calgary, Alberta.</p>
+
+      <div class="disclaimer" role="note">
+        <strong>Educational use only.</strong> This simulator does not examine or assess anyone's eyes and is not a diagnostic tool. New double vision, a drooping eyelid, a change in pupil size, or eye-movement problems with headache, weakness or dizziness need urgent medical assessment.
       </div>
-      <div class="cancel-btn" onclick="document.getElementById('side-modal').style.display='none'">
-        CANCEL
-      </div>
-    </div>
-  </div>
+    </section>
+  </main>
+
+  <footer>
+    Interactive Gaze Simulator · Created by Dr Robert Burke, Calgary Vision Centre · Educational use only, not a diagnostic tool · <span id="version"></span>
+  </footer>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+  <div class="visually-hidden" id="status" role="status" aria-live="polite"></div>
+
+  <noscript><p style="padding:16px">The simulator needs JavaScript and WebGL. The reference material on this page works without them.</p></noscript>
 
   <script type="importmap">
   {
     "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-      "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      "three": "./vendor/three/three.module.min.js",
+      "three/addons/": "./vendor/three/addons/"
     }
   }
   </script>
   <script type="module" src="./main.js"></script>
-  <script>
-    // Detect if device has touch capability
-    const isTouchDevice = ('ontouchstart' in window) || 
-                         (navigator.maxTouchPoints > 0) || 
-                         (navigator.msMaxTouchPoints > 0);
-    
-    const promptText = document.getElementById('prompt-text');
-    if (promptText) {
-      promptText.innerHTML = isTouchDevice 
-        ? 'Touch and drag on screen<br>to guide eye gaze'
-        : 'Move mouse to guide eye gaze';
-    }
-
-    window.toggleMenu = (menuId, headerId) => {
-      const menu = document.getElementById(menuId);
-      const header = document.getElementById(headerId);
-      const isVisible = menu.style.display === 'block';
-      
-      collapseAllMenus();
-
-      if (!isVisible) {
-        menu.style.display = 'block';
-        header.classList.add('open');
-      }
-    }
-
-    window.collapseAllMenus = () => {
-      document.querySelectorAll('.dropdown-content').forEach(d => d.style.display = 'none');
-      document.querySelectorAll('.menu-btn').forEach(h => h.classList.remove('open'));
-    }
-  </script>
 </body>
 </html>
