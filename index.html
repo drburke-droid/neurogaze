@@ -79,47 +79,38 @@
     .actions { display: flex; gap: 8px; flex-wrap: wrap; }
     .btn { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; min-height: 40px; cursor: pointer; text-decoration: none; color: var(--text); display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
     .btn:hover { border-color: var(--accent); }
-    .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
 
-    /* ── App layout ─────────────────────────────────── */
-    .app { display: grid; grid-template-columns: 270px minmax(0, 1fr) 340px; height: calc(100dvh - 63px); min-height: 560px; }
-    .rail, .info { overflow-y: auto; padding: 14px; background: var(--panel); }
-    .rail { border-right: 1px solid var(--line); }
-    .info { border-left: 1px solid var(--line); }
-    .center { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+    /* ── Layout: one page, no inner scrolling ───────── */
+    .app { max-width: 1320px; margin: 0 auto; padding: 14px 16px 20px; display: grid; gap: 14px;
+      grid-template-columns: minmax(0, 1fr) clamp(280px, 34%, 380px);
+      grid-template-areas: "cases cases" "sim card" "readouts readouts"; }
+    .cases { grid-area: cases; }
+    .sim { grid-area: sim; min-width: 0; }
+    .card { grid-area: card; }
+    .readouts { grid-area: readouts; display: grid; grid-template-columns: 1fr 1fr 300px; gap: 18px; }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; }
     .section-title { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
-    .rail .section-title:not(:first-child) { margin-top: 18px; }
     .hint { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
 
-    /* Case list */
-    .case-list { display: grid; gap: 4px; }
-    .case-btn { display: block; width: 100%; text-align: left; background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 7px 10px; cursor: pointer; }
-    .case-btn:hover { background: var(--panel-2); }
-    .case-btn[aria-pressed="true"] { background: var(--panel-2); border-color: var(--accent); }
-    .case-btn .name { display: block; font-weight: 600; font-size: 14px; }
-    .case-btn .sub { display: block; color: var(--muted); font-size: 12.5px; }
-    .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-    .seg button { background: transparent; border: 0; padding: 7px 11px; min-height: 38px; cursor: pointer; font-size: 13.5px; }
+    /* Case chips */
+    .cases-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .case-btn { background: var(--panel); border: 1px solid var(--line); border-radius: 99px; padding: 6px 12px; min-height: 36px; cursor: pointer; font-size: 14px; font-weight: 600; }
+    .case-btn:hover { border-color: var(--accent); }
+    .case-btn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .case-btn .sub { display: none; }
+    .case-select { display: none; width: 100%; min-height: 42px; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font: inherit; font-weight: 600; }
+    .cases-label { display: none; font-size: 12px; color: var(--muted); }
+    .side-row { display: inline-flex; align-items: center; gap: 8px; margin-left: 6px; }
+    .side-row[hidden] { display: none; }
+    .side-row .label { color: var(--muted); font-size: 13px; }
+    .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
+    .seg button { background: transparent; border: 0; padding: 6px 11px; min-height: 36px; cursor: pointer; font-size: 13.5px; }
     .seg button + button { border-left: 1px solid var(--line); }
     .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
     .seg button:disabled { opacity: .35; cursor: not-allowed; }
-    .side-row { margin-top: 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .side-row .label { color: var(--muted); font-size: 13px; }
 
-    /* Nerve table */
-    .nerves { width: 100%; border-collapse: collapse; }
-    .nerves th { font-size: 12.5px; color: var(--muted); font-weight: 600; text-align: left; padding: 4px 2px; }
-    .nerves td { padding: 3px 2px; }
-    .nerve-btn { width: 100%; min-height: 40px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); cursor: pointer; font-size: 13px; }
-    .nerve-btn .st { display: block; font-size: 11.5px; color: var(--muted); }
-    .nerve-btn[data-state="paresis"] { border-color: var(--paresis); }
-    .nerve-btn[data-state="paresis"] .st { color: var(--paresis); }
-    .nerve-btn[data-state="palsy"] { border-color: var(--palsy); }
-    .nerve-btn[data-state="palsy"] .st { color: var(--palsy); }
-    .reset { margin-top: 12px; width: 100%; justify-content: center; }
-
-    /* Stage */
-    .stage { position: relative; flex: 1; min-height: 0; background: radial-gradient(ellipse at 50% 40%, #171b25 0%, var(--bg) 70%); touch-action: none; overflow: hidden; cursor: crosshair; }
+    /* Stage: sized by width, never by viewport height, so an embed can measure itself */
+    .stage { position: relative; aspect-ratio: 4 / 3; max-height: 560px; width: 100%; border-radius: var(--radius); border: 1px solid var(--line); background: radial-gradient(ellipse at 50% 40%, #171b25 0%, var(--bg) 70%); touch-action: none; overflow: hidden; cursor: crosshair; }
     .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
     .chip { position: absolute; background: rgba(11, 13, 18, .82); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 13.5px; pointer-events: none; max-width: calc(100% - 24px); }
     .case-chip { top: 12px; left: 12px; font-weight: 600; }
@@ -132,11 +123,11 @@
     .loader[hidden] { display: none; }
 
     /* Controls under the stage */
-    .controls { display: flex; gap: 16px; align-items: center; padding: 10px 14px; border-top: 1px solid var(--line); background: var(--panel); flex-wrap: wrap; }
+    .controls { display: flex; gap: 16px; align-items: center; padding: 12px 0 0; flex-wrap: wrap; }
     .pad { display: grid; grid-template-columns: repeat(3, 40px); gap: 4px; }
     .pad button { width: 40px; height: 40px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); cursor: pointer; font-size: 16px; line-height: 1; }
     .pad button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-    .options { display: flex; gap: 10px 14px; flex-wrap: wrap; align-items: center; flex: 1; min-width: 0; }
+    .options { display: flex; gap: 10px 14px; flex-wrap: wrap; align-items: flex-end; flex: 1; min-width: 0; }
     .opt { display: flex; flex-direction: column; gap: 3px; }
     .opt .label { font-size: 12px; color: var(--muted); }
     .toggle[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
@@ -155,12 +146,12 @@
     .redflag { border-left: 3px solid var(--palsy); padding: 6px 10px; background: rgba(255, 107, 133, .07); border-radius: 0 8px 8px 0; font-size: 14px; }
     .card .go { margin-top: 10px; }
 
-    /* Muscles */
-    .muscles { margin-top: 22px; }
+    /* Readouts: muscles + nerves */
     .legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 12.5px; color: var(--muted); margin: 4px 0 10px; }
     .legend i { display: inline-block; width: 18px; height: 8px; border-radius: 3px; vertical-align: middle; margin-right: 4px; }
-    .eye-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
-    .eye-table caption { text-align: left; font-weight: 700; font-size: 14px; padding: 4px 0; }
+    #muscle-tables { display: contents; }
+    .eye-table { width: 100%; border-collapse: collapse; }
+    .eye-table caption { text-align: left; font-weight: 700; font-size: 14px; padding: 0 0 6px; }
     .eye-table th { text-align: left; font-weight: 600; font-size: 13px; padding: 3px 6px 3px 0; white-space: nowrap; width: 1%; }
     .eye-table th small { display: block; color: var(--muted); font-weight: 400; font-size: 11.5px; }
     .eye-table td { padding: 3px 0; }
@@ -176,9 +167,21 @@
     tr[data-state="palsy"] .st { color: var(--palsy); }
     tr[data-state="restricted"] .st { color: var(--restricted); }
     tr[data-state="normal"] .st { color: var(--muted); }
+    .muscles-head { grid-column: 1 / 3; }
+    .nerves-box { grid-column: 3; grid-row: 1 / span 2; }
+    .nerves { width: 100%; border-collapse: collapse; }
+    .nerves th { font-size: 12.5px; color: var(--muted); font-weight: 600; text-align: left; padding: 4px 2px; }
+    .nerves td { padding: 3px 2px; }
+    .nerve-btn { width: 100%; min-height: 40px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); cursor: pointer; font-size: 13px; }
+    .nerve-btn .st { display: block; font-size: 11.5px; color: var(--muted); }
+    .nerve-btn[data-state="paresis"] { border-color: var(--paresis); }
+    .nerve-btn[data-state="paresis"] .st { color: var(--paresis); }
+    .nerve-btn[data-state="palsy"] { border-color: var(--palsy); }
+    .nerve-btn[data-state="palsy"] .st { color: var(--palsy); }
+    .reset { margin-top: 12px; width: 100%; justify-content: center; }
 
-    /* Content below the app */
-    .content { max-width: 860px; margin: 0 auto; padding: 36px 16px 20px; }
+    /* Content below the app (standalone page only) */
+    .content { max-width: 860px; margin: 0 auto; padding: 24px 16px 20px; }
     .content h2 { font-size: 22px; margin: 28px 0 10px; }
     .content h3 { font-size: 17px; margin: 18px 0 6px; }
     .content p, .content li { color: #d3d9e4; }
@@ -186,41 +189,42 @@
     .content th, .content td { text-align: left; border-bottom: 1px solid var(--line); padding: 6px 8px 6px 0; vertical-align: top; }
     .disclaimer { border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; background: var(--panel); }
     footer { border-top: 1px solid var(--line); padding: 18px 16px 28px; color: var(--muted); font-size: 13.5px; text-align: center; }
+    .embed-note { display: none; }
     .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 8px; font-weight: 600; z-index: 20; }
     .toast[hidden] { display: none; }
 
-    /* ── Tablet / phone ─────────────────────────────── */
-    @media (max-width: 1080px) {
-      .app { grid-template-columns: 250px minmax(0, 1fr); grid-template-rows: auto auto; height: auto; }
-      .center { height: min(78dvh, 720px); align-self: start; position: sticky; top: 0; }
-      .info { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-      .muscles { margin-top: 0; }
+    /* ── Embedded in the clinic page: the host page does all the scrolling ── */
+    .embed, .embed body { overflow: hidden; }
+    .embed .brand p, .embed #about, .embed footer, .embed .about-link { display: none; }
+    .embed .embed-note { display: block; text-align: center; color: var(--muted); font-size: 12.5px; padding: 0 16px 14px; }
+    .embed .toast { position: absolute; top: 12px; bottom: auto; }
+
+    /* ── Narrower screens ───────────────────────────── */
+    @media (max-width: 1000px) {
+      .readouts { grid-template-columns: 1fr 1fr; }
+      .nerves-box { grid-column: 1 / -1; grid-row: auto; }
     }
-    @media (max-width: 760px) {
-      .topbar { flex-wrap: wrap; padding: 8px 12px calc(8px) 12px; }
+    @media (max-width: 720px) {
+      .app { grid-template-columns: 1fr; grid-template-areas: "cases" "sim" "card" "readouts"; }
+    }
+    @media (max-width: 640px) {
+      .topbar { padding: 8px 12px; gap: 8px; }
       .brand h1 { font-size: 16px; }
       .brand p { display: none; }
       .actions .btn { min-height: 36px; padding: 6px 10px; font-size: 13px; }
-      .app { display: flex; flex-direction: column; }
-      .center { order: -1; height: auto; }
-      .stage { position: sticky; top: 0; z-index: 2; flex: none; height: 46dvh; min-height: 260px; }
-      .controls { padding: 10px 12px; }
-      .rail { border-right: 0; border-top: 1px solid var(--line); }
-      .case-list { grid-template-columns: 1fr 1fr; }
-      .info { display: block; }
-      .muscles { margin-top: 22px; }
+      .app { padding: 10px 10px 16px; gap: 10px; }
+      #case-list { display: none; }
+      .case-select, .cases-label { display: block; }
+      .cases-row { gap: 8px; }
+      .side-row { margin-left: 0; width: 100%; }
+      .stage { aspect-ratio: 1 / 1; }
+      .readouts { grid-template-columns: 1fr; }
+      .muscles-head { grid-column: 1; }
       .chip, .credit { font-size: 12px; padding: 4px 8px; }
       .case-chip { top: 8px; left: 8px; }
-      .dev-chip { bottom: 8px; left: 8px; }
+      .dev-chip { bottom: 44px; left: 8px; }
       .credit { bottom: 8px; right: 8px; }
-      .dev-chip { bottom: 44px; }
-      .embed .brand { display: none; }
-      .embed .topbar { justify-content: flex-end; }
     }
-    /* ── Embedded in another page (iframe) ─────────── */
-    .embed .topbar .brand p { display: none; }
-    .embed .app { height: calc(100dvh - 63px); min-height: 0; }
-    @media (max-width: 1080px) { .embed .app { height: auto; } }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
     }
@@ -237,45 +241,37 @@
     <div class="actions">
       <button class="btn" id="copy-link" type="button">Copy link</button>
       <button class="btn" id="save-image" type="button">Save image</button>
-      <a class="btn" href="#about">About</a>
+      <a class="btn about-link" href="#about">About</a>
     </div>
   </header>
 
   <main id="main">
     <div class="app">
-      <aside class="rail" aria-label="Cases and cranial nerves">
-        <h2 class="section-title" id="cases-title">Cases</h2>
-        <div class="case-list" id="case-list" aria-labelledby="cases-title"></div>
-        <div class="side-row" id="side-row">
-          <span class="label" id="side-label">Affected side</span>
-          <div class="seg" id="side-picker" role="group" aria-labelledby="side-label">
-            <button type="button" data-side="R">Right OD</button>
-            <button type="button" data-side="L">Left OS</button>
-            <button type="button" data-side="B">Both</button>
+      <nav class="cases" aria-label="Cases">
+        <h2 class="visually-hidden" id="cases-title">Cases</h2>
+        <div class="cases-row">
+          <div class="cases-row" id="case-list" aria-labelledby="cases-title"></div>
+          <label class="cases-label" for="case-select">Case</label>
+          <select class="case-select" id="case-select"></select>
+          <div class="side-row" id="side-row">
+            <span class="label" id="side-label">Affected side</span>
+            <div class="seg" id="side-picker" role="group" aria-labelledby="side-label">
+              <button type="button" data-side="R">Right OD</button>
+              <button type="button" data-side="L">Left OS</button>
+              <button type="button" data-side="B">Both</button>
+            </div>
           </div>
         </div>
+      </nav>
 
-        <h2 class="section-title" id="nerves-title">Cranial nerves</h2>
-        <table class="nerves" aria-labelledby="nerves-title">
-          <thead><tr><th scope="col"></th><th scope="col">Right OD</th><th scope="col">Left OS</th></tr></thead>
-          <tbody>
-            <tr><th scope="row">CN III</th><td><button class="nerve-btn" type="button" data-eye="R" data-nerve="3"></button></td><td><button class="nerve-btn" type="button" data-eye="L" data-nerve="3"></button></td></tr>
-            <tr><th scope="row">CN IV</th><td><button class="nerve-btn" type="button" data-eye="R" data-nerve="4"></button></td><td><button class="nerve-btn" type="button" data-eye="L" data-nerve="4"></button></td></tr>
-            <tr><th scope="row">CN VI</th><td><button class="nerve-btn" type="button" data-eye="R" data-nerve="6"></button></td><td><button class="nerve-btn" type="button" data-eye="L" data-nerve="6"></button></td></tr>
-          </tbody>
-        </table>
-        <p class="hint">Tap a nerve to cycle normal → paresis → palsy.</p>
-        <button class="btn reset" id="reset" type="button">Reset to normal</button>
-      </aside>
-
-      <section class="center" aria-label="Simulator">
+      <section class="sim" aria-label="Simulator">
         <div class="stage" id="stage" tabindex="0" aria-label="Simulator view. Arrow keys move the gaze; keys 1 to 9 jump to the nine diagnostic positions.">
           <canvas id="view" role="img" aria-label="3D face showing the current eye position."></canvas>
           <div class="loader" id="loader">Loading the 3D model… <span id="load-pct"></span></div>
           <div class="chip case-chip" id="case-chip" aria-hidden="true"></div>
           <div class="chip dev-chip" id="dev-chip" aria-hidden="true"></div>
           <div id="target" aria-hidden="true"></div>
-          <a class="credit" href="https://calgaryvisioncentre.com/" rel="author">Created by Dr Robert Burke</a>
+          <a class="credit" href="https://calgaryvisioncentre.com/" target="_top" rel="author">Created by Dr Robert Burke</a>
         </div>
         <div class="controls">
           <div class="pad" id="pad" role="group" aria-label="Nine diagnostic positions of gaze"></div>
@@ -292,19 +288,19 @@
               <div class="seg" id="view-picker" role="group" aria-labelledby="view-label">
                 <button type="button" data-view="face">Face</button><button type="button" data-view="eyes">Eyes</button>
               </div></div>
-            <div class="opt"><span class="label">&nbsp;</span>
-              <div style="display:flex; gap:6px; flex-wrap:wrap">
-                <button class="btn" id="compare" type="button" title="Hold to see a healthy patient in the same gaze (or hold N)">Hold: compare normal</button>
-                <button class="btn toggle" id="lock" type="button" aria-pressed="false" title="Stop the eyes following the pointer (or press L)">Lock gaze</button>
-              </div></div>
+            <div class="opt" style="flex-direction:row; gap:6px; flex-wrap:wrap">
+              <button class="btn" id="compare" type="button" title="Hold to see a healthy patient in the same gaze (or hold N)">Hold: compare normal</button>
+              <button class="btn toggle" id="lock" type="button" aria-pressed="false" title="Stop the eyes following the pointer (or press L)">Lock gaze</button>
+            </div>
           </div>
           <p class="hint" style="flex-basis:100%; margin:0">Move the pointer over the face (drag on touch), or use the pad or keys 1–9. Positions are shown as you, the examiner, see the patient.</p>
         </div>
       </section>
 
-      <aside class="info" aria-label="Case details and muscle activity">
-        <article class="card" id="card" aria-live="polite"></article>
-        <section class="muscles" aria-labelledby="muscles-title">
+      <article class="card panel" id="card" aria-live="polite"></article>
+
+      <section class="readouts panel" aria-label="Muscle activity and cranial nerves">
+        <div class="muscles-head">
           <h2 class="section-title" id="muscles-title">Muscle activity</h2>
           <div class="legend">
             <span><i style="background:var(--accent)"></i>Force</span>
@@ -313,11 +309,25 @@
             <span><i style="background:var(--palsy)"></i>Palsy</span>
             <span><i style="background:var(--restricted)"></i>Restricted</span>
           </div>
-          <div id="muscle-tables"></div>
-          <p class="hint">Effort is the command sent to the muscle. Both eyes get the same command (Hering's law), so a weak muscle shows high effort but little force, and its yoke in the other eye over-acts.</p>
-        </section>
-      </aside>
+          <p class="hint" style="margin:0 0 6px">Effort is the command sent to a muscle. Both eyes get the same command (Hering's law), so a weak muscle shows high effort but little force, and its yoke in the other eye over-acts.</p>
+        </div>
+        <div id="muscle-tables"></div>
+        <div class="nerves-box">
+          <h2 class="section-title" id="nerves-title">Cranial nerves</h2>
+          <table class="nerves" aria-labelledby="nerves-title">
+            <thead><tr><th scope="col"></th><th scope="col">Right OD</th><th scope="col">Left OS</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">CN III</th><td><button class="nerve-btn" type="button" data-eye="R" data-nerve="3"></button></td><td><button class="nerve-btn" type="button" data-eye="L" data-nerve="3"></button></td></tr>
+              <tr><th scope="row">CN IV</th><td><button class="nerve-btn" type="button" data-eye="R" data-nerve="4"></button></td><td><button class="nerve-btn" type="button" data-eye="L" data-nerve="4"></button></td></tr>
+              <tr><th scope="row">CN VI</th><td><button class="nerve-btn" type="button" data-eye="R" data-nerve="6"></button></td><td><button class="nerve-btn" type="button" data-eye="L" data-nerve="6"></button></td></tr>
+            </tbody>
+          </table>
+          <p class="hint">Tap a nerve to cycle normal → paresis → palsy.</p>
+          <button class="btn reset" id="reset" type="button">Reset to normal</button>
+        </div>
+      </section>
     </div>
+    <p class="embed-note">Educational simulation, not a diagnostic tool.</p>
 
     <section class="content" id="about">
       <h2>About this simulator</h2>

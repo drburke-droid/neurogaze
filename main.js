@@ -303,12 +303,23 @@ for (const c of CASES) {
   b.innerHTML = '<span class="name"></span><span class="sub"></span>';
   b.querySelector('.name').textContent = c.name;
   b.querySelector('.sub').textContent = c.sub;
+  b.title = c.sub;
   b.addEventListener('click', () => {
     const keep = sim.caseId !== 'normal' && c.sides.includes(sim.side);
     applyCase(c.id, keep ? sim.side : (c.sides.includes('R') ? 'R' : c.sides[0]));
   });
   caseList.append(b);
 }
+
+const caseSelect = $('case-select');
+for (const c of CASES) caseSelect.add(new Option(`${c.name} (${c.sub})`, c.id));
+caseSelect.add(new Option('Custom nerve settings', 'custom'));
+caseSelect.options[caseSelect.options.length - 1].hidden = true;
+caseSelect.addEventListener('change', () => {
+  const c = CASE_BY_ID[caseSelect.value]; if (!c) return;
+  const keep = sim.caseId !== 'normal' && c.sides.includes(sim.side);
+  applyCase(c.id, keep ? sim.side : (c.sides.includes('R') ? 'R' : c.sides[0]));
+});
 
 $('side-picker').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-side]');
@@ -517,6 +528,7 @@ function renderCard() {
 function refreshAll() {
   const c = CASE_BY_ID[sim.caseId];
   for (const b of caseList.children) b.setAttribute('aria-pressed', String(!sim.custom && b.dataset.case === sim.caseId));
+  caseSelect.value = sim.custom ? 'custom' : sim.caseId;
   for (const b of $('side-picker').children) {
     b.disabled = !c.sides.includes(b.dataset.side);
     b.setAttribute('aria-pressed', String(!sim.custom && b.dataset.side === sim.side && c.id !== 'normal'));
@@ -604,7 +616,7 @@ function readHash() {
   return true;
 }
 window.addEventListener('hashchange', () => {
-  if (readHash()) stage.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
+  if (readHash() && !EMBED) stage.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -680,6 +692,17 @@ $('version').textContent = VERSION;
 if (!readHash()) { sim.gazeH = 0; sim.gazeV = 0; applyCase('normal', 'B', { keepGaze: true, announce: false }); }
 for (const eye of ['R', 'L']) { shown[eye].h = sim.solution[eye].h; shown[eye].v = sim.solution[eye].v; }
 if (initRenderer()) loadModel();
+
+// In an embed, report our height so the host page sizes the iframe and does all the scrolling
+if (EMBED && window.parent !== window) {
+  let lastH = 0;
+  const report = () => {
+    const h = Math.ceil(document.documentElement.getBoundingClientRect().height);
+    if (Math.abs(h - lastH) > 1) { lastH = h; window.parent.postMessage({ type: 'gaze-height', height: h }, PARENT ? PARENT.origin : '*'); }
+  };
+  new ResizeObserver(report).observe(document.body);
+  report();
+}
 
 // Small hook for automated checks and the preview-image build
 window.__gaze = { sim, applyCase, setGaze, exportImage, readHash, shareUrl };
