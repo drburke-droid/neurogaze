@@ -62,7 +62,7 @@ Then open the printed address. Run the model tests with `npm test` (Node 18 or l
 
 ## Deployment notes
 
-- The canonical and social-preview URLs in `index.html` assume the page lives at `https://calgaryvisioncentre.com/gaze/`. Update the three marked lines if it lives elsewhere.
+- The simulator's canonical home is `https://calgaryvisioncentre.com/gaze`, the clinic page that embeds it. The social-preview image is served from GitHub Pages. See `docs/promotion-kit.md` for the Squarespace pages, embed code and outreach material.
 - There are no third-party requests: no CDN, web fonts, cookies or analytics.
 
 ## Browser support

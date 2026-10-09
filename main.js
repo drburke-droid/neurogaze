@@ -1208,7 +1208,11 @@ function exportImage() {
   y = text(caseTitle(), 800, y + 34, `700 38px ${sans}`, '#e9edf4');
   y = text(`Patient looking ${gazeName()}`, 800, y + 6, `400 22px ${sans}`, '#a9b2c3');
   y = text(describeDeviation(sim.solution.deviation, sim.near), 800, y + 18, `600 22px ${sans}`, '#4cc9f0');
-  if (!sim.custom && sim.caseId !== 'normal') text(CASE_BY_ID[sim.caseId].card.look, 800, y + 16, `400 18px ${sans}`, '#d3d9e4');
+  if (!sim.custom && sim.caseId !== 'normal') {
+    // Keep the clinical description; drop sentences that are on-screen instructions
+    const look = CASE_BY_ID[sim.caseId].card.look.split(/(?<=\.)\s+/).filter((t) => !/\b(switch|toggle|hold|tap|click|press)\b/i.test(t)).join(' ');
+    text(look, 800, y + 16, `400 18px ${sans}`, '#d3d9e4');
+  }
   text('Created by Dr Robert Burke', 800, H - 74, `700 20px ${sans}`, '#e9edf4');
   text('calgaryvisioncentre.com · educational use only', 800, H - 44, `400 16px ${sans}`, '#a9b2c3');
   return out.toDataURL('image/png');
