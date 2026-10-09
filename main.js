@@ -5,9 +5,10 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import {
   MUSCLES, MUSCLE_NAMES, NERVE_OF, defaultState, solve, stepFatigue, muscleState,
-  describeDeviation, GAZE_POSITIONS, GAZE_NAMES, strength,
+  describeDeviation, GAZE_POSITIONS, GAZE_NAMES, strength, prism,
 } from './engine.js';
-import { CASES, CASE_BY_ID, SIDE_LABEL } from './cases.js';
+import { CASES, CASE_BY_ID, SIDE_LABEL, CAUSES, sidedName } from './cases.js';
+import { KEYS as CHART_KEYS, chartFromState, normalChart, rankPatterns, describeFindings } from './diagnose.js';
 
 const VERSION = 'v3.0';
 const MODEL_URL = './head_eyes_v2.glb';
@@ -43,6 +44,7 @@ const sim = {
 };
 // Eased eye angles actually drawn (per eye: h = abduction +, v = up +)
 const shown = { R: { h: 0, v: 0 }, L: { h: 0, v: 0 } };
+let mode = 'sim'; // 'sim' | 'chart'
 
 function currentState() { return sim.comparing ? defaultState() : sim.state; }
 
@@ -90,18 +92,20 @@ function initRenderer() {
   penlight = new THREE.PointLight(0xfff4e0, 2.2, 0, 2);
   scene.add(penlight);
 
-  new ResizeObserver(resize).observe(stage);
+  const ro = new ResizeObserver(resize);
+  ro.observe(stage);
+  ro.observe($('chart-grid'));
   resize();
   return true;
 }
 
 function resize() {
   if (!renderer) return;
-  const w = stage.clientWidth, h = stage.clientHeight;
+  const host = mode === 'chart' ? $('chart-grid') : stage;
+  const w = host.clientWidth, h = host.clientHeight;
   if (!w || !h) return;
   renderer.setSize(w, h, false);
-  camera.aspect = w / h;
-  frameCamera();
+  if (mode === 'sim') { camera.aspect = w / h; frameCamera(); }
   requestFrame();
 }
 
@@ -191,6 +195,7 @@ function requestFrame() {
 
 function frame(t) {
   rafId = 0;
+  if (mode === 'chart') { renderChart(); lastT = 0; return; }
   const elapsed = lastT ? Math.min(0.5, (t - lastT) / 1000) : 1 / 60;
   const dt = Math.min(0.05, elapsed);
   lastT = t;
@@ -467,6 +472,7 @@ cmp.addEventListener('keyup', (e) => { if (e.key === ' ' || e.key === 'Enter') s
 
 document.addEventListener('keydown', (e) => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (mode === 'chart') { chartKey(e); return; }
   if (/^[1-9]$/.test(e.key)) { const [H, V] = GAZE_POSITIONS[e.key]; setGaze(H, V); return; }
   const nudge = { ArrowLeft: [5, 0], ArrowRight: [-5, 0], ArrowUp: [0, 5], ArrowDown: [0, -5] }[e.key];
   if (nudge && document.activeElement === stage) { e.preventDefault(); setGaze(sim.gazeH + nudge[0], sim.gazeV + nudge[1]); return; }
@@ -474,6 +480,243 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'l' || e.key === 'L') setLocked(!sim.locked);
 });
 document.addEventListener('keyup', (e) => { if (e.key === 'n' || e.key === 'N') setComparing(false); });
+
+// ═══════════════════════════════════════════════════════════════
+// Motility chart: record the nine positions, then match them to the model
+// ═══════════════════════════════════════════════════════════════
+const chartGrid = $('chart-grid');
+const chartCells = $('chart-cells');
+const CELL_NAME = { 7: 'Up-right', 8: 'Up', 9: 'Up-left', 4: 'Right', 5: 'Primary', 6: 'Left', 1: 'Down-right', 2: 'Down', 3: 'Down-left' };
+const chart = { obs: normalChart(), edited: new Set(), sel: '5', eye: 'R', suggested: false };
+let chartCam = null;
+const cellEls = {};
+
+function compactDev(k) {
+  const o = chart.obs[k];
+  const [H] = GAZE_POSITIONS[k];
+  const hz = (H - o.R.h) + (-H - o.L.h), vt = o.R.v - o.L.v;
+  const parts = [];
+  if (Math.abs(hz) >= 1.5) parts.push(`${hz > 0 ? 'ET' : 'XT'} ${prism(hz)}Δ`);
+  if (Math.abs(vt) >= 1.5) parts.push(`${vt > 0 ? 'R/L' : 'L/R'} ${prism(vt)}Δ`);
+  return parts.join(' · ');
+}
+
+for (const k of CHART_KEYS) {
+  const el = document.createElement('div');
+  el.className = 'cell';
+  el.dataset.key = k;
+  el.setAttribute('role', 'button');
+  el.tabIndex = 0;
+  el.innerHTML = `<span class="pos">${CELL_NAME[k]}</span><span class="dev"></span><span class="eyetag od">OD</span><span class="eyetag os">OS</span>`;
+  let drag = null;
+  el.addEventListener('pointerdown', (e) => {
+    if (!e.isPrimary) return;
+    const r = el.getBoundingClientRect();
+    const eye = e.clientX - r.left < r.width / 2 ? 'R' : 'L'; // viewer's left half = patient's right eye
+    selectCell(k, eye);
+    drag = { x: e.clientX, y: e.clientY, deg: 100 / r.width, h0: chart.obs[k][eye].h, v0: chart.obs[k][eye].v, eye };
+    el.setPointerCapture(e.pointerId);
+  });
+  el.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    const dx = (e.clientX - drag.x) * drag.deg, dy = (e.clientY - drag.y) * drag.deg;
+    // Dragging toward the viewer's left turns the eye toward the patient's right
+    setObs(k, drag.eye, drag.h0 + (drag.eye === 'R' ? -dx : dx), drag.v0 - dy, false);
+  });
+  const end = () => { if (drag) { drag = null; chartChanged(); } };
+  el.addEventListener('pointerup', end);
+  el.addEventListener('pointercancel', end);
+  el.addEventListener('focus', () => { if (chart.sel !== k) selectCell(k, chart.eye); });
+  chartCells.append(el);
+  cellEls[k] = el;
+}
+
+function selectCell(k, eye) {
+  chart.sel = k;
+  chart.eye = eye;
+  updateChartUI();
+}
+
+function setObs(k, eye, h, v, commit = true) {
+  chart.obs[k][eye] = { h: clamp(h, -55, 55), v: clamp(v, -55, 50) };
+  const n = normalChart()[k];
+  const same = ['R', 'L'].every((e) => Math.abs(chart.obs[k][e].h - n[e].h) < 0.5 && Math.abs(chart.obs[k][e].v - n[e].v) < 0.5);
+  if (same) chart.edited.delete(k); else chart.edited.add(k);
+  updateChartUI();
+  requestFrame();
+  if (commit) chartChanged();
+}
+
+function chartChanged() {
+  scheduleHash(300);
+  if (chart.suggested) suggest(false);
+}
+
+function nudge(dir) {
+  const k = chart.sel, eye = chart.eye, o = chart.obs[k][eye], step = 2;
+  // "left" = toward the viewer's left = the patient's right
+  const towardPatientRight = dir === 'left' ? step : dir === 'right' ? -step : 0;
+  const dh = eye === 'R' ? towardPatientRight : -towardPatientRight;
+  const dv = dir === 'up' ? step : dir === 'down' ? -step : 0;
+  setObs(k, eye, o.h + dh, o.v + dv);
+}
+
+function updateChartUI() {
+  for (const k of CHART_KEYS) {
+    const el = cellEls[k];
+    el.classList.toggle('selected', k === chart.sel);
+    el.classList.toggle('edited', chart.edited.has(k));
+    el.querySelector('.dev').textContent = compactDev(k);
+    el.querySelector('.eyetag.od').classList.toggle('active', chart.eye === 'R');
+    el.querySelector('.eyetag.os').classList.toggle('active', chart.eye === 'L');
+    el.setAttribute('aria-pressed', String(k === chart.sel));
+    el.setAttribute('aria-label', `Patient looking ${GAZE_NAMES[k]}. ${compactDev(k) || 'Eyes aligned'}.${chart.edited.has(k) ? ' Edited.' : ''}`);
+  }
+  for (const b of $('eye-picker').children) b.setAttribute('aria-pressed', String(b.dataset.eye === chart.eye));
+  $('chart-from-sim').textContent = `Fill from simulator: ${caseTitle()}`;
+}
+
+function frameChartCam(cw, ch) {
+  chartCam ||= new THREE.PerspectiveCamera(22, 1, 0.05, 50);
+  chartCam.aspect = cw / ch;
+  const box = { w: 0.7, h: 0.3, y: eyeMid.y - 0.005 };
+  const t = Math.tan((chartCam.fov * DEG) / 2);
+  const dist = Math.max(box.h / 2 / t, box.w / 2 / (t * chartCam.aspect));
+  chartCam.position.set(0, box.y + 0.02, eyeMid.z + dist);
+  chartCam.lookAt(0, box.y, eyeMid.z);
+  chartCam.updateProjectionMatrix();
+}
+
+function renderChart() {
+  if (!renderer || !eyes) return;
+  const W = chartGrid.clientWidth, H = chartGrid.clientHeight;
+  if (!W || !H) return;
+  const cw = W / 3, ch = H / 3;
+  frameChartCam(cw, ch);
+  renderer.setScissorTest(false);
+  renderer.setViewport(0, 0, W, H);
+  renderer.clear();
+  renderer.setScissorTest(true);
+  CHART_KEYS.forEach((k, i) => {
+    const row = Math.floor(i / 3), col = i % 3;
+    for (const eye of ['R', 'L']) {
+      const o = chart.obs[k][eye];
+      eyes[eye].rotation.y = (eye === 'R' ? -1 : 1) * o.h * DEG;
+      eyes[eye].rotation.x = -o.v * DEG;
+      eyes[eye].position.z = eyes[eye].userData.z0;
+    }
+    const [gh, gv] = GAZE_POSITIONS[k];
+    const Hr = gh * DEG, Vr = gv * DEG;
+    penlight.position.set(eyeMid.x - Math.sin(Hr) * Math.cos(Vr) * 1.6, eyeMid.y + Math.sin(Vr) * 1.6, eyeMid.z + Math.cos(Hr) * Math.cos(Vr) * 1.6);
+    const x = col * cw, y = H - (row + 1) * ch;
+    renderer.setViewport(x, y, cw, ch);
+    renderer.setScissor(x, y, cw, ch);
+    renderer.render(scene, chartCam);
+  });
+  renderer.setScissorTest(false);
+  renderer.setViewport(0, 0, W, H);
+}
+
+function suggest(say = true) {
+  chart.suggested = true;
+  const ranked = rankPatterns(chart.obs, chart.edited);
+  const box = $('results');
+  box.innerHTML = '';
+  const add = (tag, text, cls) => { const el = document.createElement(tag); if (text != null) el.textContent = text; if (cls) el.className = cls; box.append(el); return el; };
+  add('h2', 'Most likely patterns');
+  add('p', 'Your chart compared with every condition in the model, at several severities and with either eye fixing.', 'hint');
+  const best = ranked[0];
+  if (best.rms > 6) add('p', `Nothing in the model reproduces this chart closely (closest fit is off by about ${Math.round(best.rms)}° per eye per position). Consider combined lesions, a restrictive process, myasthenia, or re-checking the chart.`, 'warn');
+  const ol = add('ol');
+  const shown = ranked.filter((r) => r.probability >= 0.02).slice(0, 5);
+  shown.forEach((r, i) => {
+    const li = document.createElement('li');
+    const name = document.createElement('div');
+    name.className = 'dx';
+    name.textContent = r.label;
+    if (r.severity) { const sv = document.createElement('span'); sv.className = 'sev'; sv.textContent = ` · ${r.severity}`; name.append(sv); }
+    const fit = document.createElement('div');
+    fit.className = 'fit';
+    const pct = Math.round(r.probability * 100);
+    fit.innerHTML = `<div class="bar"><i style="width:${pct}%"></i></div><span class="pct">${pct}%</span>`;
+    li.append(name, fit);
+    const causes = (CAUSES[r.caseId] || []).slice(0, i === 0 ? 6 : 3);
+    if (causes.length) {
+      const ul = document.createElement('ul'); ul.className = 'causes';
+      for (const c of causes) { const it = document.createElement('li'); it.textContent = c; ul.append(it); }
+      li.append(ul);
+    }
+    if (r.caseId !== 'normal') {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'btn open';
+      b.textContent = 'Open in simulator';
+      b.addEventListener('click', () => { setMode('sim'); applyCase(r.caseId, r.side); });
+      li.append(b);
+    }
+    ol.append(li);
+  });
+  add('h3', 'What you charted');
+  const ul = add('ul', null, 'findings');
+  for (const f of describeFindings(chart.obs)) { const li = document.createElement('li'); li.textContent = f; ul.append(li); }
+  add('p', 'Myasthenia gravis can mimic any of these patterns: ask about variability, fatigue and ptosis. Pupil involvement, pain, or other neurological signs need urgent assessment.', 'redflag');
+  add('p', 'Pattern matching against a simplified teaching model. Not a diagnosis.', 'hint');
+  if (say) announce(`Most likely: ${best.label}, ${Math.round(best.probability * 100)} percent.`);
+  scheduleHash(300);
+}
+
+function showChartIntro() {
+  const box = $('results');
+  box.innerHTML = `<h2>Chart what you see</h2>
+    <ol class="findings" style="padding-left:18px">
+      <li>Each box shows the eyes in one cardinal position, as you face the patient. They start out normal.</li>
+      <li>For every position where something looks off, drag that eye (or select it and use the arrows) to where you saw it.</li>
+      <li>Press <strong>Enter</strong> or <strong>Suggest diagnosis</strong>. The ranking updates as you keep adjusting.</li>
+    </ol>
+    <p class="hint">To see how it works, set up a case in the Simulator, come back and press <em>Fill from simulator</em>.</p>`;
+}
+
+function chartKey(e) {
+  const tag = document.activeElement?.tagName;
+  if (/^[1-9]$/.test(e.key)) { selectCell(e.key, chart.eye); cellEls[e.key].focus(); return; }
+  const dir = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' }[e.key];
+  if (dir) { e.preventDefault(); nudge(dir); return; }
+  if (e.key === 'o' || e.key === 'O') { chart.eye = chart.eye === 'R' ? 'L' : 'R'; updateChartUI(); return; }
+  if (e.key === 'Enter' && tag !== 'BUTTON' && tag !== 'A') { e.preventDefault(); suggest(); }
+}
+
+$('eye-picker').addEventListener('click', (e) => { const b = e.target.closest('button[data-eye]'); if (b) { chart.eye = b.dataset.eye; updateChartUI(); } });
+document.querySelectorAll('[data-nudge]').forEach((b) => b.addEventListener('click', () => nudge(b.dataset.nudge)));
+$('chart-reset-cell').addEventListener('click', () => {
+  const n = normalChart()[chart.sel];
+  chart.obs[chart.sel] = { R: { ...n.R }, L: { ...n.L } };
+  chart.edited.delete(chart.sel); updateChartUI(); requestFrame(); chartChanged();
+});
+$('chart-reset').addEventListener('click', () => {
+  chart.obs = normalChart(); chart.edited.clear(); chart.suggested = false;
+  showChartIntro(); updateChartUI(); requestFrame(); scheduleHash();
+});
+$('chart-from-sim').addEventListener('click', () => {
+  chart.obs = chartFromState(sim.state, sim.fixing);
+  const n = normalChart();
+  chart.edited = new Set(CHART_KEYS.filter((k) => ['R', 'L'].some((e) => Math.abs(chart.obs[k][e].h - n[k][e].h) > 0.5 || Math.abs(chart.obs[k][e].v - n[k][e].v) > 0.5)));
+  updateChartUI(); requestFrame(); chartChanged();
+  announce(`Chart filled from ${caseTitle()}.`);
+});
+$('chart-suggest').addEventListener('click', () => suggest());
+
+function setMode(m) {
+  mode = m === 'chart' ? 'chart' : 'sim';
+  document.body.classList.toggle('chart-mode', mode === 'chart');
+  $('chart').hidden = mode !== 'chart';
+  $('results').hidden = mode !== 'chart';
+  (mode === 'chart' ? chartGrid : stage).prepend(canvas);
+  for (const b of $('mode-picker').children) b.setAttribute('aria-pressed', String(b.dataset.mode === mode));
+  if (mode === 'chart') { updateChartUI(); if (!chart.suggested) showChartIntro(); }
+  resize();
+  requestFrame();
+  scheduleHash();
+}
+$('mode-picker').addEventListener('click', (e) => { const b = e.target.closest('button[data-mode]'); if (b) setMode(b.dataset.mode); });
 
 // Muscle tables
 const muscleRows = { R: {}, L: {} };
@@ -556,10 +799,7 @@ function caseTitle() {
     const prefix = sim.caseId !== 'normal' ? `${SIDE_LABEL[sim.side]} ${CASE_BY_ID[sim.caseId].name.toLowerCase()} + ` : '';
     return parts.length ? `${prefix}${parts.join(', ')}` : (prefix ? prefix.slice(0, -3) : 'Normal');
   }
-  const c = CASE_BY_ID[sim.caseId];
-  if (c.id === 'normal') return 'Normal';
-  if (c.sides.length === 1 && c.sides[0] === 'B') return c.name;
-  return `${SIDE_LABEL[sim.side]} ${c.name.charAt(0).toLowerCase()}${c.name.slice(1)}`;
+  return sidedName(sim.caseId, sim.side);
 }
 
 function renderCard() {
@@ -650,6 +890,17 @@ function scheduleHash(delay = 0) {
 }
 function writeHash() {
   const p = new URLSearchParams();
+  if (mode === 'chart') {
+    p.set('mode', 'chart');
+    const c = [];
+    for (const k of chart.edited) for (const e of ['R', 'L']) c.push(`${k}${e}${Math.round(chart.obs[k][e].h)}_${Math.round(chart.obs[k][e].v)}`);
+    if (c.length) p.set('c', c.join(','));
+    if (chart.suggested) p.set('s', '1');
+    const hash = `#${p.toString().replace(/%2C/g, ',')}`;
+    if (hash !== location.hash) history.replaceState(null, '', hash);
+    if (PARENT && window.parent !== window) window.parent.postMessage({ type: 'gaze-hash', hash }, PARENT.origin);
+    return;
+  }
   p.set('case', sim.caseId);
   if (sim.caseId !== 'normal') p.set('side', sim.side);
   const key = Object.entries(GAZE_POSITIONS).find(([, [H, V]]) => Math.abs(H - sim.gazeH) < 0.5 && Math.abs(V - sim.gazeV) < 0.5);
@@ -671,6 +922,18 @@ function readHash() {
   const raw = location.hash.slice(1);
   if (!raw.includes('=')) return false;
   const p = new URLSearchParams(raw);
+  if (p.get('mode') === 'chart') {
+    if (!sim.solution) applyCase('normal', 'B', { keepGaze: true, announce: false });
+    chart.obs = normalChart(); chart.edited.clear();
+    for (const part of (p.get('c') || '').split(',')) {
+      const m = /^([1-9])([RL])(-?\d{1,2})_(-?\d{1,2})$/.exec(part);
+      if (m) { chart.obs[m[1]][m[2]] = { h: clamp(+m[3], -55, 55), v: clamp(+m[4], -55, 50) }; chart.edited.add(m[1]); }
+    }
+    setMode('chart');
+    if (p.get('s') === '1') suggest(false);
+    return true;
+  }
+  if (mode === 'chart') setMode('sim');
   const id = CASE_BY_ID[p.get('case')] ? p.get('case') : 'normal';
   applyCase(id, p.get('side') || CASE_BY_ID[id].sides[0], { announce: false });
   if (p.get('gaze') && GAZE_POSITIONS[p.get('gaze')]) { [sim.gazeH, sim.gazeV] = GAZE_POSITIONS[p.get('gaze')]; }
@@ -761,6 +1024,7 @@ $('save-image').addEventListener('click', async () => {
 // Start
 // ═══════════════════════════════════════════════════════════════
 $('version').textContent = VERSION;
+for (const b of $('mode-picker').children) b.setAttribute('aria-pressed', String(b.dataset.mode === 'sim'));
 if (!readHash()) { sim.gazeH = 0; sim.gazeV = 0; applyCase('normal', 'B', { keepGaze: true, announce: false }); }
 for (const eye of ['R', 'L']) { shown[eye].h = sim.solution[eye].h; shown[eye].v = sim.solution[eye].v; }
 if (initRenderer()) loadModel();
@@ -777,4 +1041,4 @@ if (EMBED && window.parent !== window) {
 }
 
 // Small hook for automated checks and the preview-image build
-window.__gaze = { sim, applyCase, setGaze, exportImage, readHash, shareUrl };
+window.__gaze = { sim, applyCase, setGaze, exportImage, readHash, shareUrl, chart, setMode, suggest, nudge, selectCell };

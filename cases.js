@@ -14,6 +14,16 @@ const abductionKey = (eye) => (eye === 'R' ? 4 : 6);
 const adductionKey = (eye) => (eye === 'R' ? 6 : 4);
 
 export const SIDE_LABEL = { R: 'Right', L: 'Left', B: 'Bilateral' };
+const PROPER = new Set(['brown', 'duane', 'mfs', 'mg']);
+
+/** "Right sixth nerve palsy", "Left Duane syndrome", "Myasthenia gravis". */
+export function sidedName(id, side) {
+  const c = CASE_BY_ID[id];
+  if (id === 'normal') return 'Normal';
+  if (c.sides.length === 1 && c.sides[0] === 'B') return c.name;
+  const name = PROPER.has(id) ? c.name : c.name.charAt(0).toLowerCase() + c.name.slice(1);
+  return `${SIDE_LABEL[side]} ${name}`;
+}
 
 export const CASES = [
   {
@@ -130,6 +140,18 @@ export const CASES = [
     },
   },
   {
+    id: 'cavsinus', name: 'Cavernous sinus syndrome', sub: 'CN III + IV + VI', sides: ['R', 'L'], mechanism: 'Nerve palsy',
+    apply(s, side) { s.nerves[side][3] = 0; s.nerves[side][4] = 0; s.nerves[side][6] = 0; },
+    worst: (side) => abductionKey(side),
+    card: {
+      summary: 'The third, fourth and sixth nerves (and V1/V2 and the ocular sympathetics) run together through the cavernous sinus and superior orbital fissure, so one lesion can stop them all.',
+      look: 'Near-total ophthalmoplegia of one eye: it barely moves in any direction while the other eye moves normally.',
+      signs: ['Ophthalmoplegia of one eye', 'Ptosis; pupil may be dilated or small (sympathetic involvement)', 'Numbness of the forehead (V1) ± cheek (V2)', 'Proptosis and chemosis if there is venous congestion'],
+      redFlags: 'Needs urgent imaging. Consider carotid-cavernous fistula, cavernous sinus thrombosis (fever, sepsis), pituitary apoplexy (sudden headache, low vision), aneurysm, tumour and Tolosa–Hunt syndrome.',
+      notModelled: 'Ptosis, the pupil, proptosis and sensory loss.',
+    },
+  },
+  {
     id: 'mg', name: 'Myasthenia gravis', sub: 'Fatigable · any pattern', sides: ['B'], mechanism: 'Neuromuscular junction',
     apply(s) {
       s.muscles.R.SR = 0.75; s.muscles.R.MR = 0.85; s.muscles.L.LR = 0.8; s.muscles.L.IO = 0.85;
@@ -173,5 +195,23 @@ export const CASES = [
     },
   },
 ];
+
+
+// Usual causes, shown with suggested diagnoses in the motility chart
+export const CAUSES = {
+  normal: [],
+  cn3: ['Microvascular ischaemia (diabetes, hypertension): usually pupil-sparing', 'Posterior communicating artery aneurysm: pupil involved, painful', 'Trauma', 'Tumour or uncal herniation', 'Giant cell arteritis (age over 50)'],
+  cn4: ['Head trauma (often bilateral)', 'Decompensated congenital palsy (check old photos, large vertical fusional range)', 'Microvascular ischaemia', 'Rarely tumour or demyelination'],
+  cn6: ['Microvascular ischaemia (diabetes, hypertension)', 'Raised intracranial pressure (check for papilloedema)', 'Trauma', 'Skull base tumour, petrous apex disease', 'Demyelination in younger adults; post-viral in children'],
+  cavsinus: ['Carotid-cavernous fistula', 'Cavernous sinus thrombosis', 'Pituitary apoplexy or tumour', 'Intracavernous aneurysm', 'Tolosa–Hunt syndrome'],
+  ino: ['Multiple sclerosis (young, often bilateral)', 'Brainstem stroke (older, usually unilateral)', 'Less often tumour, trauma or Wernicke encephalopathy'],
+  ted: ['Graves disease (hyperthyroid)', 'Also euthyroid or hypothyroid autoimmune thyroid disease', 'Risk raised by smoking and radioiodine treatment'],
+  blowout: ['Blunt orbital trauma (ball, fist, fall)'],
+  brown: ['Congenital tendon sheath abnormality', 'Acquired: trauma or surgery near the trochlea, inflammation (e.g. rheumatoid arthritis, sinusitis)'],
+  duane: ['Congenital cranial dysinnervation (absent abducens nucleus)', 'Can be associated with hearing, spine or limb anomalies'],
+  mg: ['Autoimmune acetylcholine-receptor or MuSK antibodies', 'Thymoma in some patients'],
+  mfs: ['Post-infectious anti-GQ1b antibody syndrome (often after Campylobacter or a viral illness)'],
+  skew: ['Brainstem or cerebellar stroke (e.g. lateral medullary)', 'Demyelination, tumour or trauma affecting the vestibular pathways'],
+};
 
 export const CASE_BY_ID = Object.fromEntries(CASES.map((c) => [c.id, c]));

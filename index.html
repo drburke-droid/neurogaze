@@ -139,6 +139,46 @@
     .opt .label { font-size: 12px; color: var(--muted); }
     .toggle[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
 
+    /* Mode switch */
+    .mode-row { margin-bottom: 10px; }
+    .mode-seg button { font-weight: 600; min-height: 40px; padding: 8px 14px; }
+    .chart-mode .sim-only, .chart-mode .sim, .chart-mode #card { display: none !important; }
+    .chart { grid-area: sim; min-width: 0; }
+    .results { grid-area: card; }
+    .chart-mode .results[hidden] { display: block; }
+
+    /* Motility chart */
+    .chart-grid { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: var(--radius); overflow: hidden; background: var(--bg); }
+    .chart-grid canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .chart-cells { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); }
+    .cell { position: relative; border: 1px solid var(--line); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+    .cell:active { cursor: grabbing; }
+    .cell.selected { border: 2px solid var(--accent); }
+    .cell .pos { position: absolute; top: 4px; left: 6px; font-size: 12px; color: var(--muted); font-weight: 600; text-shadow: 0 1px 2px #000; }
+    .cell .dev { position: absolute; top: 4px; right: 6px; font-size: 11.5px; font-family: var(--mono); color: var(--text); background: rgba(11,13,18,.75); border-radius: 4px; padding: 0 4px; }
+    .cell .dev:empty { display: none; }
+    .cell .eyetag { position: absolute; bottom: 4px; font-size: 11px; font-weight: 700; color: var(--muted); padding: 0 5px; border-radius: 4px; }
+    .cell .eyetag.od { left: 6px; } .cell .eyetag.os { right: 6px; }
+    .cell.selected .eyetag.active { background: var(--accent); color: var(--accent-ink); }
+    .cell.edited .pos::after { content: " ●"; color: var(--paresis); }
+    .chart-tools { display: flex; gap: 12px 16px; align-items: flex-end; flex-wrap: wrap; padding-top: 12px; }
+    .nudge { display: inline-flex; gap: 4px; }
+    .nudge button { width: 40px; height: 38px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); cursor: pointer; font-size: 16px; }
+    .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+    .kbd { font-size: 11px; border: 1px solid rgba(6,35,48,.5); border-radius: 4px; padding: 0 4px; margin-left: 4px; }
+    .results ol { padding-left: 20px; margin: 6px 0 0; }
+    .results li { margin: 0 0 14px; }
+    .results .dx { font-weight: 700; }
+    .results .sev { color: var(--muted); font-weight: 400; }
+    .fit { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+    .fit .bar { flex: 1; height: 8px; background: #2a303d; border-radius: 4px; overflow: hidden; }
+    .fit .bar i { display: block; height: 100%; background: var(--accent); }
+    .fit .pct { font-family: var(--mono); font-size: 12.5px; color: var(--muted); width: 3.5em; text-align: right; }
+    .results .causes { margin: 4px 0 6px; padding-left: 18px; font-size: 13.5px; color: #d3d9e4; }
+    .results .open { margin-top: 2px; min-height: 34px; font-size: 13px; }
+    .results .warn { border-left: 3px solid var(--paresis); padding: 6px 10px; background: rgba(255, 183, 3, .07); border-radius: 0 8px 8px 0; font-size: 14px; }
+    .results .findings { padding-left: 18px; }
+
     /* Card */
     .card h2 { font-size: 19px; }
     .badge { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); margin: 6px 0 8px; }
@@ -224,6 +264,9 @@
       .case-select, .cases-label { display: block; }
       .cases-row { gap: 8px; }
       .side-row { margin-left: 0; width: 100%; }
+      .mode-seg { width: 100%; } .mode-seg button { flex: 1; font-size: 13px; padding: 6px 8px; }
+      .chart-grid { aspect-ratio: 4 / 3; }
+      .cell .pos { font-size: 10.5px; } .cell .dev { font-size: 10px; }
       .stage { aspect-ratio: 1 / 1; }
       .readouts { grid-template-columns: 1fr; }
       .muscles-head { grid-column: 1; }
@@ -256,7 +299,13 @@
     <div class="app">
       <nav class="cases" aria-label="Cases">
         <h2 class="visually-hidden" id="cases-title">Cases</h2>
-        <div class="cases-row">
+        <div class="mode-row">
+          <div class="seg mode-seg" id="mode-picker" role="group" aria-label="Mode">
+            <button type="button" data-mode="sim">Simulator</button>
+            <button type="button" data-mode="chart">Motility chart → suggest diagnosis</button>
+          </div>
+        </div>
+        <div class="cases-row sim-only">
           <div class="cases-row" id="case-list" aria-labelledby="cases-title"></div>
           <label class="cases-label" for="case-select">Case</label>
           <select class="case-select" id="case-select"></select>
@@ -306,9 +355,36 @@
         </div>
       </section>
 
-      <article class="card panel" id="card" aria-live="polite"></article>
+      <section class="chart" id="chart" aria-label="Motility chart" hidden>
+        <div class="chart-grid" id="chart-grid">
+          <div class="chart-cells" id="chart-cells"></div>
+        </div>
+        <div class="chart-tools">
+          <div class="opt"><span class="label" id="eye-label">Adjusting</span>
+            <div class="seg" id="eye-picker" role="group" aria-labelledby="eye-label">
+              <button type="button" data-eye="R">Right eye OD</button><button type="button" data-eye="L">Left eye OS</button>
+            </div></div>
+          <div class="opt"><span class="label" id="nudge-label">Move it</span>
+            <div class="nudge" role="group" aria-labelledby="nudge-label">
+              <button type="button" data-nudge="left" aria-label="Move toward your left">←</button>
+              <button type="button" data-nudge="up" aria-label="Move up">↑</button>
+              <button type="button" data-nudge="down" aria-label="Move down">↓</button>
+              <button type="button" data-nudge="right" aria-label="Move toward your right">→</button>
+            </div></div>
+          <div class="opt" style="flex-direction:row; gap:6px; flex-wrap:wrap; align-items:flex-end">
+            <button class="btn" type="button" id="chart-reset-cell">Reset position</button>
+            <button class="btn" type="button" id="chart-reset">Reset all</button>
+            <button class="btn" type="button" id="chart-from-sim" title="Fill the chart from the case currently set in the simulator">Fill from simulator case</button>
+          </div>
+          <button class="btn primary" type="button" id="chart-suggest">Suggest diagnosis <span class="kbd">Enter</span></button>
+          <p class="hint" style="flex-basis:100%; margin:0">Each box is one cardinal position, as you see the patient. The left eye in each box is the patient's right eye (OD). <strong>Drag an eye</strong> to where you saw it, or select a box and use the arrows (keys: 1–9 pick a box, arrows move, O switches eye, Enter suggests).</p>
+        </div>
+      </section>
 
-      <section class="readouts panel" aria-label="Muscle activity and cranial nerves">
+      <article class="card panel" id="card" aria-live="polite"></article>
+      <article class="card panel results" id="results" aria-live="polite" hidden></article>
+
+      <section class="readouts panel sim-only" aria-label="Muscle activity and cranial nerves">
         <div class="muscles-head">
           <h2 class="section-title" id="muscles-title">Muscle activity</h2>
           <div class="legend">
@@ -351,6 +427,7 @@
         <li><strong>Fixing eye:</strong> switch fixation to the affected eye to see the larger secondary deviation predicted by Hering's law.</li>
         <li><strong>Near target:</strong> shows convergence, which is spared in internuclear ophthalmoplegia.</li>
         <li><strong>Compare with normal:</strong> press and hold anywhere on the face (or hold the N key) to flip to a healthy patient in the same gaze.</li>
+        <li><strong>Motility chart:</strong> switch to "Motility chart" to record what you see in clinic. Each of the nine boxes shows the eyes in one cardinal position; drag each eye to where you observed it, then press Enter. The app compares your chart with every condition in the model, at several severities and with either eye fixing, and lists the most likely patterns with their usual causes. It is pattern matching against a teaching model, not a diagnosis.</li>
         <li><strong>Share:</strong> the address bar always holds the current case and gaze, so "Copy link" opens exactly what you see. "Save image" downloads a labelled picture.</li>
       </ul>
 
