@@ -405,9 +405,11 @@
               <tr><th scope="row">CN III</th><td><button class="nerve-btn" type="button" data-eye="R" data-nerve="3"></button></td><td><button class="nerve-btn" type="button" data-eye="L" data-nerve="3"></button></td></tr>
               <tr><th scope="row">CN IV</th><td><button class="nerve-btn" type="button" data-eye="R" data-nerve="4"></button></td><td><button class="nerve-btn" type="button" data-eye="L" data-nerve="4"></button></td></tr>
               <tr><th scope="row">CN VI</th><td><button class="nerve-btn" type="button" data-eye="R" data-nerve="6"></button></td><td><button class="nerve-btn" type="button" data-eye="L" data-nerve="6"></button></td></tr>
+              <tr><th scope="row">Lid</th><td><button class="nerve-btn sign-btn" type="button" data-eye="R" data-sign="lid"></button></td><td><button class="nerve-btn sign-btn" type="button" data-eye="L" data-sign="lid"></button></td></tr>
+              <tr><th scope="row">Pupil</th><td><button class="nerve-btn sign-btn" type="button" data-eye="R" data-sign="pupil"></button></td><td><button class="nerve-btn sign-btn" type="button" data-eye="L" data-sign="pupil"></button></td></tr>
             </tbody>
           </table>
-          <p class="hint">Tap a nerve to cycle normal → paresis → palsy.</p>
+          <p class="hint">Tap a nerve to cycle normal → paresis → palsy. Lid: none → mild → marked → complete ptosis. Pupil: normal → small → dilated.</p>
           <button class="btn reset" id="reset" type="button">Reset to normal</button>
         </div>
       </section>
@@ -450,7 +452,7 @@
       <h3><a href="#case=cn4&amp;side=R&amp;gaze=3">Fourth nerve (trochlear) palsy</a></h3>
       <p>The affected eye sits higher, most of all when looking down and toward the nose. Patients tilt the head to the opposite shoulder. The Parks–Bielschowsky three-step test confirms it.</p>
       <h3><a href="#case=cn3&amp;side=R&amp;gaze=5">Third nerve (oculomotor) palsy</a></h3>
-      <p>The eye rests down and out, with limited adduction, elevation and depression, usually with ptosis. A dilated pupil or pain suggests an aneurysm and needs urgent imaging.</p>
+      <p>The eye rests down and out, with limited adduction, elevation and depression, usually with ptosis. A dilated pupil or pain suggests an aneurysm and needs urgent imaging. In the simulator, toggle the pupil to compare pupil-involving and pupil-sparing palsies.</p>
       <h3><a href="#case=ino&amp;side=R&amp;gaze=6">Internuclear ophthalmoplegia (INO)</a></h3>
       <p>An MLF lesion stops the eye on the lesion side from adducting on side gaze, with nystagmus of the abducting eye. Convergence is usually spared. Often multiple sclerosis in the young, stroke in older patients.</p>
       <h3><a href="#case=ted&amp;side=R&amp;gaze=7">Thyroid eye disease</a></h3>
@@ -469,7 +471,7 @@
       <p>A supranuclear vertical misalignment: the eye on the side of a lateral medullary stroke sits lower, by about the same amount in every gaze. Acute vertical diplopia with vertigo is a stroke until proven otherwise.</p>
 
       <h2>What the model does and does not show</h2>
-      <p>This is a qualitative teaching model, not a biomechanical simulation. It limits eye movements to physiological ranges, separates weak muscles (paresis) from tight ones (restriction), applies Hering's law through a selectable fixing eye, and treats MLF and skew lesions as supranuclear. It does not model eyelids, pupils, torsion, head tilt or saccade velocities, and the numbers it displays are illustrative.</p>
+      <p>This is a qualitative teaching model, not a biomechanical simulation. It limits eye movements to physiological ranges, separates weak muscles (paresis) from tight ones (restriction), applies Hering's law through a selectable fixing eye, and treats MLF and skew lesions as supranuclear. Ptosis and pupil size can be shown for each eye (a third nerve palsy shows both by default, and myasthenic ptosis worsens on sustained upgaze), and the lids follow the eyes in downgaze. It does not model pupil light reactions, torsion, head tilt or saccade velocities, and the numbers it displays are illustrative.</p>
 
       <h2>Author</h2>
       <p>Created by <a href="https://calgaryvisioncentre.com/" rel="author">Dr Robert Burke</a>, optometrist, Calgary Vision Centre, Calgary, Alberta.</p>

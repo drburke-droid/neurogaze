@@ -44,6 +44,8 @@ export function defaultState() {
     skew: { R: 0, L: 0 },      // supranuclear vertical offset (deg, + up), comitant
     duane: { R: 0, L: 0 },     // Duane type I: no abduction, retraction on adduction
     fatigue: null,             // myasthenia: { severity, f: { R: {...}, L: {...} } }
+    lid: { R: 0, L: 0 },       // ptosis: 0 none … 1 complete
+    pupil: { R: 1, L: 1 },     // pupil size relative to normal: 2 dilated, 0.55 small
   };
 }
 
@@ -210,6 +212,15 @@ export function muscleState(state, eye, m) {
 }
 
 /** Prism dioptres from degrees. */
+/** Upper-lid ptosis actually shown, including myasthenic fatigue of the elevators. */
+export function lidDroop(state, eye) {
+  let p = state.lid[eye];
+  if (state.fatigue) p += 0.6 * Math.max(state.fatigue.f[eye].SR, state.fatigue.f[eye].IO);
+  return Math.min(1, p);
+}
+
+export const PUPIL = { normal: 1, dilated: 2, small: 0.55 };
+
 export const prism = (deg) => Math.round(100 * Math.tan((Math.abs(deg) * Math.PI) / 180));
 
 /** Plain-language deviation, e.g. "ET 14° (25Δ) · R hyper 4° (7Δ)". */

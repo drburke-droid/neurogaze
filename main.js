@@ -5,7 +5,7 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import {
   MUSCLES, MUSCLE_NAMES, NERVE_OF, defaultState, solve, stepFatigue, muscleState,
-  describeDeviation, GAZE_POSITIONS, GAZE_NAMES, strength, prism,
+  describeDeviation, GAZE_POSITIONS, GAZE_NAMES, strength, prism, lidDroop, PUPIL,
 } from './engine.js';
 import { CASES, CASE_BY_ID, SIDE_LABEL, CAUSES, sidedName } from './cases.js';
 import { KEYS as CHART_KEYS, chartFromState, normalChart, rankPatterns, describeFindings } from './diagnose.js';
@@ -184,9 +184,157 @@ function onModel(gltf) {
   eyeMid.copy(pR).add(pL).multiplyScalar(0.5);
   for (const e of [eyeR, eyeL]) { e.rotation.order = 'YXZ'; e.userData.z0 = e.position.z; }
   eyes = { R: eyeR, L: eyeL };
+  setupPupils();
+  setupLids(model);
   $('loader').hidden = true;
   frameCamera();
   requestFrame();
+}
+
+// ── Pupils: enlarge or shrink the pupil painted in the iris texture ──────────
+// The iris is a disc whose texture has the pupil centred at uv (0.4955, 0.4961),
+// radius 0.14, inside an iris of radius 0.42. Remap radially in the shader.
+function setupPupils() {
+  for (const eye of ['R', 'L']) {
+    eyes[eye].traverse((o) => {
+      if (!o.isMesh || !o.material.map || o.material.transmission > 0) return;
+      const box = new THREE.Box3().setFromObject(o);
+      const size = box.getSize(new THREE.Vector3());
+      if (size.z > size.x * 0.2) return; // the iris is the flat disc; the sclera is a sphere
+      const m = o.material.clone();
+      const u = { value: 1 };
+      m.onBeforeCompile = (shader) => {
+        shader.uniforms.pupilScale = u;
+        shader.fragmentShader = shader.fragmentShader
+          .replace('#include <common>', '#include <common>\nuniform float pupilScale;')
+          .replace('#include <map_fragment>', `
+            #ifdef USE_MAP
+              vec2 pc = vec2(0.4955, 0.4961);
+              vec2 d = vMapUv - pc;
+              float r = length(d);
+              float rp0 = 0.14, R = 0.42, rp = clamp(rp0 * pupilScale, 0.04, 0.36);
+              float r2 = r < rp ? r * rp0 / rp : (r < R ? rp0 + (r - rp) * (R - rp0) / (R - rp) : r);
+              vec2 uv2 = pc + (r > 1e-5 ? d / r * r2 : vec2(0.0));
+              diffuseColor *= texture2D(map, uv2);
+            #endif`);
+      };
+      m.customProgramCacheKey = () => 'pupil';
+      o.material = m;
+      eyes[eye].userData.pupil = u;
+    });
+  }
+}
+
+// ── Eyelids: a thin skin shell around each globe, lowered for ptosis ─────────
+// Hidden by the face everywhere except inside the eye opening, like a real lid.
+const LID_COLS = 36, LID_ROWS = 14;
+const lids = {};
+function setupLids(model) {
+  // Globe radius in world units, from the widest eye mesh (the sclera) while the eyes look straight ahead
+  let radius = 0;
+  eyes.L.traverse((o) => {
+    if (o.isMesh) { const b = new THREE.Box3().setFromObject(o); radius = Math.max(radius, (b.max.x - b.min.x) / 2); }
+  });
+  if (!radius) radius = 0.067;
+  const skin = sampleLidSkin(model);
+  for (const eye of ['R', 'L']) {
+    const geo = new THREE.BufferGeometry();
+    const n = (LID_COLS + 1) * (LID_ROWS + 1);
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+    geo.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+    const col = new Float32Array(n * 3);
+    for (let j = 0; j <= LID_ROWS; j++) for (let i = 0; i <= LID_COLS; i++) {
+      const t = j / LID_ROWS, k = (j * (LID_COLS + 1) + i) * 3;
+      // Skin, darkening to a lash line at the margin
+      const lash = t > 0.92 ? (t - 0.92) / 0.08 : 0;
+      const shade = 1.18 - 0.12 * Math.pow(t, 3);
+      const c = skin.clone().multiplyScalar(shade).lerp(new THREE.Color(0x120c0a), lash);
+      col[k] = c.r; col[k + 1] = c.g; col[k + 2] = c.b;
+    }
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    const idx = [];
+    for (let j = 0; j < LID_ROWS; j++) for (let i = 0; i < LID_COLS; i++) {
+      const a = j * (LID_COLS + 1) + i, b = a + 1, c = a + LID_COLS + 1, d = c + 1;
+      idx.push(a, c, b, b, c, d);
+    }
+    geo.setIndex(idx);
+    const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75, metalness: 0, envMapIntensity: 0.35 });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.visible = false;
+    eyes[eye].getWorldPosition(mesh.position); // the eye node sits at the centre of the globe
+    scene.add(mesh);
+    lids[eye] = { mesh, radius: radius * 1.06, margin: null };
+  }
+}
+
+// Average skin colour just above the eye, read from the face texture
+function sampleLidSkin(model) {
+  const fallback = new THREE.Color(0x7a5a4a);
+  try {
+    let head = null;
+    model.traverse((o) => { if (o.isMesh && o.material.map && !eyes.R.getObjectById(o.id) && !eyes.L.getObjectById(o.id)) head = head || o; });
+    if (!head || !head.geometry.attributes.uv) return fallback;
+    const target = eyes.R.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 0.05, 0.05));
+    const pos = head.geometry.attributes.position, uv = head.geometry.attributes.uv, v = new THREE.Vector3();
+    let best = -1, bestD = Infinity;
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i); head.localToWorld(v);
+      const d = v.distanceToSquared(target);
+      if (d < bestD) { bestD = d; best = i; }
+    }
+    const img = head.material.map.image;
+    const w = 64, h = 64, cv = document.createElement('canvas');
+    cv.width = w; cv.height = h;
+    const g = cv.getContext('2d');
+    g.drawImage(img, 0, 0, w, h);
+    const px = Math.floor(uv.getX(best) * (w - 1)), py = Math.floor(uv.getY(best) * (h - 1));
+    const data = g.getImageData(Math.max(0, px - 1), Math.max(0, py - 1), 3, 3).data;
+    let r = 0, gg = 0, b = 0;
+    for (let i = 0; i < data.length; i += 4) { r += data[i]; gg += data[i + 1]; b += data[i + 2]; }
+    const nPx = data.length / 4;
+    return new THREE.Color().setRGB(r / nPx / 255, gg / nPx / 255, b / nPx / 255, THREE.SRGBColorSpace);
+  } catch { return fallback; }
+}
+
+// Shape the lid for a given margin elevation (degrees, + up). The margin is arched.
+function shapeLid(eye, marginDeg) {
+  const L = lids[eye];
+  if (L.margin !== null && Math.abs(L.margin - marginDeg) < 0.05) return;
+  L.margin = marginDeg;
+  const pos = L.mesh.geometry.attributes.position, nor = L.mesh.geometry.attributes.normal;
+  const span = 75 * DEG, top = 80 * DEG;
+  for (let j = 0; j <= LID_ROWS; j++) for (let i = 0; i <= LID_COLS; i++) {
+    const a = -span + (2 * span * i) / LID_COLS;                 // azimuth, 0 = straight ahead
+    const arch = 9 * Math.cos(a * 1.1) - 9 * Math.cos(span * 1.1); // centre of the margin sits higher
+    const em = (marginDeg + arch) * DEG;
+    const e = top + (em - top) * (j / LID_ROWS);                 // from above the globe down to the margin
+    const x = Math.cos(e) * Math.sin(a), y = Math.sin(e), z = Math.cos(e) * Math.cos(a);
+    const k = j * (LID_COLS + 1) + i;
+    pos.setXYZ(k, x * L.radius, y * L.radius, z * L.radius);
+    nor.setXYZ(k, x, y, z);
+  }
+  pos.needsUpdate = true; nor.needsUpdate = true;
+  L.mesh.geometry.computeBoundingSphere();
+}
+
+// Margin elevation: the model's own lid sits near +26°; a complete ptosis reaches about −38°.
+// Lids also follow the eye down, as real lids do (the face model's own lids cannot).
+const LID_OPEN_DEG = 26, LID_CLOSED_DEG = -38;
+function updateLidsAndPupils(st, chartView = false, chartV = null) {
+  if (!eyes || !lids.R) return;
+  for (const eye of ['R', 'L']) {
+    const droop = chartView ? 0 : lidDroop(st, eye);
+    const L = lids[eye];
+    const v = chartV ? chartV[eye] : shown[eye].v;
+    const follow = v < 0 ? 0.85 * v : 0;
+    const margin = LID_OPEN_DEG + (LID_CLOSED_DEG - LID_OPEN_DEG) * droop + follow * (1 - 0.4 * droop);
+    if (margin > LID_OPEN_DEG - 2) { L.mesh.visible = false; }
+    else {
+      shapeLid(eye, margin);
+      L.mesh.visible = true;
+    }
+    if (eyes[eye].userData.pupil) eyes[eye].userData.pupil.value = chartView ? 1 : st.pupil[eye];
+  }
 }
 
 function requestFrame() {
@@ -246,6 +394,7 @@ function frame(t) {
     // Penlight sits on the fixation target, ~1.6 units in front of the eyes
     const H = sim.gazeH * DEG, V = sim.gazeV * DEG;
     penlight.position.set(eyeMid.x - Math.sin(H) * Math.cos(V) * 1.6, eyeMid.y + Math.sin(V) * 1.6, eyeMid.z + Math.cos(H) * Math.cos(V) * 1.6);
+    updateLidsAndPupils(st);
     renderer.render(scene, camera);
   }
   if (active) requestFrame(); else lastT = 0;
@@ -416,16 +565,40 @@ function applyCase(id, side, { keepGaze = false, announce: say = true } = {}) {
   requestFrame();
 }
 
-document.querySelectorAll('.nerve-btn').forEach((b) => {
+document.querySelectorAll('.nerve-btn:not(.sign-btn)').forEach((b) => {
   b.addEventListener('click', () => {
     const { eye, nerve } = b.dataset;
     const cur = sim.state.nerves[eye][nerve];
-    sim.state.nerves[eye][nerve] = cur > 0.75 ? 0.5 : cur > 0.25 ? 0 : 1;
+    const next = cur > 0.75 ? 0.5 : cur > 0.25 ? 0 : 1;
+    sim.state.nerves[eye][nerve] = next;
+    if (nerve === '3') { // the third nerve also lifts the lid and constricts the pupil
+      sim.state.lid[eye] = next === 0 ? 0.55 : next === 0.5 ? 0.25 : 0;
+      sim.state.pupil[eye] = next === 0 ? PUPIL.dilated : PUPIL.normal;
+    }
     if (NERVE_ONLY.has(sim.caseId)) sim.caseId = 'normal'; // the nerve grid now describes the whole state
     sim.custom = true;
     resolve();
     refreshAll();
     announce(`${eye === 'R' ? 'Right' : 'Left'} cranial nerve ${['', '', '', 'three', 'four', '', 'six'][nerve]}: ${nerveStateName(sim.state.nerves[eye][nerve])}.`);
+    requestFrame();
+  });
+});
+const LID_STEPS = [0, 0.25, 0.55, 1];
+const LID_NAMES = ['None', 'Mild ptosis', 'Marked ptosis', 'Complete ptosis'];
+const lidIndex = (v) => LID_STEPS.reduce((best, x, i) => (Math.abs(x - v) < Math.abs(LID_STEPS[best] - v) ? i : best), 0);
+const PUPIL_STEPS = [PUPIL.normal, PUPIL.small, PUPIL.dilated]; // from dilated, one tap gives a normal (spared) pupil
+const pupilName = (v) => (v > 1.2 ? 'Dilated' : v < 0.8 ? 'Small' : 'Normal');
+document.querySelectorAll('.sign-btn').forEach((b) => {
+  b.addEventListener('click', () => {
+    const { eye, sign } = b.dataset;
+    if (sign === 'lid') sim.state.lid[eye] = LID_STEPS[(lidIndex(sim.state.lid[eye]) + 1) % LID_STEPS.length];
+    else {
+      const i = PUPIL_STEPS.findIndex((x) => Math.abs(x - sim.state.pupil[eye]) < 0.05);
+      sim.state.pupil[eye] = PUPIL_STEPS[(i + 1) % PUPIL_STEPS.length];
+    }
+    sim.custom = true;
+    refreshAll();
+    announce(`${eye === 'R' ? 'Right' : 'Left'} ${sign}: ${sign === 'lid' ? LID_NAMES[lidIndex(sim.state.lid[eye])] : pupilName(sim.state.pupil[eye])}.`);
     requestFrame();
   });
 });
@@ -605,6 +778,7 @@ function renderChart() {
       eyes[eye].rotation.x = -o.v * DEG;
       eyes[eye].position.z = eyes[eye].userData.z0;
     }
+    updateLidsAndPupils(null, true, { R: chart.obs[k].R.v, L: chart.obs[k].L.v });
     const [gh, gv] = GAZE_POSITIONS[k];
     const Hr = gh * DEG, Vr = gv * DEG;
     penlight.position.set(eyeMid.x - Math.sin(Hr) * Math.cos(Vr) * 1.6, eyeMid.y + Math.sin(Vr) * 1.6, eyeMid.z + Math.cos(Hr) * Math.cos(Vr) * 1.6);
@@ -796,6 +970,10 @@ function caseTitle() {
       const v = sim.state.nerves[eye][n];
       if (Math.abs(v - base.nerves[eye][n]) > 0.001) parts.push(`${eye === 'R' ? 'Right' : 'Left'} CN ${{ 3: 'III', 4: 'IV', 6: 'VI' }[n]} ${nerveStateName(v)}`);
     }
+    for (const eye of ['R', 'L']) {
+      if (Math.abs(sim.state.lid[eye] - base.lid[eye]) > 0.01) parts.push(`${eye === 'R' ? 'Right' : 'Left'} ${LID_NAMES[lidIndex(sim.state.lid[eye])].toLowerCase().replace('none', 'no ptosis')}`);
+      if (Math.abs(sim.state.pupil[eye] - base.pupil[eye]) > 0.05) parts.push(`${eye === 'R' ? 'Right' : 'Left'} pupil ${pupilName(sim.state.pupil[eye]).toLowerCase()}`);
+    }
     const prefix = sim.caseId !== 'normal' ? `${SIDE_LABEL[sim.side]} ${CASE_BY_ID[sim.caseId].name.toLowerCase()} + ` : '';
     return parts.length ? `${prefix}${parts.join(', ')}` : (prefix ? prefix.slice(0, -3) : 'Normal');
   }
@@ -843,7 +1021,15 @@ function refreshAll() {
     b.setAttribute('aria-pressed', String(!sim.custom && b.dataset.side === sim.side && c.id !== 'normal'));
   }
   $('side-row').hidden = c.id === 'normal' || sim.custom;
-  document.querySelectorAll('.nerve-btn').forEach((b) => {
+  document.querySelectorAll('.sign-btn').forEach((b) => {
+    const { eye, sign } = b.dataset;
+    const label = sign === 'lid' ? LID_NAMES[lidIndex(sim.state.lid[eye])] : pupilName(sim.state.pupil[eye]);
+    const abnormal = sign === 'lid' ? sim.state.lid[eye] > 0.01 : Math.abs(sim.state.pupil[eye] - 1) > 0.05;
+    b.dataset.state = abnormal ? 'paresis' : 'normal';
+    b.innerHTML = `${eye === 'R' ? 'OD' : 'OS'}<span class="st">${label}</span>`;
+    b.setAttribute('aria-label', `${eye === 'R' ? 'Right' : 'Left'} ${sign}: ${label}`);
+  });
+  document.querySelectorAll('.nerve-btn:not(.sign-btn)').forEach((b) => {
     const v = sim.state.nerves[b.dataset.eye][b.dataset.nerve];
     const s = nerveStateName(v);
     b.dataset.state = s;
@@ -913,6 +1099,13 @@ function writeHash() {
     const n = [];
     for (const eye of ['R', 'L']) for (const k of [3, 4, 6]) { const v = sim.state.nerves[eye][k]; if (v < 0.999) n.push(`${eye}${k}:${Math.round(v * 100)}`); }
     if (n.length) p.set('n', n.join(','));
+    const base = defaultState(); CASE_BY_ID[sim.caseId].apply(base, sim.side);
+    const lp = [];
+    for (const eye of ['R', 'L']) {
+      if (Math.abs(sim.state.lid[eye] - base.lid[eye]) > 0.01) lp.push(`${eye}lid:${Math.round(sim.state.lid[eye] * 100)}`);
+      if (Math.abs(sim.state.pupil[eye] - base.pupil[eye]) > 0.05) lp.push(`${eye}pup:${Math.round(sim.state.pupil[eye] * 100)}`);
+    }
+    if (lp.length) p.set('lp', lp.join(','));
   }
   const hash = `#${p.toString().replace(/%3A/g, ':').replace(/%2C/g, ',')}`;
   if (hash !== location.hash) history.replaceState(null, '', hash);
@@ -945,6 +1138,14 @@ function readHash() {
     for (const part of p.get('n').split(',')) {
       const m = /^([RL])([346]):(\d{1,3})$/.exec(part);
       if (m) { sim.state.nerves[m[1]][m[2]] = clamp(+m[3] / 100, 0, 1); sim.custom = true; }
+    }
+  }
+  if (p.get('lp')) {
+    for (const part of p.get('lp').split(',')) {
+      const m = /^([RL])(lid|pup):(\d{1,3})$/.exec(part);
+      if (!m) continue;
+      if (m[2] === 'lid') sim.state.lid[m[1]] = clamp(+m[3] / 100, 0, 1); else sim.state.pupil[m[1]] = clamp(+m[3] / 100, 0.4, 2.2);
+      sim.custom = true;
     }
   }
   resolve(); frameCamera(); refreshAll(); requestFrame();

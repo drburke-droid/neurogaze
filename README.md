@@ -29,7 +29,9 @@ This is a qualitative teaching model, not a biomechanical simulation (`engine.js
 - **INO** and **skew deviation** act on supranuclear commands: INO spares convergence and shows abducting nystagmus; skew is comitant with full ductions.
 - **Myasthenia** is fatigable: muscles weaken with sustained use and recover at rest.
 
-Not modelled: eyelids, pupils, torsion, head tilt and saccade velocities. Displayed numbers are illustrative.
+- **Ptosis and pupils:** each eye has a lid (none, mild, marked, complete) and a pupil (normal, small, dilated). A third nerve palsy shows marked ptosis and a dilated pupil by default; switching the pupil to normal gives a pupil-sparing palsy. Myasthenic ptosis worsens with sustained upgaze. The lids are shells around each globe that the face hides outside the eye opening, and they follow the eyes in downgaze.
+
+Not modelled: pupil light reactions, torsion, head tilt and saccade velocities. Displayed numbers are illustrative.
 
 `tests/diagnose.test.mjs` charts each condition with simulated reading error and checks the matcher recovers it. `tests/engine.test.mjs` checks the clinical direction of every case in the nine positions (for example: sixth nerve esotropia is largest toward the affected side; a fourth nerve hypertropia grows down and in; thyroid eye disease gives hypotropia with limited elevation; INO converges normally at near).
 

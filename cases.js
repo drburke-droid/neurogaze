@@ -35,19 +35,19 @@ export const CASES = [
       look: 'Use the nine positions. In abduction the vertical recti do the elevating and depressing; in adduction the obliques take over. That is why each muscle is tested in its own diagnostic position.',
       signs: ['LR abducts (CN VI)', 'MR adducts (CN III)', 'SR elevates in abduction, IO in adduction (CN III)', 'IR depresses in abduction, SO in adduction (CN IV)'],
       redFlags: '',
-      notModelled: 'Torsion, eyelids, pupils, saccade dynamics.',
+      notModelled: 'Torsion, pupil light reactions and saccade dynamics.',
     },
   },
   {
     id: 'cn3', name: 'Third nerve palsy', sub: 'CN III · oculomotor', sides: ['R', 'L', 'B'], mechanism: 'Nerve palsy',
-    apply(s, side) { for (const e of eyesFor(side)) s.nerves[e][3] = 0; },
+    apply(s, side) { for (const e of eyesFor(side)) { s.nerves[e][3] = 0; s.lid[e] = 0.55; s.pupil[e] = 2; } },
     worst: (side) => adductionKey(side === 'L' ? 'L' : 'R'),
     card: {
       summary: 'Complete palsy leaves the eye "down and out": only the lateral rectus (CN VI) and superior oblique (CN IV) still work.',
-      look: 'Exotropia and hypotropia in primary position. Adduction, elevation and depression are all limited.',
+      look: 'Ptosis, a dilated pupil, and an eye that rests down and out. Adduction, elevation and depression are all limited. Switch the pupil to Normal (in the nerve panel) to see a pupil-sparing palsy.',
       signs: ['Ptosis (often complete)', 'Pupil may be dilated and unreactive', 'Exotropia with hypotropia', 'Limited adduction, elevation, depression'],
       redFlags: 'A pupil-involving or painful third nerve palsy is a posterior communicating artery aneurysm until proven otherwise and needs same-day imaging. Pupil-sparing palsies in vascular-risk patients are often microvascular but still need follow-up.',
-      notModelled: 'Ptosis, the pupil, and the intorsion seen when a CN III-palsied eye attempts to look down.',
+      notModelled: 'Pupil reactions to light, and the intorsion seen when a CN III-palsied eye attempts to look down.',
     },
   },
   {
@@ -141,29 +141,30 @@ export const CASES = [
   },
   {
     id: 'cavsinus', name: 'Cavernous sinus syndrome', sub: 'CN III + IV + VI', sides: ['R', 'L'], mechanism: 'Nerve palsy',
-    apply(s, side) { s.nerves[side][3] = 0; s.nerves[side][4] = 0; s.nerves[side][6] = 0; },
+    apply(s, side) { s.nerves[side][3] = 0; s.nerves[side][4] = 0; s.nerves[side][6] = 0; s.lid[side] = 0.55; s.pupil[side] = 1.4; },
     worst: (side) => abductionKey(side),
     card: {
       summary: 'The third, fourth and sixth nerves (and V1/V2 and the ocular sympathetics) run together through the cavernous sinus and superior orbital fissure, so one lesion can stop them all.',
       look: 'Near-total ophthalmoplegia of one eye: it barely moves in any direction while the other eye moves normally.',
       signs: ['Ophthalmoplegia of one eye', 'Ptosis; pupil may be dilated or small (sympathetic involvement)', 'Numbness of the forehead (V1) ± cheek (V2)', 'Proptosis and chemosis if there is venous congestion'],
       redFlags: 'Needs urgent imaging. Consider carotid-cavernous fistula, cavernous sinus thrombosis (fever, sepsis), pituitary apoplexy (sudden headache, low vision), aneurysm, tumour and Tolosa–Hunt syndrome.',
-      notModelled: 'Ptosis, the pupil, proptosis and sensory loss.',
+      notModelled: 'Proptosis, chemosis and sensory loss. The pupil is shown mid-dilated; sympathetic involvement can make it small instead.',
     },
   },
   {
     id: 'mg', name: 'Myasthenia gravis', sub: 'Fatigable · any pattern', sides: ['B'], mechanism: 'Neuromuscular junction',
     apply(s) {
       s.muscles.R.SR = 0.75; s.muscles.R.MR = 0.85; s.muscles.L.LR = 0.8; s.muscles.L.IO = 0.85;
+      s.lid.R = 0.2;
       s.fatigue = { severity: 0.75, f: { R: Object.fromEntries(MUSCLES.map((m) => [m, 0])), L: Object.fromEntries(MUSCLES.map((m) => [m, 0])) } };
     },
     worst: () => 8,
     card: {
       summary: 'Antibodies block the neuromuscular junction, so muscles weaken with use and recover with rest. Any combination of muscles can be involved.',
-      look: 'Hold a gaze (try up) for 10–15 seconds and watch the eyes drift as the muscles fatigue. Return to straight ahead to let them recover.',
+      look: 'Hold a gaze (try up) for 10–15 seconds and watch the eyes drift and the right lid droop as the muscles fatigue. Return to straight ahead to let them recover.',
       signs: ['Variable, fatigable diplopia', 'Ptosis that worsens on sustained upgaze', 'Can mimic any nerve palsy or INO', 'Pupils always normal'],
       redFlags: 'Difficulty swallowing, speaking or breathing means generalised disease and needs same-day assessment.',
-      notModelled: 'Ptosis, Cogan\'s lid twitch and the ice-pack test.',
+      notModelled: 'Cogan\'s lid twitch and the ice-pack test.',
     },
   },
   {
