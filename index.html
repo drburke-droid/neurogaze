@@ -110,7 +110,7 @@
     .seg button:disabled { opacity: .35; cursor: not-allowed; }
 
     /* Stage: sized by width, never by viewport height, so an embed can measure itself */
-    .stage { position: relative; aspect-ratio: 4 / 3; max-height: 560px; width: 100%; border-radius: var(--radius); border: 1px solid var(--line); background: radial-gradient(ellipse at 50% 40%, #171b25 0%, var(--bg) 70%); touch-action: none; overflow: hidden; cursor: crosshair; }
+    .stage { position: relative; aspect-ratio: 4 / 3; max-height: 560px; width: 100%; border-radius: var(--radius); border: 1px solid var(--line); background: radial-gradient(ellipse at 50% 40%, #171b25 0%, var(--bg) 70%); touch-action: none; overflow: hidden; cursor: crosshair; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
     .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
     .chip { position: absolute; background: rgba(11, 13, 18, .82); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 13.5px; pointer-events: none; max-width: calc(100% - 24px); }
     .case-chip { top: 12px; left: 12px; font-weight: 600; }
@@ -118,6 +118,9 @@
     .dev-chip { bottom: 12px; left: 12px; font-family: var(--mono); font-size: 13px; }
     .credit { position: absolute; right: 12px; bottom: 12px; background: rgba(11, 13, 18, .82); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 13px; font-weight: 600; color: var(--text); text-decoration: none; }
     .credit:hover { border-color: var(--accent); }
+    .lock-chip { top: 12px; right: 12px; color: var(--accent); font-weight: 600; }
+    .lock-chip[hidden] { display: none; }
+    #target.locked { border-color: var(--accent); background: var(--accent); box-shadow: 0 0 0 2px rgba(0,0,0,.6), 0 0 0 6px rgba(76, 201, 240, .35); }
     #target { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 2px rgba(0,0,0,.6), 0 0 12px rgba(255, 244, 224, .9); background: rgba(255, 244, 224, .9); pointer-events: none; }
     .loader { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: var(--muted); padding: 20px; }
     .loader[hidden] { display: none; }
@@ -271,6 +274,7 @@
           <div class="chip case-chip" id="case-chip" aria-hidden="true"></div>
           <div class="chip dev-chip" id="dev-chip" aria-hidden="true"></div>
           <div id="target" aria-hidden="true"></div>
+          <div class="chip lock-chip" id="lock-chip" hidden>🔒 Gaze locked · click the face to unlock</div>
           <a class="credit" href="https://calgaryvisioncentre.com/" target="_top" rel="author">Created by Dr Robert Burke</a>
         </div>
         <div class="controls">
@@ -293,7 +297,7 @@
               <button class="btn toggle" id="lock" type="button" aria-pressed="false" title="Stop the eyes following the pointer (or press L)">Lock gaze</button>
             </div>
           </div>
-          <p class="hint" style="flex-basis:100%; margin:0">Move the pointer over the face (drag on touch), or use the pad or keys 1–9. Positions are shown as you, the examiner, see the patient.</p>
+          <p class="hint" style="flex-basis:100%; margin:0"><strong>On the face:</strong> move to aim the eyes, click to lock or unlock the gaze, press and hold to compare with normal. On touch, tap or drag to aim and press and hold to compare. Keys: 1–9 positions, L lock, hold N compare. Positions are shown as you, the examiner, see the patient.</p>
         </div>
       </section>
 
@@ -337,10 +341,11 @@
       <h2>How to use it</h2>
       <ul>
         <li><strong>Look around:</strong> move the pointer over the face, drag with a finger, or use the 3×3 pad. Keys 1–9 match a numeric keypad; arrow keys nudge the gaze.</li>
+        <li><strong>Lock the gaze:</strong> click the face to freeze the eyes where you clicked, so you can move to the controls without changing the gaze. Click again to unlock.</li>
         <li><strong>Pick a case</strong> from the list and choose the affected side. The card explains the signs and the red flags.</li>
         <li><strong>Fixing eye:</strong> switch fixation to the affected eye to see the larger secondary deviation predicted by Hering's law.</li>
         <li><strong>Near target:</strong> shows convergence, which is spared in internuclear ophthalmoplegia.</li>
-        <li><strong>Hold "compare normal"</strong> (or the N key) to flip to a healthy patient in the same gaze.</li>
+        <li><strong>Compare with normal:</strong> press and hold anywhere on the face (or hold the N key) to flip to a healthy patient in the same gaze.</li>
         <li><strong>Share:</strong> the address bar always holds the current case and gaze, so "Copy link" opens exactly what you see. "Save image" downloads a labelled picture.</li>
       </ul>
 

@@ -280,16 +280,57 @@ function positionTargetDot() {
   targetDot.style.top = `${clamp(y, 8, stage.clientHeight - 8)}px`;
 }
 
-function onPointer(e) {
-  if (sim.locked || !e.isPrimary) return;
-  if (e.pointerType !== 'mouse' && e.type === 'pointermove' && e.buttons === 0) return;
+function aimAt(e) {
   const r = stage.getBoundingClientRect();
   const o = eyesOnStage();
   const dx = e.clientX - r.left - o.x, dy = e.clientY - r.top - o.y;
   setGaze(-Math.atan2(dx, o.d) / DEG, -Math.atan2(dy, o.d) / DEG, { fromPointer: true });
 }
-stage.addEventListener('pointermove', onPointer);
-stage.addEventListener('pointerdown', (e) => { if (e.pointerType !== 'mouse') stage.setPointerCapture(e.pointerId); onPointer(e); });
+
+// On the face itself:
+//   mouse  — hover aims the eyes; click locks / unlocks the gaze; press and hold compares with normal
+//   touch  — tap or drag aims the eyes; press and hold (without moving) compares with normal
+const HOLD_MS = 350, MOVE_PX = 8;
+let press = null;
+
+function setLocked(on) {
+  sim.locked = on;
+  refreshAll();
+  announce(on ? 'Gaze locked.' : 'Gaze unlocked.');
+}
+
+stage.addEventListener('pointerdown', (e) => {
+  if (!e.isPrimary || e.button !== 0) return;
+  if (e.target.closest('a, button')) return; // the credit link
+  press = { x: e.clientX, y: e.clientY, moved: false, holding: false, mouse: e.pointerType === 'mouse' };
+  press.timer = setTimeout(() => { if (press && !press.moved) { press.holding = true; setComparing(true); } }, HOLD_MS);
+  if (!press.mouse) { stage.setPointerCapture(e.pointerId); if (!sim.locked) aimAt(e); }
+});
+
+stage.addEventListener('pointermove', (e) => {
+  if (!e.isPrimary) return;
+  if (press && !press.moved && Math.hypot(e.clientX - press.x, e.clientY - press.y) > MOVE_PX) {
+    press.moved = true;
+    clearTimeout(press.timer);
+  }
+  if (sim.locked || (press && press.holding)) return;
+  if (e.pointerType !== 'mouse' && e.buttons === 0) return;
+  aimAt(e);
+});
+
+function endPress(e, cancelled) {
+  if (!press) return;
+  clearTimeout(press.timer);
+  if (press.holding) setComparing(false);
+  else if (!cancelled && press.mouse && !press.moved) {
+    if (!sim.locked) aimAt(e);   // lock exactly where the click happened
+    setLocked(!sim.locked);
+  }
+  press = null;
+}
+stage.addEventListener('pointerup', (e) => endPress(e, false));
+stage.addEventListener('pointercancel', (e) => endPress(e, true));
+stage.addEventListener('contextmenu', (e) => { if (press) e.preventDefault(); });
 
 // ═══════════════════════════════════════════════════════════════
 // UI
@@ -384,7 +425,7 @@ $('view-picker').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-view]'); if (!b) return;
   sim.view = b.dataset.view; frameCamera(); refreshAll(); requestFrame();
 });
-$('lock').addEventListener('click', () => { sim.locked = !sim.locked; refreshAll(); });
+$('lock').addEventListener('click', () => setLocked(!sim.locked));
 
 function setComparing(on) {
   if (sim.comparing === on) return;
@@ -402,7 +443,7 @@ document.addEventListener('keydown', (e) => {
   const nudge = { ArrowLeft: [5, 0], ArrowRight: [-5, 0], ArrowUp: [0, 5], ArrowDown: [0, -5] }[e.key];
   if (nudge && document.activeElement === stage) { e.preventDefault(); setGaze(sim.gazeH + nudge[0], sim.gazeV + nudge[1]); return; }
   if (e.key === 'n' || e.key === 'N') setComparing(true);
-  if (e.key === 'l' || e.key === 'L') { sim.locked = !sim.locked; refreshAll(); }
+  if (e.key === 'l' || e.key === 'L') setLocked(!sim.locked);
 });
 document.addEventListener('keyup', (e) => { if (e.key === 'n' || e.key === 'N') setComparing(false); });
 
@@ -545,6 +586,10 @@ function refreshAll() {
   for (const b of $('near-picker').children) b.setAttribute('aria-pressed', String((b.dataset.near === '1') === sim.near));
   for (const b of $('view-picker').children) b.setAttribute('aria-pressed', String(b.dataset.view === sim.view));
   $('lock').setAttribute('aria-pressed', String(sim.locked));
+  $('lock').textContent = sim.locked ? 'Unlock gaze' : 'Lock gaze';
+  $('lock-chip').hidden = !sim.locked;
+  $('lock-chip').textContent = matchMedia('(pointer: coarse)').matches ? '🔒 Gaze locked · tap Unlock gaze below' : '🔒 Gaze locked · click the face to unlock';
+  targetDot.classList.toggle('locked', sim.locked);
   renderCard();
   positionTargetDot();
   updateReadouts();
