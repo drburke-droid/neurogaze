@@ -328,6 +328,12 @@ EyeWiki articles are written by ophthalmologists, so you can't add a link yourse
 
 ---
 
+## 6. "Part of the Visual Systems Lab" block
+
+Some visitors land straight on `/gaze` or a condition page from Google and never see the lab. Paste `docs/vsl-intro-block.html` into a **Code block below the simulator** on every simulator page. It's a small Windows-95-style window on the lab's teal background. It introduces the lab in its own words, has an "Open the Visual Systems Lab" button linking to `/lab`, and links to the other twelve programs. Those links also give search engines a path to every tool. All its styling is scoped to the block, so it won't affect the rest of the page.
+
+---
+
 ## What not to do
 
 - **Don't add it to the main navigation.** Most patients don't need it, and the quiet links are enough for search.
