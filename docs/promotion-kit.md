@@ -334,6 +334,19 @@ Some visitors land straight on `/gaze` or a condition page from Google and never
 
 ---
 
+## 7. Searchable text for the lab page (`/lab`)
+
+Google can't read the programs inside the retro computer, so the lab page needs its own text. Add a **Markdown block** below the lab's iframe and paste `docs/vsl-lab-text.md` into it. It describes the lab and links to all 13 tools by name.
+
+Lab page settings:
+
+| Field | Paste this |
+|---|---|
+| SEO title | Visual Systems Lab: Free Interactive Vision Science Tools · Calgary Vision Centre |
+| SEO description | 13 free interactive vision science tools by Dr Robert Burke: eye movement and cranial nerve simulator, contact lens and IOL simulators, contrast sensitivity, myopia risk and glaucoma vision. |
+
+---
+
 ## What not to do
 
 - **Don't add it to the main navigation.** Most patients don't need it, and the quiet links are enough for search.
