@@ -213,7 +213,14 @@
       .case-chip { top: 8px; left: 8px; }
       .dev-chip { bottom: 8px; left: 8px; }
       .credit { bottom: 8px; right: 8px; }
+      .dev-chip { bottom: 44px; }
+      .embed .brand { display: none; }
+      .embed .topbar { justify-content: flex-end; }
     }
+    /* ── Embedded in another page (iframe) ─────────── */
+    .embed .topbar .brand p { display: none; }
+    .embed .app { height: calc(100dvh - 63px); min-height: 0; }
+    @media (max-width: 1080px) { .embed .app { height: auto; } }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
     }

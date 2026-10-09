@@ -13,6 +13,16 @@ const VERSION = 'v3.0';
 const MODEL_URL = './head_eyes_v2.glb';
 const DEG = Math.PI / 180;
 const $ = (id) => document.getElementById(id);
+
+// Embed mode: ?embed=1&parent=<page URL>. The host page forwards its #hash into the
+// iframe and receives hash updates back, so shared links point at the host page.
+const QS = new URLSearchParams(location.search);
+const EMBED = QS.has('embed');
+const PARENT = (() => {
+  try { const u = new URL(QS.get('parent') || ''); return u.protocol === 'https:' || u.hostname === 'localhost' || u.hostname === '127.0.0.1' ? u : null; } catch { return null; }
+})();
+if (EMBED) document.documentElement.classList.add('embed');
+const shareUrl = () => (PARENT ? `${PARENT.origin}${PARENT.pathname}${location.hash}` : location.href);
 const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 
 // ═══════════════════════════════════════════════════════════════
@@ -571,6 +581,7 @@ function writeHash() {
   }
   const hash = `#${p.toString().replace(/%3A/g, ':').replace(/%2C/g, ',')}`;
   if (hash !== location.hash) history.replaceState(null, '', hash);
+  if (PARENT && window.parent !== window) window.parent.postMessage({ type: 'gaze-hash', hash }, PARENT.origin);
 }
 function readHash() {
   const raw = location.hash.slice(1);
@@ -601,8 +612,8 @@ window.addEventListener('hashchange', () => {
 // ═══════════════════════════════════════════════════════════════
 $('copy-link').addEventListener('click', async () => {
   writeHash();
-  try { await navigator.clipboard.writeText(location.href); toast('Link copied'); }
-  catch { prompt('Copy this link:', location.href); }
+  try { await navigator.clipboard.writeText(shareUrl()); toast('Link copied'); }
+  catch { prompt('Copy this link:', shareUrl()); }
 });
 
 function exportImage() {
@@ -653,7 +664,7 @@ $('save-image').addEventListener('click', async () => {
     const blob = await (await fetch(url)).blob();
     const file = new File([blob], name, { type: 'image/png' });
     if (matchMedia('(pointer: coarse)').matches && navigator.canShare?.({ files: [file] })) {
-      await navigator.share({ files: [file], title: caseTitle(), text: location.href });
+      await navigator.share({ files: [file], title: caseTitle(), text: shareUrl() });
       return;
     }
   } catch { /* fall through to download */ }
@@ -671,4 +682,4 @@ for (const eye of ['R', 'L']) { shown[eye].h = sim.solution[eye].h; shown[eye].v
 if (initRenderer()) loadModel();
 
 // Small hook for automated checks and the preview-image build
-window.__gaze = { sim, applyCase, setGaze, exportImage, readHash };
+window.__gaze = { sim, applyCase, setGaze, exportImage, readHash, shareUrl };
