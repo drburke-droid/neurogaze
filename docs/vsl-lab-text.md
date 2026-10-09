@@ -19,7 +19,7 @@ In the lab, the programs live on the desktop of a 1990s computer: click an icon 
 
 ### Visual performance
 
-- **[Contrast Sensitivity Explorer](https://drburke-droid.github.io/csf_v2/handoff-fixes/csf-explorer.html)**: explore the contrast sensitivity function, and which spatial frequencies the visual system sees best.
+- **[Contrast Sensitivity Explorer](https://drburke-droid.github.io/csf_v2/handoff-fixes/csf-explorer.html)**: explore the contrast sensitivity function: which spatial frequencies the visual system can detect at the lowest contrast.
 - **[Fourier Transformation](https://drburke-droid.github.io/csf_v2/handoff-fixes/spatial-freq-analyzer.html)**: break an image into its spatial frequencies and see what each band contributes to what you perceive.
 - **[Blue Light Exposure Calculator](https://calgaryvisioncentre.com/blue-light-calculator)**: estimate your daily blue-light dose from screens and sunlight, and put it in perspective.
 
