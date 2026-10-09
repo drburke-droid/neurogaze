@@ -118,8 +118,12 @@
     .dev-chip { bottom: 12px; left: 12px; font-family: var(--mono); font-size: 13px; }
     .credit { position: absolute; right: 12px; bottom: 12px; background: rgba(11, 13, 18, .82); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 13px; font-weight: 600; color: var(--text); text-decoration: none; }
     .credit:hover { border-color: var(--accent); }
-    .lock-chip { top: 12px; right: 12px; color: var(--accent); font-weight: 600; }
+    .lock-chip { top: 12px; right: 12px; font-weight: 600; color: var(--text); }
+    .lock-chip .key { display: inline-block; border: 1px solid var(--line); border-radius: 5px; padding: 0 6px; margin-right: 2px; background: var(--panel-2); }
+    .lock-chip.is-locked { color: var(--accent); border-color: var(--accent); }
     .lock-chip[hidden] { display: none; }
+    #target-tip { position: absolute; transform: translate(14px, -50%); background: rgba(11, 13, 18, .88); border: 1px solid var(--accent); color: var(--accent); border-radius: 6px; padding: 2px 8px; font-size: 12.5px; font-weight: 600; white-space: nowrap; pointer-events: none; }
+    #target-tip[hidden] { display: none; }
     #target.locked { border-color: var(--accent); background: var(--accent); box-shadow: 0 0 0 2px rgba(0,0,0,.6), 0 0 0 6px rgba(76, 201, 240, .35); }
     #target { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 2px rgba(0,0,0,.6), 0 0 12px rgba(255, 244, 224, .9); background: rgba(255, 244, 224, .9); pointer-events: none; }
     .loader { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: var(--muted); padding: 20px; }
@@ -274,7 +278,8 @@
           <div class="chip case-chip" id="case-chip" aria-hidden="true"></div>
           <div class="chip dev-chip" id="dev-chip" aria-hidden="true"></div>
           <div id="target" aria-hidden="true"></div>
-          <div class="chip lock-chip" id="lock-chip" hidden>🔒 Gaze locked · click the face to unlock</div>
+          <div id="target-tip" aria-hidden="true" hidden>Click to lock</div>
+          <div class="chip lock-chip" id="lock-chip" hidden></div>
           <a class="credit" href="https://calgaryvisioncentre.com/" target="_top" rel="author">Created by Dr Robert Burke</a>
         </div>
         <div class="controls">

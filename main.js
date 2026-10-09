@@ -278,6 +278,8 @@ function positionTargetDot() {
   const y = e.y - Math.tan(sim.gazeV * DEG) * e.d;
   targetDot.style.left = `${clamp(x, 8, stage.clientWidth - 8)}px`;
   targetDot.style.top = `${clamp(y, 8, stage.clientHeight - 8)}px`;
+  const tipEl = document.getElementById('target-tip');
+  if (tipEl) { tipEl.style.left = targetDot.style.left; tipEl.style.top = targetDot.style.top; }
 }
 
 function aimAt(e) {
@@ -291,10 +293,35 @@ function aimAt(e) {
 //   mouse  — hover aims the eyes; click locks / unlocks the gaze; press and hold compares with normal
 //   touch  — tap or drag aims the eyes; press and hold (without moving) compares with normal
 const HOLD_MS = 350, MOVE_PX = 8;
+const COARSE = matchMedia('(pointer: coarse)').matches;
+const tip = $('target-tip');
+let hovering = false;
+// Show the "Click to lock" label by the target until the visitor has used the lock twice
+let lockUses = 0;
+try { lockUses = +localStorage.getItem('gazeLockUses') || 0; } catch { /* storage unavailable */ }
+
+function updateLockHint() {
+  const chip = $('lock-chip');
+  chip.classList.toggle('is-locked', sim.locked);
+  if (sim.locked) {
+    chip.textContent = COARSE ? '🔒 Gaze locked · tap "Unlock gaze" below' : '🔒 Gaze locked · click the face to unlock';
+  } else if (COARSE) {
+    chip.textContent = 'Press and hold the face to compare with normal';
+  } else {
+    chip.innerHTML = '<span class="key">Click</span> lock gaze · <span class="key">Hold</span> compare with normal';
+  }
+  chip.hidden = false;
+  tip.hidden = COARSE || sim.locked || !hovering || lockUses >= 2;
+  tip.style.left = targetDot.style.left;
+  tip.style.top = targetDot.style.top;
+}
+stage.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') { hovering = true; updateLockHint(); } });
+stage.addEventListener('pointerleave', () => { hovering = false; updateLockHint(); });
 let press = null;
 
 function setLocked(on) {
   sim.locked = on;
+  if (on) { lockUses++; try { localStorage.setItem('gazeLockUses', String(lockUses)); } catch { /* ignore */ } }
   refreshAll();
   announce(on ? 'Gaze locked.' : 'Gaze unlocked.');
 }
@@ -309,6 +336,7 @@ stage.addEventListener('pointerdown', (e) => {
 
 stage.addEventListener('pointermove', (e) => {
   if (!e.isPrimary) return;
+  if (e.pointerType === 'mouse' && !hovering) { hovering = true; updateLockHint(); }
   if (press && !press.moved && Math.hypot(e.clientX - press.x, e.clientY - press.y) > MOVE_PX) {
     press.moved = true;
     clearTimeout(press.timer);
@@ -587,8 +615,7 @@ function refreshAll() {
   for (const b of $('view-picker').children) b.setAttribute('aria-pressed', String(b.dataset.view === sim.view));
   $('lock').setAttribute('aria-pressed', String(sim.locked));
   $('lock').textContent = sim.locked ? 'Unlock gaze' : 'Lock gaze';
-  $('lock-chip').hidden = !sim.locked;
-  $('lock-chip').textContent = matchMedia('(pointer: coarse)').matches ? '🔒 Gaze locked · tap Unlock gaze below' : '🔒 Gaze locked · click the face to unlock';
+  updateLockHint();
   targetDot.classList.toggle('locked', sim.locked);
   renderCard();
   positionTargetDot();
