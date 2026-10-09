@@ -884,13 +884,22 @@ function setMode(m) {
   $('chart').hidden = mode !== 'chart';
   $('results').hidden = mode !== 'chart';
   (mode === 'chart' ? chartGrid : stage).prepend(canvas);
-  for (const b of $('mode-picker').children) b.setAttribute('aria-pressed', String(b.dataset.mode === mode));
+  for (const b of $('mode-picker').children) { b.setAttribute('aria-selected', String(b.dataset.mode === mode)); b.tabIndex = b.dataset.mode === mode ? 0 : -1; }
   if (mode === 'chart') { updateChartUI(); if (!chart.suggested) showChartIntro(); }
   resize();
   requestFrame();
   scheduleHash();
 }
 $('mode-picker').addEventListener('click', (e) => { const b = e.target.closest('button[data-mode]'); if (b) setMode(b.dataset.mode); });
+// Arrow keys move between the two tabs (standard tab pattern)
+$('mode-picker').addEventListener('keydown', (e) => {
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  e.preventDefault(); e.stopPropagation();
+  const next = mode === 'sim' ? 'chart' : 'sim';
+  setMode(next);
+  $('mode-picker').querySelector(`[data-mode="${next}"]`).focus();
+});
+document.querySelectorAll('[data-mode-jump]').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.modeJump)));
 
 // Muscle tables
 const muscleRows = { R: {}, L: {} };
@@ -1225,7 +1234,7 @@ $('save-image').addEventListener('click', async () => {
 // Start
 // ═══════════════════════════════════════════════════════════════
 $('version').textContent = VERSION;
-for (const b of $('mode-picker').children) b.setAttribute('aria-pressed', String(b.dataset.mode === 'sim'));
+for (const b of $('mode-picker').children) { b.setAttribute('aria-selected', String(b.dataset.mode === mode)); b.tabIndex = b.dataset.mode === mode ? 0 : -1; }
 if (!readHash()) { sim.gazeH = 0; sim.gazeV = 0; applyCase('normal', 'B', { keepGaze: true, announce: false }); }
 for (const eye of ['R', 'L']) { shown[eye].h = sim.solution[eye].h; shown[eye].v = sim.solution[eye].v; }
 if (initRenderer()) loadModel();
