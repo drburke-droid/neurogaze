@@ -96,6 +96,7 @@ const NECK_MUSCLES = [[-0.44, -0.27], [-0.52, -0.2], [-0.58, -0.28], [-0.57, -0.
 const GLOWS = [
   { at: [0.12, 0.27], r: 0.14 },  // forehead and temple
   { at: [0.17, 0.0], r: 0.09 },   // around the eye
+  { at: [-0.08, -0.33], r: 0.12 }, // jaw muscles
   { at: [-0.52, -0.42], r: 0.13 }, // back of the neck
   { at: [-0.4, 0.3], r: 0.14 },   // side of the head
 ];
@@ -111,7 +112,7 @@ const MODES = {
   reading: { eye: 0.7, route: 0.8, v1: 0.35, v2: 0.35, v3: 0.35, mening: 0.35, neck: 0.35, jaw: 0.12 },
   weight: { eye: 1, route: 0.3, v1: 0.2, v2: 0.2, v3: 0.2, mening: 0.2, neck: 0.2, brain: 0.3 },
   figure: { eye: 1, route: 1, v1: 1, v2: 1, v3: 1, jaw: 0.7, mening: 1, neck: 1, brain: 0.5 }, // the still diagram on the page
-  flood: { eye: 0.85, route: 1, v1: 0.6, v2: 0.5, v3: 0.5, mening: 0.8, neck: 0.8, jaw: 0.3, glow: 1 },
+  flood: { eye: 0.85, route: 1, v1: 0.6, v2: 0.5, v3: 0.7, mening: 0.8, neck: 0.8, jaw: 0.8, glow: 1 },
 };
 const LABELS = {
   sense: [{ text: 'Eye muscles', at: [0.05, 0.075], side: 't' }, { text: 'Position sensors (proprioceptors)', at: [0.11, -0.06], side: 'b', hot: true }],
@@ -130,6 +131,7 @@ const LABELS = {
   flood: [
     { text: 'Headaches', at: [0.12, 0.33], side: 'l', sym: true },
     { text: 'Eye strain', at: [0.22, 0.0], side: 'l', sym: true },
+    { text: 'Jaw tension', at: [0.0, -0.36], side: 'l', sym: true },
     { text: 'Neck pain', at: [-0.56, -0.5], side: 'r', sym: true },
   ],
 };

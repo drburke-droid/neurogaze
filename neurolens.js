@@ -82,7 +82,7 @@ const STEPS = [
   { say: () => 'The same nerve carries feeling from the forehead, the cheeks and the jaw, controls the chewing muscles, and supplies the covering of the brain. In the brainstem, it also meets the nerves from the back of the head and neck.', scene: 'nerve', nerve: 'map' },
   { say: () => 'Now picture reading. Every correction, after every word, sends another burst of signals along that nerve. Over a long stretch of reading, the nerve almost pulses with them.', scene: 'nerve', nerve: 'reading' },
   { say: () => "Yet each eye weighs only about 7.5 grams, and the muscles that move it are far stronger than they need to be. They're built not to tire, with their own special kind of myosin, the protein that makes muscle contract, and a rich blood supply.", scene: 'nerve', nerve: 'weight' },
-  { say: () => "So it's probably not tired eye muscles. It's more like a bandwidth problem: their sensors keep flooding the brain, through the trigeminal nerve, with updates on where the eyes are. That constant traffic is thought to contribute to headaches, eye strain and neck pain. Read on to see how Neurolens can help.", scene: 'nerve', nerve: 'flood' },
+  { say: () => "So it's probably not tired eye muscles. It's more like a bandwidth problem: their sensors keep flooding the brain, through the trigeminal nerve, with updates on where the eyes are. That constant traffic is thought to contribute to headaches, eye strain, jaw tension and neck pain. Read on to see how Neurolens can help.", scene: 'nerve', nerve: 'flood' },
 ];
 const step = () => STEPS[st.step];
 
