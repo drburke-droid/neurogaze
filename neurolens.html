@@ -84,6 +84,11 @@
     .tabs { display: inline-flex; background: var(--soft); border-radius: 99px; padding: 4px; }
     .tabs button { border: 0; background: transparent; border-radius: 99px; padding: 10px 20px; font-weight: 700; font-size: 17px; cursor: pointer; color: var(--muted); }
     .tabs button[aria-selected="true"] { background: #fff; color: var(--ink); box-shadow: 0 1px 4px rgba(20, 30, 50, .15); }
+    .speed { display: inline-flex; border: 2px solid var(--line); border-radius: 99px; overflow: hidden; }
+    .speed[hidden] { display: none; }
+    .speed button { border: 0; background: #fff; padding: 9px 16px; font-weight: 700; font-size: 16px; cursor: pointer; color: var(--muted); }
+    .speed button + button { border-left: 2px solid var(--line); }
+    .speed button[aria-pressed="true"] { background: var(--ink); color: #fff; }
     .btn { display: inline-flex; align-items: center; gap: 8px; border-radius: 99px; padding: 11px 20px; font-weight: 700; font-size: 17px; cursor: pointer; text-decoration: none; border: 2px solid var(--accent); background: #fff; color: var(--accent); }
     .btn:hover { background: #f0f6ff; }
     .btn.primary { background: var(--accent); color: #fff; }
@@ -169,9 +174,12 @@
             <button type="button" role="tab" id="tab-reading" data-mode="reading" aria-selected="false">Reading</button>
           </div>
           <button class="btn" type="button" id="play">Play</button>
+          <div class="speed" id="speed" role="group" aria-label="Reading speed" hidden>
+            <button type="button" data-slow="0" aria-pressed="true" title="About 150 words a minute, eye movements at true size">Full speed</button><button type="button" data-slow="1" aria-pressed="false" title="Slowed down and magnified">Slow motion</button>
+          </div>
           <button class="linkish" type="button" id="drift">Show eyes that drift inward</button>
         </div>
-        <p class="legend">The paddle and the card are see-through so you can watch the eyes behind them. Rings show where each eye is aiming: <i style="border-color:var(--od)"></i>right eye <i style="border-color:var(--os)"></i>left eye. Eye movements are exaggerated so they're easy to see.</p>
+        <p class="legend">The paddle and the card are see-through so you can watch the eyes behind them. Rings show where each eye is aiming: <i style="border-color:var(--od)"></i>right eye <i style="border-color:var(--os)"></i>left eye. Eye movements are exaggerated so they're easy to see, except when reading at full speed, which is shown at true size.</p>
       </div>
     </div>
   </section>

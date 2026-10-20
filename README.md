@@ -24,7 +24,7 @@ Created by **Dr Robert Burke**, optometrist, Calgary Vision Centre.
 `neurolens.html` is a patient-facing page embedded on the clinic's Neurolens page (layout and embed code in `docs/neurolens-embed.md`). It shows that eyes drift to their resting position when they are not being held together:
 
 - **Cover test:** a clear paddle covers each eye in turn; the covered eye drifts to its resting position and pulls back into line when uncovered. The paddle can also be dragged by hand.
-- **Reading:** the eyes read a clear card, seen from behind, word by word. After each jump they land slightly out of line (fixation disparity), shown by a ring for each eye, and are pulled back together.
+- **Reading:** the eyes read a clear card, seen from behind, word by word. At full speed (150 words a minute, true size) it looks normal; in slow motion (slowed and magnified) you can see them land slightly out of line after each jump (fixation disparity), shown by a ring for each eye, before they are pulled back together.
 
 Below the demonstration are the cause, effect and solution, a call to action and the clinic's Neurolens articles. Eye movements are exaggerated; `fixation.js` holds the model (tests in `tests/fixation.test.mjs`) and `head3d.js` loads the shared 3D head.
 

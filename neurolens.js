@@ -7,7 +7,7 @@ const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 const DEG = Math.PI / 180;
 const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t));
 const EYES = ['R', 'L'];
-const MAG = 8;            // eye movements are exaggerated so they can be seen
+const MAG = 8;            // eye movements are exaggerated so they can be seen (true size when reading at full speed)
 const MAX_TURN = 18;      // degrees: the most an eye is shown turned away
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -30,6 +30,8 @@ const st = {
   t: 0, step: -1,       // position in the cover-test script, seconds
   cover: null,          // eye currently behind the paddle
   read: null,           // reading: { i, ph, t, from, to, err, count, pause }
+  slow: false,          // reading in slow motion (slowed down and magnified)
+  speedChosen: false,   // the visitor picked a speed; otherwise full speed and slow motion take turns
   manual: false,        // the visitor has moved the paddle themselves
 };
 let inView = false;
@@ -48,15 +50,17 @@ const COVER = [
   { at: 18.8, loop: true },
 ];
 
-// Reading: one fixation per word, in seconds of slowed-down time
-const READ_SPEED = 0.4;
-const PHASES = [['saccade', 0.05], ['land', 0.12], ['correct', 0.15], ['fixate', 0.2]];
+// Reading: one fixation per word, in real seconds at full speed (0.4 s a word = 150 words a minute).
+// At full speed the misalignment is true size and too brief to see; slow motion slows and magnifies it.
+const PHASES = [['saccade', 0.035], ['land', 0.05], ['correct', 0.1], ['fixate', 0.215]];
+const SLOW = 0.15; // slow motion plays at this fraction of real time
 const PASSAGE = 'Every time your eyes jump to the next word, they need to land together. If they land slightly out of line, the brain pulls them back. This happens with every word you read.';
+const FULL_SAY = 'Full speed, about 150 words a minute. Everything looks normal: the eyes simply move from word to word.';
 const READ_SAY = [
-  [0, () => 'Watch the eyes jump from word to word. The card is see-through so we can see the eyes from behind it.'],
+  [0, () => 'Slowed down and magnified: watch what happens each time the eyes land on a word.'],
   [4, () => `During each jump the eyes aren't held together, so they slip ${way()} toward their resting position and land slightly out of line. Watch the rings come apart.`],
   [13, () => 'The brain notices and pulls them back together. That small miss and correction is called fixation disparity.'],
-  [22, () => 'It happens with every word you read, thousands of times a day.'],
+  [22, () => 'At full speed this happens with every word, too quickly to notice, thousands of times a day.'],
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -123,19 +127,19 @@ function nextWord(r) {
 
 function stepReading(dt) {
   const r = st.read;
-  if (r.pause > 0) { // end of the paragraph
-    r.pause -= dt / READ_SPEED;
-    if (r.pause <= 0) { r.i = 0; r.count = 0; r.from = r.to; nextWord(r); }
+  if (r.pause > 0) { // end of the paragraph: then read it again, at the other speed unless one was picked
+    r.pause -= dt;
+    if (r.pause <= 0) { if (!st.speedChosen) setSlow(!st.slow); r.i = 0; r.count = 0; r.from = r.to; nextWord(r); }
     return;
   }
-  r.t += dt;
+  r.t += dt * (st.slow ? SLOW : 1);
   while (r.t >= PHASES[r.ph][1]) {
     r.t -= PHASES[r.ph][1];
     r.ph++;
     if (r.ph === 1) { words[r.i].classList.add('cur'); if (Math.abs(posture()) > 0) r.count++; }
     if (r.ph === PHASES.length) {
       r.from = r.to;
-      if (++r.i >= words.length) { r.i = words.length - 1; r.ph = PHASES.length - 1; r.pause = 3.5; return; }
+      if (++r.i >= words.length) { r.i = words.length - 1; r.ph = PHASES.length - 1; r.pause = st.slow ? 4.5 : 3.5; return; }
       nextWord(r);
     }
   }
@@ -218,10 +222,13 @@ function setMode(mode) {
   paddle.hidden = mode !== 'cover';
   $('target').hidden = mode !== 'cover';
   for (const b of document.querySelectorAll('[role="tab"]')) b.setAttribute('aria-selected', String(b.dataset.mode === mode));
-  $('mode-label').textContent = mode === 'cover' ? 'Cover test' : 'Reading';
+
+  $('speed').hidden = mode !== 'reading';
+  if (mode === 'reading') st.speedChosen = false;
+  setSlow(mode === 'reading' ? false : st.slow); // also sets the mode label
   if (mode === 'reading' && geo) { st.read = { i: 0, count: 0, from: DOT, pause: 0 }; nextWord(st.read); }
   if (mode === 'cover' && geo) parkPaddle();
-  caption(mode === 'cover' ? COVER[0].say() : READ_SAY[0][1]());
+  caption(mode === 'cover' ? COVER[0].say() : readingCaption());
   status(mode === 'cover' ? 'Cover test.' : 'Reading demonstration.');
   play();
 }
@@ -246,6 +253,21 @@ $('play').addEventListener('click', () => {
   status('Playing.');
 });
 for (const b of document.querySelectorAll('[role="tab"]')) b.addEventListener('click', () => setMode(b.dataset.mode));
+
+function setSlow(on) {
+  st.slow = on;
+  for (const b of $('speed').children) b.setAttribute('aria-pressed', String((b.dataset.slow === '1') === on));
+  $('mode-label').textContent = st.mode === 'cover' ? 'Cover test' : on ? 'Reading · slow motion' : 'Reading · full speed';
+  request();
+}
+$('speed').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-slow]'); if (!b) return;
+  st.speedChosen = true;
+  setSlow(b.dataset.slow === '1');
+  caption(readingCaption());
+  status(st.slow ? 'Slow motion.' : 'Full speed.');
+  if (!st.playing) play();
+});
 $('drift').addEventListener('click', () => {
   st.drift = st.drift === 'exo' ? 'eso' : 'exo';
   $('drift').textContent = st.drift === 'exo' ? 'Show eyes that drift inward' : 'Show eyes that drift outward';
@@ -263,6 +285,7 @@ new IntersectionObserver(([e]) => {
 // Frame loop (runs only while something moves)
 // ═══════════════════════════════════════════════════════════════
 let rafId = 0, last = 0, lastAim = '', captionText = '';
+const magnification = () => (st.mode === 'reading' && !st.slow ? 1 : MAG); // reading at full speed is true size
 function request() { if (!rafId) rafId = requestAnimationFrame(tick); }
 
 function tick(now) {
@@ -282,10 +305,8 @@ function tick(now) {
     }
   }
   if (st.playing && st.mode === 'reading') {
-    stepReading(dt * READ_SPEED);
-    const r = st.read;
-    if (r.pause > 0) caption(`That was one short paragraph: ${r.count} small corrections.`);
-    else caption(READ_SAY.filter(([from]) => from <= r.i).pop()[1]());
+    stepReading(dt);
+    caption(readingCaption());
   }
 
   // Behind the paddle an eye drifts to rest; uncovered, it pulls back into line
@@ -316,7 +337,8 @@ function draw() {
   if (!geo) return;
   const g = gazeNow();
   const land = landingError();
-  const turn = (e) => clamp((drift[e] + land) * MAG, -MAX_TURN, MAX_TURN);
+  const mag = magnification();
+  const turn = (e) => clamp((drift[e] + land) * mag, -MAX_TURN, MAX_TURN);
   const aimR = g.H - NEAR_CONVERGENCE + turn('R'), aimL = -g.H - NEAR_CONVERGENCE + turn('L');
   head.aim('R', aimR, g.V);
   head.aim('L', aimL, g.V);
@@ -332,6 +354,13 @@ function draw() {
     const dx = Math.tan(turn(e) * DEG) * geo.D * (e === 'R' ? -1 : 1); // outward = toward that eye's own side
     Object.assign(ring.style, { left: `${p.x + dx}px`, top: `${p.y}px` });
   }
+}
+
+function readingCaption() {
+  const r = st.read;
+  if (!r || r.pause <= 0) return st.slow && r ? READ_SAY.filter(([from]) => from <= r.i).pop()[1]() : FULL_SAY;
+  if (st.slow) return `That was one short paragraph: ${r.count} small corrections, each too quick to notice at full speed.${st.speedChosen ? '' : ' Back to full speed.'}`;
+  return st.speedChosen ? 'That was one short paragraph at a normal reading speed.' : 'Looks normal. Now the same reading, slowed down and magnified.';
 }
 
 function caption(text) {
@@ -362,4 +391,4 @@ if (EMBED) {
 }
 
 // Small hook for automated checks
-window.__nl = { st, drift, setMode, play, pause, paddleOver, get geo() { return geo; } };
+window.__nl = { st, drift, setMode, setSlow, play, pause, paddleOver, get geo() { return geo; }, get mag() { return magnification(); } };
