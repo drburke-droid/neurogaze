@@ -2,10 +2,12 @@
 
 `neurolens.html` replaces most of the Neurolens page (`calgaryvisioncentre.com/neurolens-calgary`) with a single, patient-friendly embed:
 
-1. **See what your eyes are doing.** A 3D face with two short animations that play on their own when scrolled into view:
-   - **Cover test:** a paddle covers one eye, then the other. It is drawn see-through, and labelled as such, so viewers can watch the eye behind it. Behind it the eye drifts to its resting position; when the paddle comes away, it pulls back into line.
-   - **Reading:** the eyes read a clear card word by word, seen from behind. It plays first at **full speed** (about 150 words a minute, true size), where everything looks normal, then in **slow motion** (slowed and magnified), where you can see that after each jump the eyes slip toward their resting position and land slightly out of line (two rings show where each eye is aiming) before the brain pulls them back together: fixation disparity. It keeps alternating unless a speed is picked.
-   - Controls: the two tabs, Pause/Play, Full speed / Slow motion (when reading), and one link to show eyes that drift inward instead of outward. Chairside, you can also drag the paddle over either eye yourself.
+1. **See what your eyes are doing.** A click-through story on a 3D face, 17 short steps, with the text written across the forehead and Back / Next below:
+   - Eyes look straight because the brain keeps the two eyes' information lined up; an eye that isn't used drifts to its resting position; where that is, and how well we cope with it, is the essence of BVD.
+   - **Cover test, hands on:** the visitor drags a solid paddle over an eye, then clicks it to open an X-ray window and peek behind it: the covered eye has drifted (exophoric). They then cover the other eye and see the roles swap. On these steps Next becomes **Show me**, which does it for them.
+   - Asleep, both eyes go to rest. During every saccade the brain switches off the eyes' input (try it across the room, and in a mirror versus a phone's front camera), so the eyes start to drift and land slightly out of line.
+   - **Reading** is a chain of saccades: at full speed (150 words a minute, true size) it looks normal; slowed down and magnified, the miss after each jump, fixation disparity, is clear. The last step points to the explanations below.
+   - Also: Full speed / Slow motion while reading, and a link to show eyes that drift inward. Arrow keys step back and forth.
 2. **Why small misalignments can cause symptoms:** the cause, the effect (with a simple trigeminal nerve diagram) and the solution, in plain language.
 3. **Could Neurolens help you?** Certified provider, questionnaire button, booking button and phone number.
 4. **Learn more from Dr Burke:** the four blog articles as cards.

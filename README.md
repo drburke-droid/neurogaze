@@ -21,10 +21,11 @@ Created by **Dr Robert Burke**, optometrist, Calgary Vision Centre.
 
 ## Companion page: the Neurolens embed
 
-`neurolens.html` is a patient-facing page embedded on the clinic's Neurolens page (layout and embed code in `docs/neurolens-embed.md`). It shows that eyes drift to their resting position when they are not being held together:
+`neurolens.html` is a patient-facing page embedded on the clinic's Neurolens page (layout and embed code in `docs/neurolens-embed.md`). A click-through story on the 3D face explains that an eye drifts to its resting position whenever it isn't being used:
 
-- **Cover test:** a clear paddle covers each eye in turn; the covered eye drifts to its resting position and pulls back into line when uncovered. The paddle can also be dragged by hand.
-- **Reading:** the eyes read a clear card, seen from behind, word by word. At full speed (150 words a minute, true size) it looks normal; in slow motion (slowed and magnified) you can see them land slightly out of line after each jump (fixation disparity), shown by a ring for each eye, before they are pulled back together.
+- **Cover test, hands on:** the visitor drags a solid paddle over an eye and clicks it to peek through an X-ray window; the covered eye has drifted. Covering the other eye swaps the roles.
+- **Saccades:** the brain switches off the eyes' input during each jump (with the across-the-room and mirror-versus-phone-camera exercises), so both eyes start to drift and land slightly out of line.
+- **Reading:** a chain of saccades across a see-through card, at full speed (150 words a minute, true size) where it looks normal, and slowed and magnified where the miss after each jump (fixation disparity) shows.
 
 Below the demonstration are the cause, effect and solution, a call to action and the clinic's Neurolens articles. Eye movements are exaggerated; `fixation.js` holds the model (tests in `tests/fixation.test.mjs`) and `head3d.js` loads the shared 3D head.
 

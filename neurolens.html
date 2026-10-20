@@ -71,19 +71,36 @@
 
     .tag.wrap { white-space: normal; width: max-content; max-width: 210px; }
 
-    /* A clear occluder paddle */
+    /* The cover paddle: solid, with an X-ray window that opens to peek behind it */
     .paddle { position: absolute; z-index: 5; cursor: grab; touch-action: none; transition: left .7s cubic-bezier(.4, 0, .2, 1), top .7s cubic-bezier(.4, 0, .2, 1); }
     .paddle.dragging { cursor: grabbing; transition: none; }
-    .paddle svg { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 6px 12px rgba(0,0,0,.35)); }
-    .paddle .acrylic { fill: rgba(220, 235, 255, .16); stroke: rgba(255, 255, 255, .85); stroke-width: 2.5; }
-    .paddle .glare { fill: rgba(255, 255, 255, .28); }
+    .paddle svg { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 6px 12px rgba(0,0,0,.45)); }
+    .paddle .head, .paddle .stick { fill: url(#paddle-solid); stroke: #0b0d11; stroke-width: 1.5; }
+    #peek-label { font: 800 7px var(--body); letter-spacing: .2em; fill: #5ad8ff; opacity: 0; }
+    .paddle.peeking #peek-label { opacity: 1; }
+    .paddle:focus-visible { outline: none; }
+    .paddle:focus-visible .head { stroke: #fff; stroke-width: 3; }
+    .callout { position: absolute; z-index: 7; transform: translate(-50%, calc(-100% - 10px)); background: #ffd25a; color: #1b2230; font: 700 14px/1.2 var(--body); padding: 7px 12px; border-radius: 99px; box-shadow: 0 4px 12px rgba(0,0,0,.35); white-space: nowrap; pointer-events: none; animation: bob 1.6s ease-in-out infinite; }
+    .callout::after { content: ""; position: absolute; left: 50%; bottom: -6px; margin-left: -6px; border: 6px solid transparent; border-bottom: 0; border-top-color: #ffd25a; }
+    .callout[hidden], .input-chip[hidden], .ring-label[hidden] { display: none; }
+    @keyframes bob { 50% { margin-top: -4px; } }
+    .ring-label { position: absolute; z-index: 5; font: 700 12.5px var(--body); pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
+    .ring-label.od { color: var(--od); transform: translate(calc(-100% - 16px), -50%); }
+    .ring-label.os { color: var(--os); transform: translate(16px, -50%); }
+    .target.dim { opacity: .35; }
+    .input-chip { position: absolute; left: 12px; bottom: 12px; z-index: 6; display: flex; align-items: center; gap: 8px; background: rgba(16, 20, 28, .82); color: #e9edf4; border-radius: 99px; padding: 5px 12px 5px 8px; font: 700 13px var(--body); }
+    .input-chip i { width: 12px; height: 12px; border-radius: 50%; background: #2bd47a; box-shadow: 0 0 8px #2bd47a; }
+    .input-chip.off i { background: #59606e; box-shadow: none; }
+    .input-chip.off { color: #aab3c2; }
 
-    .caption { min-height: 4.2em; background: var(--soft); border-radius: 12px; padding: 14px 18px; font-size: 19px; line-height: 1.45; display: flex; gap: 12px; align-items: flex-start; }
-    .caption .mode { flex: none; font: 600 12px/1 var(--head); text-transform: uppercase; letter-spacing: .08em; color: #fff; background: var(--accent); border-radius: 99px; padding: 6px 10px; margin-top: 3px; }
-    .controls { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
-    .tabs { display: inline-flex; background: var(--soft); border-radius: 99px; padding: 4px; }
-    .tabs button { border: 0; background: transparent; border-radius: 99px; padding: 10px 20px; font-weight: 700; font-size: 17px; cursor: pointer; color: var(--muted); }
-    .tabs button[aria-selected="true"] { background: #fff; color: var(--ink); box-shadow: 0 1px 4px rgba(20, 30, 50, .15); }
+    /* The story, written across the forehead */
+    .story { position: absolute; z-index: 6; top: 0; left: 0; right: 0; padding: 18px 24px 46px; text-align: center; color: #fff; font: 600 clamp(17px, 2.1vw, 25px)/1.38 var(--head); text-shadow: 0 2px 8px rgba(0, 0, 0, .7); background: linear-gradient(rgba(8, 11, 16, .86), rgba(8, 11, 16, .62) 62%, rgba(8, 11, 16, 0)); cursor: pointer; }
+    .story p { max-width: 880px; margin: 0 auto; }
+    .nav { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+    .progress { color: var(--muted); font-weight: 700; font-size: 16px; min-width: 4.5em; text-align: center; }
+    .btn:disabled { opacity: .35; cursor: default; }
+    .btn.primary.ready { animation: ready 1.4s ease-in-out infinite; }
+    @keyframes ready { 50% { box-shadow: 0 0 0 6px rgba(31, 111, 209, .25); } }
     .speed { display: inline-flex; border: 2px solid var(--line); border-radius: 99px; overflow: hidden; }
     .speed[hidden] { display: none; }
     .speed button { border: 0; background: #fff; padding: 9px 16px; font-weight: 700; font-size: 16px; cursor: pointer; color: var(--muted); }
@@ -129,57 +146,65 @@
       .wrap { padding: 0 14px; }
       section { padding: 20px 0; }
       .stage { aspect-ratio: 1 / 1; }
-      .caption { font-size: 17px; flex-direction: column; gap: 8px; }
-      .tabs button { padding: 9px 14px; font-size: 16px; }
+      .story { font-size: 14.5px; padding: 10px 12px 30px; }
+      .callout { font-size: 13px; }
       .linkish { margin-left: 0; }
       .posts { grid-template-columns: 1fr; }
       .credit { font-size: 12px; }
     }
-    @media (prefers-reduced-motion: reduce) { .paddle, .post, .card-text span { transition: none; } }
+    @media (prefers-reduced-motion: reduce) { .paddle, .post, .card-text span { transition: none; } .callout, .btn.primary.ready { animation: none; } }
   </style>
 </head>
 <body>
   <section aria-labelledby="see-title">
     <div class="wrap">
       <h2 id="see-title">See what your eyes are doing</h2>
-      <p class="lead">Most people's eyes have a natural resting position that isn't perfectly lined up. You don't notice, because your brain keeps pulling them together. Here is what that looks like.</p>
+      <p class="lead">A short story in pictures. Click <strong>Next</strong> to step through it.</p>
 
       <div class="demo">
-        <div class="stage" id="stage" role="img" aria-label="A 3D face. In the cover test, a clear paddle covers one eye and that eye drifts to its resting position, then moves back when uncovered. In the reading demo, the eyes read a clear card word by word, landing slightly out of line after each jump before lining up again.">
-          <canvas id="view"></canvas>
-          <div class="target" id="target"></div>
+        <div class="stage" id="stage" role="group" aria-label="3D face illustrating the story above it">
+          <canvas id="view" aria-hidden="true"></canvas>
+          <div class="target" id="target" hidden></div>
+          <div class="target dim" id="target-b" hidden></div>
           <div class="card" id="card" hidden>
             <span class="tag">See-through card, so we can watch the eyes from behind it</span>
             <div class="card-text" id="card-text"></div>
           </div>
           <div class="ring od" id="ring-R" hidden></div>
           <div class="ring os" id="ring-L" hidden></div>
-          <div class="paddle" id="paddle" tabindex="0" role="button" aria-label="Clear cover paddle. Drag it over an eye, or press Enter to move it.">
+          <span class="ring-label od" id="label-R" hidden>right eye</span>
+          <span class="ring-label os" id="label-L" hidden>left eye</span>
+          <div class="paddle" id="paddle" tabindex="0" role="button" aria-label="Cover paddle. Drag it over an eye; click it to peek behind it." hidden>
             <svg viewBox="0 0 100 200" aria-hidden="true">
-              <rect class="acrylic" x="40" y="80" width="20" height="116" rx="8"/>
-              <ellipse class="acrylic" cx="50" cy="44" rx="47" ry="42"/>
-              <path class="glare" d="M18 30 Q30 10 56 8 Q34 18 24 40 Z"/>
+              <defs>
+                <linearGradient id="paddle-solid" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4b5363"/><stop offset="1" stop-color="#1b1f27"/></linearGradient>
+                <mask id="peek-mask" maskUnits="userSpaceOnUse" x="-10" y="-10" width="120" height="220"><rect x="-10" y="-10" width="120" height="220" fill="#fff"/><circle id="peek-cut" cx="50" cy="44" r="0" fill="#000"/></mask>
+                <pattern id="scan" width="4" height="3" patternUnits="userSpaceOnUse"><rect width="4" height="1" fill="rgba(130, 225, 255, .25)"/></pattern>
+              </defs>
+              <rect class="stick" x="40" y="80" width="20" height="116" rx="8"/>
+              <ellipse class="head" cx="50" cy="44" rx="47" ry="42" mask="url(#peek-mask)"/>
+              <circle id="peek-glass" cx="50" cy="44" r="0" fill="url(#scan)"/>
+              <circle id="peek-rim" cx="50" cy="44" r="0" fill="none" stroke="#5ad8ff" stroke-width="2.5"/>
+              <text id="peek-label" x="50" y="10.5" text-anchor="middle">X-RAY</text>
             </svg>
-            <span class="tag wrap" style="top:2px">See-through paddle, so you can watch the eye behind it</span>
           </div>
+          <div class="callout" id="callout" hidden></div>
+          <div class="input-chip" id="input-chip" hidden><i></i><span></span></div>
+          <div class="story" id="story" aria-live="polite"><p id="story-text"></p></div>
           <a class="credit" href="https://calgaryvisioncentre.com/" target="_top" rel="author">Created by Dr Robert Burke</a>
           <div class="loader" id="loader">Loading… <span id="load-pct"></span></div>
         </div>
 
-        <div class="caption" aria-live="off"><span class="mode" id="mode-label">Cover test</span><span id="caption">Both eyes are aiming at the dot together.</span></div>
-
-        <div class="controls">
-          <div class="tabs" role="tablist" aria-label="Demonstration">
-            <button type="button" role="tab" id="tab-cover" data-mode="cover" aria-selected="true">Cover test</button>
-            <button type="button" role="tab" id="tab-reading" data-mode="reading" aria-selected="false">Reading</button>
-          </div>
-          <button class="btn" type="button" id="play">Play</button>
+        <div class="nav">
+          <button class="btn" type="button" id="back">‹ Back</button>
+          <span class="progress" id="progress"></span>
+          <button class="btn primary" type="button" id="next">Next ›</button>
           <div class="speed" id="speed" role="group" aria-label="Reading speed" hidden>
             <button type="button" data-slow="0" aria-pressed="true" title="About 150 words a minute, eye movements at true size">Full speed</button><button type="button" data-slow="1" aria-pressed="false" title="Slowed down and magnified">Slow motion</button>
           </div>
           <button class="linkish" type="button" id="drift">Show eyes that drift inward</button>
         </div>
-        <p class="legend">The paddle and the card are see-through so you can watch the eyes behind them. Rings show where each eye is aiming: <i style="border-color:var(--od)"></i>right eye <i style="border-color:var(--os)"></i>left eye. Eye movements are exaggerated so they're easy to see, except when reading at full speed, which is shown at true size.</p>
+        <p class="legend">Rings show where each eye is aiming: <i style="border-color:var(--od)"></i>right eye <i style="border-color:var(--os)"></i>left eye. Drifting eyes and slow motion are magnified so they're easy to see; full speed is shown at true size.</p>
       </div>
     </div>
   </section>

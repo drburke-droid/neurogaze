@@ -1,4 +1,5 @@
-// Neurolens page demo: eyes drift to their resting position — created by Dr Robert Burke
+// Neurolens page: a click-through story of resting position, saccades and fixation disparity
+// Created by Dr Robert Burke
 import { createHead } from './head3d.js';
 import { NEAR_CONVERGENCE, RESTING, landingOffset, coveredOffset } from './fixation.js';
 
@@ -7,9 +8,10 @@ const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 const DEG = Math.PI / 180;
 const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t));
 const EYES = ['R', 'L'];
-const MAG = 8;            // eye movements are exaggerated so they can be seen (true size when reading at full speed)
+const other = (e) => (e === 'R' ? 'L' : 'R');
+const MAG = 8;            // drifting eyes and slow motion are magnified so they can be seen
 const MAX_TURN = 18;      // degrees: the most an eye is shown turned away
-const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const SLOW = 0.15;        // slow motion plays at this fraction of real time
 
 // Embed mode: ?embed=1&parent=<page URL>. The host page sizes the iframe from our reported height.
 const QS = new URLSearchParams(location.search);
@@ -23,45 +25,130 @@ const toParent = (msg) => { if (EMBED && window.parent !== window) window.parent
 // State
 // ═══════════════════════════════════════════════════════════════
 const st = {
-  mode: 'cover',        // 'cover' | 'reading'
-  playing: false,
-  userPaused: REDUCED,  // don't start on our own if the visitor paused (or prefers less motion)
-  drift: 'exo',         // which way the eyes rest: 'exo' outward, 'eso' inward
-  t: 0, step: -1,       // position in the cover-test script, seconds
-  cover: null,          // eye currently behind the paddle
-  read: null,           // reading: { i, ph, t, from, to, err, count, pause }
-  slow: false,          // reading in slow motion (slowed down and magnified)
-  speedChosen: false,   // the visitor picked a speed; otherwise full speed and slow motion take turns
-  manual: false,        // the visitor has moved the paddle themselves
+  step: 0,
+  drift: 'exo',          // which way the eyes rest: 'exo' outward, 'eso' inward
+  cover: null,           // eye behind the paddle
+  firstEye: null,        // the eye the visitor covered first
+  peek: false,           // X-ray window open
+  slow: false,           // eye movements in slow motion
+  speedChosen: false,    // the visitor picked a reading speed
+  seq: null,             // running eye movements: { kind, i, ph, t, from, to, err, count, pause }
 };
-let inView = false;
 const drift = { R: 0, L: 0 }; // each eye's drift toward rest, degrees outward (true size)
+let peekShown = 0;            // 0..1, how far the X-ray window has opened
 const posture = () => RESTING[st.drift];
 const way = () => (st.drift === 'exo' ? 'outward' : 'inward');
 
-// The cover test, as a looping script (seconds)
-const COVER = [
-  { at: 0, cover: null, say: () => 'Both eyes are aiming at the dot together.' },
-  { at: 2.2, cover: 'R', say: () => 'A paddle covers the right eye. In an eye exam the paddle is solid; ours is see-through so you can watch what the covered eye does.' },
-  { at: 5.2, say: () => `The covered eye can't see the dot, so with nothing to line up with, it drifts ${way()} to where it naturally rests.` },
-  { at: 8.6, cover: null, say: () => 'When the paddle comes away, the eye has to pull back into line.' },
-  { at: 11.4, cover: 'L', say: () => `The same happens with the left eye: behind the paddle, it drifts ${way()}.` },
-  { at: 14.8, cover: null, say: () => 'Back in line. Your brain makes corrections like this all day, without you noticing.' },
-  { at: 18.8, loop: true },
+// ═══════════════════════════════════════════════════════════════
+// The story
+// ═══════════════════════════════════════════════════════════════
+// scene: what the eyes do. still = looking straight ahead; sleep = both at rest;
+// saccades, mirror, reading = repeated jumps. task: what the visitor is asked to do.
+const STEPS = [
+  { say: () => 'This is what your eyes might look like in the mirror. Looking straight, right?', scene: 'still' },
+  { say: () => 'When both eyes are in use, your brain keeps them straight. It is constantly working to keep the two streams of information, one from each eye, lined up on top of each other.', scene: 'still', rings: true, labels: true },
+  { say: () => "But when an eye isn't being used, for example when it's covered, the information from that eye stops. The brain gives that eye a break and lets it drift to its resting position.", scene: 'still', rings: true, paddle: true },
+  { say: () => 'Where that resting position is, and how well your brain and eye muscles cope with it, is the essence of binocular vision dysfunction (BVD).', scene: 'still', rings: true, paddle: true },
+  { say: () => 'Go ahead: grab the paddle in the corner and cover one of the eyes. Once it is covered, click the paddle to peek behind it and see where the eye went.', scene: 'still', rings: true, paddle: true, task: 'peek' },
+  { say: () => `See how it drifted ${way()}? This person is ${st.drift === 'exo' ? 'exophoric' : 'esophoric'}: their eyes rest slightly ${way()}.`, scene: 'still', rings: true, paddle: true, need: 'peek' },
+  { say: () => "Let's keep the paddle in X-ray mode to see what happens when we cover the other eye. Go ahead, move the paddle over the other eye.", scene: 'still', rings: true, paddle: true, need: 'peek', task: 'other' },
+  { say: () => `Now the eye that isn't being used has drifted ${way()}, and the other eye, which the brain is calling on again, has straightened out.`, scene: 'still', rings: true, paddle: true, need: 'other' },
+  { say: () => "So when an eye isn't being used, it moves to its resting position. When you sleep and neither eye is being used, both go to their resting position.", scene: 'sleep', rings: true },
+  { say: () => "Here's what most people don't realize: when you make a fast eye movement, called a saccade, your brain briefly switches off the input from your eyes to avoid a smeared, jittery view, then switches it back on once you reach your target.", scene: 'saccades', slow: true, mag: 1, input: true, rings: true },
+  { say: () => "Try it yourself: look at something across the room, then quickly look at something on the other side. Notice you don't see a streak of blur, like you would if you swung a video camera too fast?", scene: 'saccades', input: true, rings: true },
+  { say: () => "To really drive this home, look at yourself in a mirror and glance from one of your eyes to the other, and back. Notice you can't see your eyes move?", scene: 'mirror', input: true },
+  { say: () => "Now try it while filming yourself with your phone's front camera. You'll definitely see your eyes move. In the mirror you don't, because your brain switches off your eyes' input during saccades.", scene: 'mirror', input: true },
+  { say: () => `And remember: an eye whose input is switched off heads for its resting position. So during every saccade both eyes start to drift ${way()}, and they land slightly out of line until the brain switches them back on and pulls them together.`, scene: 'saccades', slow: true, input: true, rings: true },
+  { say: () => 'Reading is a long chain of saccades: word, to word, to word. Here is someone reading at full speed, about 150 words a minute. Looks normal.', scene: 'reading', input: true, rings: true },
+  { say: () => 'Now the same reading, slowed down and magnified. After each jump the eyes land slightly out of line, and the brain has to pull them back together. That small miss is called fixation disparity.', scene: 'reading', slow: true, input: true, rings: true },
+  { say: () => 'It happens with every word, thousands of times a day. Constantly pulling the eyes back into line is thought to contribute to headaches, eye strain and neck pain. Read on to see why, and how Neurolens can help.', scene: 'reading', alternate: true, input: true, rings: true },
 ];
+const step = () => STEPS[st.step];
 
-// Reading: one fixation per word, in real seconds at full speed (0.4 s a word = 150 words a minute).
-// At full speed the misalignment is true size and too brief to see; slow motion slows and magnifies it.
-const PHASES = [['saccade', 0.035], ['land', 0.05], ['correct', 0.1], ['fixate', 0.215]];
-const SLOW = 0.15; // slow motion plays at this fraction of real time
-const PASSAGE = 'Every time your eyes jump to the next word, they need to land together. If they land slightly out of line, the brain pulls them back. This happens with every word you read.';
-const FULL_SAY = 'Full speed, about 150 words a minute. Everything looks normal: the eyes simply move from word to word.';
-const READ_SAY = [
-  [0, () => 'Slowed down and magnified: watch what happens each time the eyes land on a word.'],
-  [4, () => `During each jump the eyes aren't held together, so they slip ${way()} toward their resting position and land slightly out of line. Watch the rings come apart.`],
-  [13, () => 'The brain notices and pulls them back together. That small miss and correction is called fixation disparity.'],
-  [22, () => 'At full speed this happens with every word, too quickly to notice, thousands of times a day.'],
-];
+function taskDone(s = step()) {
+  if (s.task === 'peek') return !!st.cover && st.peek;
+  if (s.task === 'other') return !!st.cover && st.cover !== st.firstEye && st.peek;
+  return true;
+}
+
+// Do the task for the visitor ("Show me")
+let showTimer = 0;
+function showMe() {
+  const s = step();
+  clearTimeout(showTimer);
+  if (s.task === 'peek') {
+    const wait = st.cover ? 0 : 900; // let the paddle arrive before the window opens
+    if (!st.cover) paddleOver(st.firstEye || 'R');
+    showTimer = setTimeout(() => { st.peek = true; refresh(); request(); }, wait);
+  }
+  if (s.task === 'other') { st.peek = true; paddleOver(other(st.firstEye || 'R')); }
+  refresh();
+}
+
+function goStep(n) {
+  const back = n < st.step;
+  st.step = clamp(n, 0, STEPS.length - 1);
+  const s = step();
+  clearTimeout(showTimer);
+  // Put the paddle where this part of the story needs it
+  if (st.step < 4 || (st.step === 4 && back)) { st.peek = false; st.firstEye = null; parkPaddle(); }
+  if (s.need === 'peek' && !(st.cover && st.peek)) { st.peek = true; paddleOver(st.cover || st.firstEye || 'R'); }
+  if (s.need === 'other' && !(st.cover && st.cover !== st.firstEye)) { st.peek = true; paddleOver(other(st.firstEye || 'R')); }
+  // Eye movements for this step (shown after refresh, so the card is on screen before the eyes aim at its words)
+  const moving = s.scene === 'saccades' || s.scene === 'mirror' || s.scene === 'reading';
+  if (moving && (!st.speedChosen || s.scene !== 'reading')) st.slow = !!s.slow;
+  refresh();
+  if (!moving) st.seq = null;
+  else if (st.seq?.kind !== s.scene) startSeq(s.scene);
+  request();
+}
+
+function next() {
+  if (!geo) return;
+  if (!taskDone()) { showMe(); return; }
+  if (st.step === STEPS.length - 1) { restart(); return; }
+  goStep(st.step + 1);
+}
+function restart() {
+  st.peek = false; st.firstEye = null; st.speedChosen = false;
+  goStep(0);
+}
+$('next').addEventListener('click', next);
+$('back').addEventListener('click', () => goStep(st.step - 1));
+$('story').addEventListener('click', next);
+document.addEventListener('keydown', (e) => {
+  if (e.altKey || e.ctrlKey || e.metaKey) return;
+  if (e.key === 'ArrowRight') { e.preventDefault(); next(); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); goStep(st.step - 1); }
+});
+$('drift').addEventListener('click', () => {
+  st.drift = st.drift === 'exo' ? 'eso' : 'exo';
+  $('drift').textContent = st.drift === 'exo' ? 'Show eyes that drift inward' : 'Show eyes that drift outward';
+  refresh();
+  request();
+});
+$('speed').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-slow]'); if (!b) return;
+  st.speedChosen = true;
+  st.slow = b.dataset.slow === '1';
+  refresh();
+});
+
+// Text and controls for the current step
+function refresh() {
+  const s = step();
+  $('story-text').textContent = s.say();
+  $('progress').textContent = `${st.step + 1} / ${STEPS.length}`;
+  $('back').disabled = st.step === 0;
+  const done = taskDone();
+  $('next').textContent = !done ? 'Show me' : st.step === STEPS.length - 1 ? 'Start again' : 'Next ›';
+  $('next').classList.toggle('ready', done && !!s.task);
+  $('speed').hidden = s.scene !== 'reading';
+  for (const b of $('speed').children) b.setAttribute('aria-pressed', String((b.dataset.slow === '1') === st.slow));
+  paddle.hidden = !s.paddle;
+  card.hidden = s.scene !== 'reading';
+  $('input-chip').hidden = !s.input;
+}
 
 // ═══════════════════════════════════════════════════════════════
 // 3D head and stage geometry
@@ -72,8 +159,8 @@ try {
   head = createHead($('view'), stage, {
     onProgress: (e) => { if (e.lengthComputable) $('load-pct').textContent = `${Math.round((100 * e.loaded) / e.total)}%`; },
   });
-  head.setView('mid');
-  head.ready.then(() => { $('loader').hidden = true; layout(); if (inView && !st.userPaused) play(); else request(); })
+  head.setView('story');
+  head.ready.then(() => { $('loader').hidden = true; layout(); parkPaddle(false); goStep(0); })
     .catch(() => { $('loader').textContent = 'The 3D model could not be loaded. Please reload the page.'; });
 } catch {
   $('loader').textContent = 'This browser could not start 3D graphics, so the demonstration is not available.';
@@ -82,12 +169,14 @@ try {
 // Eye centres on screen, their midpoint o, and u = half the distance between the eyes (pixels)
 function layout() {
   if (!head?.loaded) return;
-  head.setView('mid');
+  head.setView('story');
   const R = head.project('R'), L = head.project('L');
   const u = (L.x - R.x) / 2;
-  geo = { R, L, o: { x: (R.x + L.x) / 2, y: (R.y + L.y) / 2 }, u, D: 3.2 * u };
+  // The card spans most of a narrow stage; gaze angles scale with it so the eyes turn as far as on a wide one
+  const W = stage.clientWidth, cardW = W < 600 ? 0.94 * W : Math.min(3.6 * u, 0.94 * W);
+  geo = { R, L, o: { x: (R.x + L.x) / 2, y: (R.y + L.y) / 2 }, u, cardW, D: Math.max(3.2 * u, 0.9 * cardW) };
   placeCard();
-  if (!dragging) parkPaddle(false);
+  if (!dragging && paddleAt) { if (st.cover) paddleOver(st.cover, false); else parkPaddle(false); }
   lastAim = '';
   draw();
 }
@@ -96,20 +185,21 @@ new ResizeObserver(() => { if (head?.loaded) { head.resize(); layout(); } }).obs
 // Gaze (degrees, + = patient's right / up) ↔ stage pixels, in a stylised geometry that makes movements easy to see
 const gazeToScreen = (H, V) => ({ x: geo.o.x - Math.tan(H * DEG) * geo.D, y: geo.o.y - Math.tan(V * DEG) * geo.D });
 const screenToGaze = (x, y) => ({ H: -Math.atan2(x - geo.o.x, geo.D) / DEG, V: -Math.atan2(y - geo.o.y, geo.D) / DEG });
-const DOT = { H: 0, V: -10 }; // the near target for the cover test
+const AHEAD = { H: 0, V: 0 };
 
 // ═══════════════════════════════════════════════════════════════
-// The clear reading card
+// The see-through reading card
 // ═══════════════════════════════════════════════════════════════
 const card = $('card');
+const PASSAGE = 'Every time your eyes jump to the next word, they need to land together. If they land slightly out of line, the brain pulls them back. This happens with every word you read.';
 const words = PASSAGE.split(' ').map((w) => { const s = document.createElement('span'); s.textContent = w; return s; });
 words.forEach((s, i) => $('card-text').append(s, i < words.length - 1 ? ' ' : ''));
 
 function placeCard() {
-  const w = Math.min(3.6 * geo.u, 0.86 * stage.clientWidth);
+  const w = geo.cardW;
   Object.assign(card.style, {
     width: `${w}px`, left: `${geo.o.x - w / 2}px`, top: `${geo.o.y + 0.62 * geo.u}px`,
-    padding: `${0.12 * geo.u}px ${0.2 * geo.u}px`, fontSize: `${clamp(0.19 * geo.u, 13, 22)}px`,
+    padding: `${0.1 * geo.u}px ${0.16 * geo.u}px`, fontSize: `${clamp(0.17 * geo.u, 11.5, 22)}px`,
   });
 }
 
@@ -118,54 +208,71 @@ function wordGaze(i) {
   return screenToGaze(r.left + r.width / 2 - s.left, r.top + r.height / 2 - s.top);
 }
 
-function nextWord(r) {
-  r.ph = 0; r.t = 0;
-  r.to = wordGaze(r.i);
-  r.err = landingOffset(posture(), 0.5 * (0.85 + 0.3 * Math.random())); // each eye, degrees outward
+// ═══════════════════════════════════════════════════════════════
+// Repeated eye movements: across the room, between your eyes in a mirror, and reading
+// ═══════════════════════════════════════════════════════════════
+// Real seconds at full speed; reading at 0.4 s a word is 150 words a minute
+const PHASES = ['saccade', 'land', 'correct', 'fixate'];
+const DUR = { saccade: 0.035, land: 0.05, correct: 0.1 };
+const FIXATE = { saccades: 0.6, mirror: 0.9, reading: 0.215 };
+const REACH = { saccades: 30, mirror: 3 }; // degrees either side: across the room, or between your eyes in a mirror
+
+function startSeq(kind) {
+  st.seq = { kind, i: 0, ph: 0, t: 0, from: AHEAD, count: 0, pause: 0 };
+  aimNext(st.seq);
+}
+function targetOf(q, i) { return q.kind === 'reading' ? wordGaze(i % words.length) : { H: (i % 2 ? -1 : 1) * REACH[q.kind], V: 0 }; }
+function aimNext(q) {
+  q.ph = 0; q.t = 0;
+  q.to = targetOf(q, q.i);
+  q.err = landingOffset(posture(), 0.5 * (0.85 + 0.3 * Math.random())); // each eye, degrees outward
   for (const w of words) w.classList.remove('cur');
 }
+const phaseDur = (q) => (PHASES[q.ph] === 'fixate' ? FIXATE[q.kind] : DUR[PHASES[q.ph]]);
 
-function stepReading(dt) {
-  const r = st.read;
-  if (r.pause > 0) { // end of the paragraph: then read it again, at the other speed unless one was picked
-    r.pause -= dt;
-    if (r.pause <= 0) { if (!st.speedChosen) setSlow(!st.slow); r.i = 0; r.count = 0; r.from = r.to; nextWord(r); }
+function stepSeq(dt) {
+  const q = st.seq;
+  if (q.pause > 0) { // end of the paragraph: read it again, switching speed if the story says so
+    q.pause -= dt;
+    if (q.pause <= 0) { if (step().alternate && !st.speedChosen) { st.slow = !st.slow; refresh(); } q.i = 0; q.count = 0; q.from = q.to; aimNext(q); }
     return;
   }
-  r.t += dt * (st.slow ? SLOW : 1);
-  while (r.t >= PHASES[r.ph][1]) {
-    r.t -= PHASES[r.ph][1];
-    r.ph++;
-    if (r.ph === 1) { words[r.i].classList.add('cur'); if (Math.abs(posture()) > 0) r.count++; }
-    if (r.ph === PHASES.length) {
-      r.from = r.to;
-      if (++r.i >= words.length) { r.i = words.length - 1; r.ph = PHASES.length - 1; r.pause = st.slow ? 4.5 : 3.5; return; }
-      nextWord(r);
+  q.t += dt * (st.slow ? SLOW : 1);
+  while (q.t >= phaseDur(q)) {
+    q.t -= phaseDur(q);
+    q.ph++;
+    if (q.ph === 1) { q.count++; if (q.kind === 'reading') words[q.i].classList.add('cur'); }
+    if (q.ph === PHASES.length) {
+      q.from = q.to;
+      q.i++;
+      if (q.kind === 'reading' && q.i >= words.length) { q.i = words.length - 1; q.ph = PHASES.length - 1; q.pause = st.slow ? 4.5 : 3; return; }
+      aimNext(q);
     }
   }
 }
 
-// How far each eye has slipped toward rest right now (degrees outward, true size)
+// How far each eye has slipped toward rest during the current jump (degrees outward, true size)
 function landingError() {
-  const r = st.read;
-  if (st.mode !== 'reading' || !r || r.pause > 0) return 0;
-  const [id, dur] = PHASES[r.ph], p = r.t / dur;
-  if (id === 'saccade') return r.err * ease(p);
-  if (id === 'land') return r.err;
-  if (id === 'correct') return r.err * (1 - ease(p));
+  const q = st.seq;
+  if (!q || q.pause > 0) return 0;
+  const id = PHASES[q.ph], p = q.t / phaseDur(q);
+  if (id === 'saccade') return q.err * ease(p);
+  if (id === 'land') return q.err;
+  if (id === 'correct') return q.err * (1 - ease(p));
   return 0;
 }
+const inputOff = () => !!st.seq && st.seq.pause <= 0 && PHASES[st.seq.ph] === 'saccade';
 
 function gazeNow() {
-  const r = st.read;
-  if (st.mode !== 'reading' || !r) return DOT;
-  if (r.pause > 0 || PHASES[r.ph][0] !== 'saccade') return r.to;
-  const p = ease(r.t / PHASES[0][1]);
-  return { H: r.from.H + (r.to.H - r.from.H) * p, V: r.from.V + (r.to.V - r.from.V) * p };
+  const q = st.seq;
+  if (!q) return AHEAD;
+  if (q.pause > 0 || PHASES[q.ph] !== 'saccade') return q.to;
+  const p = ease(q.t / DUR.saccade);
+  return { H: q.from.H + (q.to.H - q.from.H) * p, V: q.from.V + (q.to.V - q.from.V) * p };
 }
 
 // ═══════════════════════════════════════════════════════════════
-// The clear paddle
+// The cover paddle: solid, with an X-ray window to peek behind it
 // ═══════════════════════════════════════════════════════════════
 const paddle = $('paddle');
 let dragging = null, paddleAt = null; // paddleAt: centre of the paddle's head, stage pixels
@@ -178,201 +285,139 @@ function setPaddle(x, y, animate) {
   Object.assign(paddle.style, { width: `${w}px`, height: `${h}px`, left: `${x - w / 2}px`, top: `${y - 0.22 * h}px` });
   request();
 }
-function parkPaddle(animate = true) { const w = paddleWidth(); setPaddle(0.62 * w, stage.clientHeight - 0.5 * w, animate); }
-function paddleOver(eye, animate = true) { if (eye) setPaddle(geo[eye].x, geo[eye].y, animate); else parkPaddle(animate); }
+// Parked in the bottom-left corner (the credit is bottom-right)
+function parkPaddle(animate = true) { if (geo) { const w = paddleWidth(); setPaddle(0.62 * w, stage.clientHeight - 0.62 * w, animate); } }
+function paddleOver(eye, animate = true) { if (!geo) return; if (eye) setPaddle(geo[eye].x, geo[eye].y, animate); else parkPaddle(animate); }
 
 // Which eye the paddle covers, from where it is drawn now (it glides between positions)
-function coveredEye() {
-  if (!geo || st.mode !== 'cover') return null;
+function paddleHead() {
   const r = paddle.getBoundingClientRect(), s = stage.getBoundingClientRect();
-  const x = r.left + r.width / 2 - s.left, y = r.top + 0.22 * r.height - s.top;
-  for (const e of EYES) if (Math.hypot(x - geo[e].x, y - geo[e].y) < 0.55 * geo.u) return e;
+  return { x: r.left + r.width / 2 - s.left, y: r.top + 0.22 * r.height - s.top, w: r.width };
+}
+function coveredEye() {
+  if (!geo || paddle.hidden) return null;
+  const p = paddleHead();
+  for (const e of EYES) if (Math.hypot(p.x - geo[e].x, p.y - geo[e].y) < 0.55 * geo.u) return e;
   return null;
 }
 
+// Drag to move it; a click without dragging opens or closes the X-ray window
 paddle.addEventListener('pointerdown', (e) => {
-  if (!geo || !e.isPrimary || st.mode !== 'cover') return;
+  if (!geo || !e.isPrimary) return;
   paddle.setPointerCapture(e.pointerId);
-  dragging = { x: e.clientX, y: e.clientY, from: { ...paddleAt } };
-  st.manual = true;
-  pause(true);
+  dragging = { x: e.clientX, y: e.clientY, from: { ...paddleAt }, moved: false };
 });
 paddle.addEventListener('pointermove', (e) => {
   if (!dragging) return;
-  setPaddle(dragging.from.x + e.clientX - dragging.x, dragging.from.y + e.clientY - dragging.y, false);
+  const dx = e.clientX - dragging.x, dy = e.clientY - dragging.y;
+  if (!dragging.moved && Math.hypot(dx, dy) < 5) return;
+  dragging.moved = true;
+  setPaddle(dragging.from.x + dx, dragging.from.y + dy, false);
 });
-const endDrag = () => { dragging = null; paddle.classList.remove('dragging'); };
-paddle.addEventListener('pointerup', endDrag);
-paddle.addEventListener('pointercancel', endDrag);
+paddle.addEventListener('pointerup', () => {
+  if (dragging && !dragging.moved) togglePeek();
+  dragging = null;
+  paddle.classList.remove('dragging');
+});
+paddle.addEventListener('pointercancel', () => { dragging = null; paddle.classList.remove('dragging'); });
 paddle.addEventListener('keydown', (e) => {
-  if (e.key !== 'Enter' && e.key !== ' ') return;
-  e.preventDefault();
-  st.manual = true;
-  pause(true);
-  paddleOver(st.cover === 'R' ? 'L' : st.cover === 'L' ? null : 'R'); // right → left → away
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); togglePeek(); return; }
+  const move = { ArrowLeft: [-12, 0], ArrowRight: [12, 0], ArrowUp: [0, -12], ArrowDown: [0, 12] }[e.key];
+  if (move) { e.preventDefault(); e.stopPropagation(); setPaddle(paddleAt.x + move[0], paddleAt.y + move[1], false); }
 });
+function togglePeek() { st.peek = !st.peek; refresh(); request(); }
 
 // ═══════════════════════════════════════════════════════════════
-// Playing, pausing and switching
+// Frame loop (runs only while something moves and the stage is on screen)
 // ═══════════════════════════════════════════════════════════════
-function setMode(mode) {
-  st.mode = mode;
-  st.t = 0; st.step = -1; st.manual = false;
-  card.hidden = mode !== 'reading';
-  paddle.hidden = mode !== 'cover';
-  $('target').hidden = mode !== 'cover';
-  for (const b of document.querySelectorAll('[role="tab"]')) b.setAttribute('aria-selected', String(b.dataset.mode === mode));
-
-  $('speed').hidden = mode !== 'reading';
-  if (mode === 'reading') st.speedChosen = false;
-  setSlow(mode === 'reading' ? false : st.slow); // also sets the mode label
-  if (mode === 'reading' && geo) { st.read = { i: 0, count: 0, from: DOT, pause: 0 }; nextWord(st.read); }
-  if (mode === 'cover' && geo) parkPaddle();
-  caption(mode === 'cover' ? COVER[0].say() : readingCaption());
-  status(mode === 'cover' ? 'Cover test.' : 'Reading demonstration.');
-  play();
-}
-
-function play() {
-  if (!geo) return;
-  if (st.mode === 'reading' && !st.read) { st.read = { i: 0, count: 0, from: DOT, pause: 0 }; nextWord(st.read); }
-  st.playing = true; st.userPaused = false;
-  $('play').textContent = 'Pause';
-  request();
-}
-function pause(byUser) {
-  st.playing = false;
-  if (byUser) st.userPaused = true;
-  $('play').textContent = 'Play';
-}
-
-$('play').addEventListener('click', () => {
-  if (st.playing) { pause(true); status('Paused.'); return; }
-  if (st.mode === 'cover' && (st.step < 0 || st.manual)) { st.t = 0; st.step = -1; st.manual = false; parkPaddle(); } // start the script again
-  play();
-  status('Playing.');
-});
-for (const b of document.querySelectorAll('[role="tab"]')) b.addEventListener('click', () => setMode(b.dataset.mode));
-
-function setSlow(on) {
-  st.slow = on;
-  for (const b of $('speed').children) b.setAttribute('aria-pressed', String((b.dataset.slow === '1') === on));
-  $('mode-label').textContent = st.mode === 'cover' ? 'Cover test' : on ? 'Reading · slow motion' : 'Reading · full speed';
-  request();
-}
-$('speed').addEventListener('click', (e) => {
-  const b = e.target.closest('button[data-slow]'); if (!b) return;
-  st.speedChosen = true;
-  setSlow(b.dataset.slow === '1');
-  caption(readingCaption());
-  status(st.slow ? 'Slow motion.' : 'Full speed.');
-  if (!st.playing) play();
-});
-$('drift').addEventListener('click', () => {
-  st.drift = st.drift === 'exo' ? 'eso' : 'exo';
-  $('drift').textContent = st.drift === 'exo' ? 'Show eyes that drift inward' : 'Show eyes that drift outward';
-  setMode(st.mode);
-});
-
-// Start when the demonstration scrolls into view; stop when it scrolls away
-new IntersectionObserver(([e]) => {
-  inView = e.isIntersecting;
-  if (inView && !st.userPaused && !st.playing) play();
-  else if (!inView && st.playing) pause(false);
-}, { threshold: 0.35 }).observe(stage);
-
-// ═══════════════════════════════════════════════════════════════
-// Frame loop (runs only while something moves)
-// ═══════════════════════════════════════════════════════════════
-let rafId = 0, last = 0, lastAim = '', captionText = '';
-const magnification = () => (st.mode === 'reading' && !st.slow ? 1 : MAG); // reading at full speed is true size
+let rafId = 0, last = 0, lastAim = '', inView = true;
 function request() { if (!rafId) rafId = requestAnimationFrame(tick); }
+new IntersectionObserver(([e]) => { inView = e.isIntersecting; if (inView) request(); }, { threshold: 0.1 }).observe(stage);
 
 function tick(now) {
   rafId = 0;
   const dt = last ? Math.min(0.1, (now - last) / 1000) : 1 / 60;
   last = now;
   if (!geo) return;
-  let active = st.playing || !!dragging || isGliding();
+  let active = !!st.seq || !!dragging || isGliding();
+  if (st.seq) stepSeq(dt);
 
-  if (st.playing && st.mode === 'cover') {
-    st.t += dt;
-    while (st.step + 1 < COVER.length && COVER[st.step + 1].at <= st.t) {
-      const s = COVER[++st.step];
-      if (s.loop) { st.t = 0; st.step = -1; continue; }
-      if ('cover' in s) paddleOver(s.cover);
-      caption(s.say());
-    }
-  }
-  if (st.playing && st.mode === 'reading') {
-    stepReading(dt);
-    caption(readingCaption());
-  }
-
-  // Behind the paddle an eye drifts to rest; uncovered, it pulls back into line
+  // Behind the paddle an eye drifts to rest; uncovered, it is pulled back into line.
+  // Asleep, neither eye is in use, so both drift and share the misalignment.
   const covered = coveredEye();
   if (covered !== st.cover) {
     st.cover = covered;
-    if (dragging || !st.playing) caption(covered ? `Behind the paddle the ${covered === 'R' ? 'right' : 'left'} eye can't see the dot, so it drifts ${way()} to where it naturally rests. The paddle is see-through so you can watch.` : 'Uncovered, the eye pulls back into line. Drag the see-through paddle over either eye.');
+    if (covered && step().task === 'peek' && !st.firstEye) st.firstEye = covered;
+    refresh();
   }
+  const sleeping = step().scene === 'sleep';
   for (const e of EYES) {
-    const goal = st.cover === e ? coveredOffset(posture()) : 0;
-    const tau = goal ? 0.6 : 0.3;
-    drift[e] += (goal - drift[e]) * (1 - Math.exp(-dt / tau));
+    const goal = st.cover === e ? coveredOffset(posture()) : sleeping ? coveredOffset(posture()) / 2 : 0;
+    drift[e] += (goal - drift[e]) * (1 - Math.exp(-dt / (goal ? 0.6 : 0.3)));
     if (Math.abs(goal - drift[e]) > 1e-3) active = true;
   }
+  const peekGoal = st.peek && !paddle.hidden ? 1 : 0;
+  peekShown += (peekGoal - peekShown) * (1 - Math.exp(-dt / 0.15));
+  if (Math.abs(peekGoal - peekShown) > 0.005) active = true; else peekShown = peekGoal;
 
   draw();
-  if (active) request(); else last = 0;
+  if (active && inView) request(); else last = 0;
 }
 
-// Is the paddle still gliding to where it was sent?
 function isGliding() {
   if (!paddleAt || paddle.hidden) return false;
-  const r = paddle.getBoundingClientRect(), s = stage.getBoundingClientRect();
-  return Math.abs(r.left + r.width / 2 - s.left - paddleAt.x) > 0.5 || Math.abs(r.top + 0.22 * r.height - s.top - paddleAt.y) > 0.5;
+  const p = paddleHead();
+  return Math.abs(p.x - paddleAt.x) > 0.5 || Math.abs(p.y - paddleAt.y) > 0.5;
 }
 
 function draw() {
   if (!geo) return;
+  const s = step();
   const g = gazeNow();
+  const reading = s.scene === 'reading';
+  // Covered and sleeping eyes are magnified; jumps are magnified only in slow motion
+  const magJump = s.mag ?? (st.slow ? MAG : 1);
   const land = landingError();
-  const mag = magnification();
-  const turn = (e) => clamp((drift[e] + land) * mag, -MAX_TURN, MAX_TURN);
-  const aimR = g.H - NEAR_CONVERGENCE + turn('R'), aimL = -g.H - NEAR_CONVERGENCE + turn('L');
+  const turn = (e) => clamp(drift[e] * MAG + land * magJump, -MAX_TURN, MAX_TURN);
+  const conv = reading ? NEAR_CONVERGENCE : 0;
+  const aimR = g.H - conv + turn('R'), aimL = -g.H - conv + turn('L');
   head.aim('R', aimR, g.V);
   head.aim('L', aimL, g.V);
   const key = `${aimR.toFixed(3)}|${aimL.toFixed(3)}|${g.V.toFixed(3)}`;
   if (key !== lastAim) { head.render(); lastAim = key; }
 
-  // The dot (cover test) or word (reading), and where each eye is aiming relative to it
+  // The target, and where each eye is aiming relative to it
   const p = gazeToScreen(g.H, g.V);
-  Object.assign($('target').style, { left: `${p.x}px`, top: `${p.y}px` });
+  const tgt = $('target'), tgtB = $('target-b');
+  tgt.hidden = !s.rings || reading;
+  Object.assign(tgt.style, { left: `${p.x}px`, top: `${p.y}px` });
+  tgtB.hidden = !st.seq || reading || !s.rings;
+  if (!tgtB.hidden) { const b = gazeToScreen(targetOf(st.seq, st.seq.i + 1).H, 0); Object.assign(tgtB.style, { left: `${b.x}px`, top: `${b.y}px` }); }
+  const off = inputOff();
   for (const e of EYES) {
-    const ring = $(`ring-${e}`);
-    ring.hidden = false;
+    const ring = $(`ring-${e}`), label = $(`label-${e}`);
+    ring.hidden = !s.rings;
     const dx = Math.tan(turn(e) * DEG) * geo.D * (e === 'R' ? -1 : 1); // outward = toward that eye's own side
-    Object.assign(ring.style, { left: `${p.x + dx}px`, top: `${p.y}px` });
+    Object.assign(ring.style, { left: `${p.x + dx}px`, top: `${p.y}px`, opacity: off ? 0.25 : 1 });
+    label.hidden = !s.labels;
+    Object.assign(label.style, { left: `${p.x}px`, top: `${p.y}px` });
   }
-}
+  const chip = $('input-chip');
+  chip.classList.toggle('off', off);
+  chip.lastChild.textContent = off ? 'Input switched off during the jump' : 'Both eyes switched on';
 
-function readingCaption() {
-  const r = st.read;
-  if (!r || r.pause <= 0) return st.slow && r ? READ_SAY.filter(([from]) => from <= r.i).pop()[1]() : FULL_SAY;
-  if (st.slow) return `That was one short paragraph: ${r.count} small corrections, each too quick to notice at full speed.${st.speedChosen ? '' : ' Back to full speed.'}`;
-  return st.speedChosen ? 'That was one short paragraph at a normal reading speed.' : 'Looks normal. Now the same reading, slowed down and magnified.';
-}
-
-function caption(text) {
-  if (text === captionText) return;
-  captionText = text;
-  $('caption').textContent = text;
-}
-
-function status(msg) {
-  const s = $('status');
-  s.textContent = '';
-  setTimeout(() => { s.textContent = msg; }, 30);
+  // The paddle's X-ray window, and what the callout invites
+  const r = (36 * peekShown).toFixed(2);
+  for (const id of ['peek-cut', 'peek-glass', 'peek-rim']) $(id).setAttribute('r', r);
+  paddle.classList.toggle('peeking', peekShown > 0.5);
+  const call = $('callout');
+  const text = paddle.hidden ? '' : st.cover && !st.peek ? 'Click to peek behind the paddle' : !st.cover && s.task ? 'Drag me over an eye' : '';
+  call.hidden = !text;
+  if (text) {
+    call.textContent = text;
+    const h = paddleHead();
+    Object.assign(call.style, { left: `${clamp(h.x, 110, stage.clientWidth - 110)}px`, top: `${h.y - 0.5 * h.w}px` });
+  }
 }
 
 // Booking and phone links: let the host page record the conversion
@@ -390,5 +435,7 @@ if (EMBED) {
   report();
 }
 
+refresh();
+
 // Small hook for automated checks
-window.__nl = { st, drift, setMode, setSlow, play, pause, paddleOver, get geo() { return geo; }, get mag() { return magnification(); } };
+window.__nl = { st, drift, goStep, next, paddleOver, get geo() { return geo; }, get peek() { return peekShown; } };

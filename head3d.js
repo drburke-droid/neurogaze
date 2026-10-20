@@ -17,6 +17,7 @@ const LID_OPEN_DEG = 6; // lid margin (ends) at rest; matches the face model's o
 const FRAMES = {
   face: (m) => ({ w: 1.05, h: 1.0, y: m.y - 0.14 }),
   mid: (m) => ({ w: 0.8, h: 0.68, y: m.y - 0.12 }),   // eyes to mouth
+  story: (m) => ({ w: 0.8, h: 0.8, y: m.y - 0.02 }), // eyes a little below centre, room for a title above
   eyes: (m) => ({ w: 0.62, h: 0.55, y: m.y - 0.02 }),
 };
 
@@ -24,7 +25,7 @@ const FRAMES = {
  * createHead(canvas, host) → head
  *   head.ready            Promise, resolves once the model is loaded
  *   head.aim(eye, h, v)   degrees; h + = abduction, v + = up
- *   head.setView(v)       'face' | 'mid' | 'eyes'
+ *   head.setView(v)       'face' | 'mid' | 'story' | 'eyes'
  *   head.project(eye)     { x, y } in host pixels of the eye centre (also accepts a world Vector3)
  *   head.render()
  */
