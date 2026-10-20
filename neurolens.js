@@ -43,6 +43,7 @@ let turnK = 0;                // 0..1: the head turning from facing us to its pr
 let sideBox = null;           // how the camera frames the profile (eases between steps)
 let nerveMode = null;         // draw the nerve this way instead of as the step says (for rendering the still diagram)
 let nerveT = 0, nerveShow = 0, nerveOn = false, frameDt = 0; // seconds into a step inside the head; the nerve drawing fading in
+let selfShow = 0;             // 0..1: the face dimmed behind the red dot, for the visitor's own cover test
 let pullT = 0, pull = 1;      // the target pulling back from the face toward the viewer (step 2): 0 near the face, 1 far
 const STICK_NEAR = 12;        // degrees each eye turns in for the target close to the face
 const STICK_DROP = 0.42;      // once pulled back toward us, the ball sits this far below the eyes (× geo.u), out of our line of sight
@@ -54,6 +55,7 @@ const way = () => (st.drift === 'exo' ? 'outward' : 'inward');
 // The story
 // ═══════════════════════════════════════════════════════════════
 // scene: what the eyes do. still = looking straight ahead (at a fixation stick held out toward us);
+// self = the visitor tries a cover test on themselves, looking at a red dot;
 // sleep = lids close, then an X-ray view shows both eyes at rest; wake = lids open and the eyes straighten;
 // saccades, mirror, reading = repeated jumps; nerve = the head in profile, with the trigeminal nerve drawn in
 // (nerve: what it shows, see nerves.js).
@@ -67,6 +69,8 @@ const STEPS = [
   { say: () => `See how it drifted ${way()}? This person is ${st.drift === 'exo' ? 'exophoric' : 'esophoric'}: their eyes rest slightly ${way()}.`, scene: 'still', rings: true, stick: true, paddle: true, need: 'peek' },
   { say: () => "Let's keep the paddle in X-ray mode to see what happens when we cover the other eye. Go ahead, move the paddle over the other eye.", scene: 'still', rings: true, stick: true, paddle: true, need: 'peek', task: 'other' },
   { say: () => `Now the eye that isn't being used has drifted ${way()}, and the other eye, which the brain is calling on again, has straightened out.`, scene: 'still', rings: true, stick: true, paddle: true, need: 'other' },
+  { say: () => 'Now try it on yourself. Look at the red dot and keep looking at it. Cover one eye with your hand, then quickly move your hand across to cover the other eye. Go back and forth a few times.', scene: 'self' },
+  { say: () => "Did the dot jump a little as you switched? If it did, you've just discovered that your eye's resting position, while it was behind your hand, wasn't exactly straight. When you uncovered it, your brain had to pull it back onto the dot. A small jump is common.", scene: 'self' },
   { say: () => "So when an eye isn't being used, it moves to its resting position. When you sleep and neither eye is being used, both go to their resting position.", scene: 'sleep' },
   { say: () => "But when both eyes are open and your brain is paying attention to both of them, they're straight again, lined up on the same target.", scene: 'wake', rings: true, stick: true },
   { say: () => "Here's what most people don't realize: when you make a fast eye movement, called a saccade, your brain briefly switches off the input from your eyes to avoid a smeared, jittery view, then switches it back on once you reach your target.", scene: 'saccades', slow: true, mag: 1, input: true, rings: true },
@@ -81,8 +85,16 @@ const STEPS = [
   { say: () => 'Those answers travel to the brain along the trigeminal nerve, the main sensory nerve of the face.', scene: 'nerve', nerve: 'route' },
   { say: () => 'The same nerve carries feeling from the forehead, the cheeks and the jaw, controls the chewing muscles, and supplies the covering of the brain. In the brainstem, it also meets the nerves from the back of the head and neck.', scene: 'nerve', nerve: 'map' },
   { say: () => 'Now picture reading. Every correction, after every word, sends another burst of signals along that nerve. Over a long stretch of reading, the nerve almost pulses with them.', scene: 'nerve', nerve: 'reading' },
-  { say: () => "Yet each eye weighs only about 7.5 grams, and the muscles that move it are far stronger than they need to be. They're built not to tire, with their own special kind of myosin, the protein that makes muscle contract, and a rich blood supply.", scene: 'nerve', nerve: 'weight' },
-  { say: () => "So it's probably not tired eye muscles. It's more like a bandwidth problem: their sensors keep flooding the brain, through the trigeminal nerve, with updates on where the eyes are. That constant traffic is thought to contribute to headaches, eye strain, jaw tension and neck pain. Read on to see how Neurolens can help.", scene: 'nerve', nerve: 'flood' },
+  { say: () => "Here's something surprising. Each eye weighs only about 7.5 grams, a little more than a toonie, and the muscles that move it are far stronger than they need to be to move something that light.", scene: 'nerve', nerve: 'weight' },
+  { say: () => "They're also built differently from other muscles: their own special kind of myosin (the protein that makes muscle contract), packed with energy-producing mitochondria, and a rich blood supply. That makes them very hard to tire. So when your eyes feel tired, it probably isn't the muscles giving out.", scene: 'nerve', nerve: 'built' },
+  { say: () => "What gets overloaded is the information. The sensors report each eye's position many times a second, all day long, and every correction adds a burst more. It's a constant stream of data, all of it funnelled into one nerve.", scene: 'nerve', nerve: 'stream' },
+  { say: () => "And that nerve isn't a private line. The trigeminal nerve also carries feeling from the forehead, face and jaw and from the covering of the brain, and it meets the neck nerves in the brainstem. They all share the same bandwidth.", scene: 'nerve', nerve: 'shared' },
+  { say: () => 'Think of your home internet. Video calls work fine, until someone starts a download that never stops; then everything on the connection starts to struggle. When the eyes rest out of line, their sensors can be that download.', scene: 'nerve', nerve: 'analogy' },
+  { say: () => 'When the trigeminal nerve has had too much, the brain is thought to start registering the overload as discomfort or pain, felt in the places this nerve looks after.', scene: 'nerve', nerve: 'overload' },
+  { say: () => 'That can mean headaches, often across the forehead or temples, and eye strain: eyes that feel tired, sore or dry by the end of the day.', scene: 'nerve', nerve: 'symHead' },
+  { say: () => 'It can mean jaw tension or clenching, through the chewing muscles this nerve controls.', scene: 'nerve', nerve: 'symJaw' },
+  { say: () => 'And it can mean neck and shoulder pain, because the trigeminal nerve meets the neck nerves at the top of the spinal cord.', scene: 'nerve', nerve: 'symNeck' },
+  { say: () => "That's the idea behind Neurolens: if the eyes need less correcting, there's less traffic on the trigeminal nerve, and less to set off these symptoms. Read on to see how it works.", scene: 'nerve', nerve: 'calm' },
 ];
 const step = () => STEPS[st.step];
 
@@ -221,7 +233,7 @@ function sideFrame(mode) {
   const W = stage.clientWidth, H = stage.clientHeight, story = $('story');
   const wide = stage.classList.contains('inside-wide');
   const left = wide ? story.offsetWidth : 0, top = wide ? 0 : story.offsetHeight;
-  const r = ROI[mode === 'sense' || mode === 'weight' ? 'eye' : 'full'];
+  const r = ROI[['sense', 'weight', 'built'].includes(mode) ? 'eye' : 'full'];
   const s = 0.94 * Math.min((W - left) / (r.z[1] - r.z[0]), (H - top) / (r.y[1] - r.y[0])); // pixels per head unit
   // Centre the region in the space the story leaves (the face looks left, so screen right is toward the back of the head)
   return { w: W / s, h: H / s, z: (r.z[0] + r.z[1]) / 2 + left / 2 / s, y: (r.y[0] + r.y[1]) / 2 + top / 2 / s };
@@ -430,6 +442,8 @@ function tick(now) {
   nerveT = side ? nerveT + dt : 0;
   nerveShow = side && turnK === 1 ? Math.min(1, nerveShow + dt / 0.45) : 0;
   if (side) active = true; // the signals keep moving
+  const selfGoal = step().scene === 'self' ? 1 : 0;
+  if (selfShow !== selfGoal) { selfShow = Math.abs(selfGoal - selfShow) < 0.01 ? selfGoal : selfShow + (selfGoal - selfShow) * (1 - Math.exp(-dt / 0.25)); active = true; }
   frameDt = dt;
   for (const e of EYES) {
     const goal = st.cover === e || (sleeping && sleepT > 0.5) || (waking && wakeT < 1.5) ? coveredOffset(posture()) : 0;
@@ -498,9 +512,14 @@ function draw() {
   xr.hidden = lids.xray < 0.02;
   Object.assign(xr.style, { top: `${geo.o.y - 0.42 * geo.u}px`, height: `${0.84 * geo.u}px`, opacity: lids.xray });
   // Inside the head: the trigeminal nerve over the profile, with the head dimmed behind it
-  const veil = $('veil');
-  veil.hidden = nerveShow < 0.01;
-  veil.style.opacity = nerveShow.toFixed(3);
+  const veil = $('veil'), veiled = Math.max(nerveShow, 0.85 * selfShow);
+  veil.hidden = veiled < 0.01;
+  veil.style.opacity = veiled.toFixed(3);
+  veil.classList.toggle('deep', selfShow > nerveShow); // for the red dot, dim the face right down
+  // The visitor's own cover test: a red dot to look at, in the space below the story
+  const dot = $('selfdot');
+  dot.hidden = selfShow < 0.01;
+  if (!dot.hidden) Object.assign(dot.style, { opacity: selfShow.toFixed(3), left: `${stage.clientWidth / 2}px`, top: `${(stage.clientHeight + $('story').offsetHeight) / 2}px` });
   if (nerveShow > 0) {
     const XP = 0.17; // the drawing lies in the plane of the near eye
     const project = ([z, y]) => head.projectXYZ(XP, y, z);

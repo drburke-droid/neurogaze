@@ -33,36 +33,53 @@ const TRUNK = [APEX, [-0.13, -0.03], GANGLION, PONS, [-0.34, -0.2], [-0.365, -0.
 const ROUTES = MUSCLES.map((m) => [m.sensors[0], ...TRUNK]);
 const SHORT = MUSCLES.map((m) => [m.sensors[1], m.from]); // sensor to the back of the socket
 
+// The main branches (also the paths that the face's own signals travel along)
+const V1_MAIN = [APEX, [0.06, 0.058], [0.17, 0.082], [0.235, 0.092], [0.272, 0.18], [0.238, 0.32], [0.15, 0.43], [0.02, 0.5]];
+const V2_MAIN = [[-0.215, -0.095], [-0.12, -0.078], [-0.04, -0.095], [0.08, -0.082], [0.18, -0.098], [0.25, -0.125]];
+const V3_MAIN = [[-0.2, -0.21], [-0.172, -0.3], [-0.12, -0.415], [-0.02, -0.478], [0.12, -0.5], [0.262, -0.52], [0.34, -0.55]];
+const MENING_MAIN = [[-0.214, -0.18], [-0.25, -0.12], [-0.245, 0.0], [-0.2, 0.18], [-0.13, 0.36], [-0.06, 0.45]];
+const C2_MAIN = [[-0.372, -0.4], [-0.47, -0.43], [-0.54, -0.36], [-0.62, -0.2], [-0.668, -0.03], [-0.65, 0.15], [-0.57, 0.32]];
+const DOWN = [PONS, [-0.34, -0.2], [-0.365, -0.33], JUNCTION]; // the trigeminal nucleus, down to the top of the spinal cord
+const rev = (a) => [...a].reverse();
+// Everything else the nerve carries, travelling in from the face, the covering of the brain and the neck
+const BRANCH_ROUTES = [
+  [...rev(V1_MAIN), ...TRUNK.slice(1)],
+  [...rev(V2_MAIN), ...DOWN],
+  [...rev(V3_MAIN), [-0.212, -0.17], GANGLION, ...DOWN],
+  [...rev(MENING_MAIN), GANGLION, ...DOWN],
+  [...rev(C2_MAIN), JUNCTION],
+];
+
 // Nerves: group, relative width, points
 const NERVES = [
   // Ophthalmic branch (V1): the eye, the forehead and the front of the scalp
   { g: 'route', w: 1.5, pts: [GANGLION, [-0.13, -0.03], APEX] },
-  { g: 'v1', w: 1, pts: [APEX, [0.06, 0.058], [0.17, 0.082], [0.235, 0.092], [0.272, 0.18], [0.238, 0.32], [0.15, 0.43], [0.02, 0.5]] },
+  { g: 'v1', w: 1, pts: V1_MAIN },
   { g: 'v1', w: 0.7, pts: [[0.235, 0.092], [0.255, 0.14], [0.212, 0.245], [0.13, 0.36], [0.0, 0.445]] },
   { g: 'v1', w: 0.55, pts: [[0.06, 0.058], [0.13, 0.05], [0.2, 0.035]] },
   // Maxillary branch (V2): the cheek, side of the nose, upper lip and upper teeth
-  { g: 'v2', w: 1.2, pts: [[-0.215, -0.095], [-0.12, -0.078], [-0.04, -0.095], [0.08, -0.082], [0.18, -0.098], [0.25, -0.125]] },
+  { g: 'v2', w: 1.2, pts: V2_MAIN },
   { g: 'v2', w: 0.7, pts: [[0.25, -0.125], [0.3, -0.105], [0.33, -0.12]] },
   { g: 'v2', w: 0.7, pts: [[0.25, -0.125], [0.31, -0.18], [0.345, -0.245]] },
   { g: 'v2', w: 0.7, pts: [[0.25, -0.125], [0.29, -0.24], [0.33, -0.33], [0.37, -0.37]] },
   { g: 'v2', w: 0.6, pts: [[-0.04, -0.095], [0.0, -0.2], [0.08, -0.31], [0.2, -0.345], [0.27, -0.35]] },
   // Mandibular branch (V3): the lower jaw, chin, lower lip, tongue, and the chewing muscles
   { g: 'v3', w: 1.4, pts: [[-0.225, -0.1], [-0.212, -0.17], [-0.2, -0.21]] },
-  { g: 'v3', w: 1, pts: [[-0.2, -0.21], [-0.172, -0.3], [-0.12, -0.415], [-0.02, -0.478], [0.12, -0.5], [0.262, -0.52], [0.34, -0.55]] },
+  { g: 'v3', w: 1, pts: V3_MAIN },
   { g: 'v3', w: 0.6, pts: [[0.262, -0.52], [0.31, -0.49], [0.37, -0.465]] },
   { g: 'v3', w: 0.6, pts: [[-0.2, -0.21], [-0.12, -0.33], [0.0, -0.405], [0.14, -0.42]] },
   { g: 'v3', w: 0.7, pts: [[-0.2, -0.21], [-0.14, -0.235], [-0.09, -0.3]] },
   { g: 'v3', w: 0.6, pts: [[-0.205, -0.2], [-0.27, -0.22], [-0.29, -0.13], [-0.27, 0.05], [-0.22, 0.24]] },
   // Branches to the covering of the brain (meninges)
-  { g: 'mening', w: 0.6, pts: [[-0.214, -0.18], [-0.25, -0.12], [-0.245, 0.0], [-0.2, 0.18], [-0.13, 0.36], [-0.06, 0.45]] },
+  { g: 'mening', w: 0.6, pts: MENING_MAIN },
   { g: 'mening', w: 0.45, pts: [[-0.245, 0.0], [-0.33, 0.12], [-0.43, 0.27], [-0.5, 0.37]] },
   { g: 'mening', w: 0.45, pts: [[-0.2, 0.18], [-0.29, 0.3], [-0.33, 0.42]] },
   { g: 'mening', w: 0.5, pts: [[-0.16, -0.045], [-0.3, -0.05], [-0.45, -0.04], [-0.6, -0.02]] },
   // Brainstem: the trigeminal nerve's root, and its long nucleus running down into the top of the spinal cord
   { g: 'route', w: 1.5, pts: [GANGLION, PONS] },
-  { g: 'route', w: 1, pts: [PONS, [-0.34, -0.2], [-0.365, -0.33], JUNCTION, [-0.37, -0.5]] },
+  { g: 'route', w: 1, pts: [...DOWN, [-0.37, -0.5]] },
   // Upper neck nerves (C2, C3): the back of the head and the neck muscles
-  { g: 'neck', w: 0.9, pts: [[-0.372, -0.4], [-0.47, -0.43], [-0.54, -0.36], [-0.62, -0.2], [-0.668, -0.03], [-0.65, 0.15], [-0.57, 0.32]] },
+  { g: 'neck', w: 0.9, pts: C2_MAIN },
   { g: 'neck', w: 0.7, pts: [[-0.372, -0.46], [-0.46, -0.49], [-0.5, -0.36], [-0.49, -0.2]] },
   { g: 'neck', w: 0.7, pts: [[-0.372, -0.52], [-0.46, -0.58], [-0.54, -0.68]] },
 ];
@@ -92,28 +109,44 @@ const FIBRES = {
 const NECK_MUSCLES = [[-0.44, -0.27], [-0.52, -0.2], [-0.58, -0.28], [-0.57, -0.45], [-0.555, -0.62], [-0.545, -0.8], [-0.54, -1.0], [-0.49, -1.05],
   [-0.455, -1.0], [-0.45, -0.8], [-0.445, -0.62], [-0.435, -0.45]];
 
-// Where symptoms are felt (glows) in the last step
+// Where symptoms are felt (glows), by area
 const GLOWS = [
-  { at: [0.12, 0.27], r: 0.14 },  // forehead and temple
-  { at: [0.17, 0.0], r: 0.09 },   // around the eye
-  { at: [-0.08, -0.33], r: 0.12 }, // jaw muscles
-  { at: [-0.52, -0.42], r: 0.13 }, // back of the neck
-  { at: [-0.4, 0.3], r: 0.14 },   // side of the head
+  { g: 'gHead', at: [0.12, 0.27], r: 0.14 },  // forehead and temple
+  { g: 'gHead', at: [-0.4, 0.3], r: 0.14 },   // side of the head
+  { g: 'gEye', at: [0.17, 0.0], r: 0.09 },    // around the eye
+  { g: 'gJaw', at: [-0.08, -0.33], r: 0.12 }, // jaw muscles
+  { g: 'gNeck', at: [-0.52, -0.42], r: 0.13 }, // back of the neck
 ];
 
 // ── What each step shows ────────────────────────────────────────
 // Intensity per part: 0 hidden, about .3 in the background, 1 lit
-const BASE = { brain: 0.45, mening: 0, eye: 0, route: 0, v1: 0, v2: 0, v3: 0, neck: 0, jaw: 0, glow: 0 };
+const BASE = { brain: 0.45, mening: 0, eye: 0, route: 0, v1: 0, v2: 0, v3: 0, neck: 0, jaw: 0, built: 0, gHead: 0, gEye: 0, gJaw: 0, gNeck: 0, meter: 0 };
+const BUSY = { eye: 0.8, route: 1, v1: 0.7, v2: 0.7, v3: 0.7, mening: 0.7, neck: 0.7, jaw: 0.3 };
 const REVEAL = [['v1', 0.4], ['v2', 1.1], ['v3', 1.8], ['jaw', 1.8], ['mening', 2.6], ['neck', 3.4]]; // the map step, seconds
 const MODES = {
   sense: { eye: 1, brain: 0.35 },
   route: { eye: 0.8, route: 1, brain: 0.4 },
   map: (t) => ({ eye: 0.55, route: 0.7, ...Object.fromEntries(REVEAL.map(([g, at]) => [g, t > at ? 1 : 0])) }),
   reading: { eye: 0.7, route: 0.8, v1: 0.35, v2: 0.35, v3: 0.35, mening: 0.35, neck: 0.35, jaw: 0.12 },
-  weight: { eye: 1, route: 0.3, v1: 0.2, v2: 0.2, v3: 0.2, mening: 0.2, neck: 0.2, brain: 0.3 },
   figure: { eye: 1, route: 1, v1: 1, v2: 1, v3: 1, jaw: 0.7, mening: 1, neck: 1, brain: 0.5 }, // the still diagram on the page
-  flood: { eye: 0.85, route: 1, v1: 0.6, v2: 0.5, v3: 0.7, mening: 0.8, neck: 0.8, jaw: 0.8, glow: 1 },
+  // The eye muscles, close up: light eyes, strong muscles that are built not to tire
+  weight: { eye: 1, route: 0.3, v1: 0.2, v2: 0.2, v3: 0.2, mening: 0.2, neck: 0.2, brain: 0.3 },
+  built: { eye: 1, route: 0.3, v1: 0.2, v2: 0.2, v3: 0.2, mening: 0.2, neck: 0.2, brain: 0.3, built: 1 },
+  // Bandwidth: a constant stream into one nerve that everything else shares (meter: how busy it is)
+  stream: { ...BUSY, v1: 0.3, v2: 0.3, v3: 0.3, mening: 0.3, neck: 0.3, meter: 0.62 },
+  shared: { ...BUSY, meter: 0.82 },
+  analogy: { ...BUSY, meter: 0.97 },
+  // Too much: felt in the places the nerve looks after, first all together, then one area at a time
+  overload: (t) => { const w = 0.75 * clamp((t - 0.6) / 2.5, 0, 1); return { ...BUSY, meter: 1, gHead: w, gEye: w, gJaw: w, gNeck: w }; },
+  symHead: { ...BUSY, v1: 1, meter: 1, gHead: 1, gEye: 1, gJaw: 0.15, gNeck: 0.15 },
+  symJaw: { ...BUSY, v3: 1, jaw: 0.9, meter: 1, gHead: 0.15, gEye: 0.15, gJaw: 1, gNeck: 0.15 },
+  symNeck: { ...BUSY, neck: 1, meter: 1, gHead: 0.15, gEye: 0.15, gJaw: 0.15, gNeck: 1 },
+  // Less correcting, less traffic
+  calm: { eye: 0.7, route: 0.6, v1: 0.35, v2: 0.35, v3: 0.35, mening: 0.35, neck: 0.35, jaw: 0.15, meter: 0.22 },
 };
+// Signals a second along the eye muscle routes, and along the face's own branches
+const RATES = { sense: 7, route: 6, map: 6, figure: 6, weight: 2, built: 2, stream: 30, shared: 30, analogy: 42, overload: 42, symHead: 34, symJaw: 34, symNeck: 34, calm: 4 };
+const BRANCH_RATES = { shared: 10, analogy: 10, overload: 10, symHead: 8, symJaw: 8, symNeck: 8 };
 const LABELS = {
   sense: [{ text: 'Eye muscles', at: [0.05, 0.075], side: 't' }, { text: 'Position sensors (proprioceptors)', at: [0.11, -0.06], side: 'b', hot: true }],
   route: [{ text: 'Trigeminal nerve', at: [-0.15, -0.04], side: 't', hot: true }, { text: 'Brainstem', at: [-0.355, -0.24], side: 'r' }],
@@ -124,16 +157,29 @@ const LABELS = {
     { text: 'Covering of the brain', at: [-0.5, 0.37], side: 'r', g: 'mening' },
     { text: 'Back of the head and neck', at: [-0.6, -0.45], side: 'r', g: 'neck' },
   ],
-  weight: [{ text: 'Each eye: about 7.5 grams', at: [0.22, 0.05], side: 'l', hot: true }, { text: 'Eye muscles: strong, built not to tire', at: [0.05, -0.08], side: 'b' }],
+  weight: [{ text: 'Each eye: about 7.5 grams', at: [0.22, 0.05], side: 'l', hot: true }, { text: 'Far stronger than they need to be', at: [0.05, -0.08], side: 'b' }],
+  built: [
+    { text: 'Their own special myosin', at: [0.05, 0.075], side: 't', g: 'built' },
+    { text: 'Packed with mitochondria', at: [0.05, -0.075], side: 'b', g: 'built' },
+    { text: 'Rich blood supply', at: [-0.045, 0.0], side: 'r', g: 'built' },
+  ],
+  stream: [{ text: 'Position updates, many times a second', at: [-0.13, -0.03], side: 't', hot: true }],
+  shared: [
+    { text: 'One shared nerve', at: [-0.2, -0.06], side: 't', hot: true },
+    { text: 'Forehead and eyes', at: [0.255, 0.3], side: 'l' },
+    { text: 'Face and jaw', at: [0.24, -0.53], side: 'l' },
+    { text: 'Covering of the brain', at: [-0.5, 0.37], side: 'r' },
+    { text: 'Back of the head and neck', at: [-0.6, -0.45], side: 'r' },
+  ],
+  analogy: [{ text: 'A download that never stops', at: [-0.13, -0.03], side: 't', hot: true }],
+  overload: [{ text: 'Too much', at: [-0.355, -0.24], side: 'r', sym: true }],
+  symHead: [{ text: 'Headaches', at: [0.12, 0.33], side: 'l', sym: true }, { text: 'Eye strain', at: [0.22, 0.0], side: 'l', sym: true }],
+  symJaw: [{ text: 'Jaw tension', at: [0.0, -0.36], side: 'l', sym: true }],
+  symNeck: [{ text: 'Neck and shoulder pain', at: [-0.56, -0.5], side: 'r', sym: true }],
+  calm: [{ text: 'Less to correct, less traffic', at: [-0.13, -0.03], side: 't', hot: true }],
   // Numbered for the still diagram, with a key beside it on the page
   figure: [[0.1, -0.075, 'b'], [-0.14, -0.035, 't'], [0.255, 0.3, 'l'], [0.33, -0.21, 'l'], [0.24, -0.53, 'l'], [-0.5, 0.37, 'r'], [-0.6, -0.45, 'r']]
     .map(([z, y, side], i) => ({ text: String(i + 1), at: [z, y], side, num: true })),
-  flood: [
-    { text: 'Headaches', at: [0.12, 0.33], side: 'l', sym: true },
-    { text: 'Eye strain', at: [0.22, 0.0], side: 'l', sym: true },
-    { text: 'Jaw tension', at: [0.0, -0.36], side: 'l', sym: true },
-    { text: 'Neck pain', at: [-0.56, -0.5], side: 'r', sym: true },
-  ],
 };
 
 // ── Drawing helpers ─────────────────────────────────────────────
@@ -164,7 +210,7 @@ function spindle(a, b, w, k) {
 /**
  * createNerves(svg, host) → overlay
  *   overlay.draw({ project, k, mode, t, dt, show })  project: [z, y] → stage pixels; k: pixels per head unit;
- *     mode: 'sense' | 'route' | 'map' | 'reading' | 'weight' | 'flood'; t: seconds into this step; show: 0..1
+ *     mode: a key of MODES, or 'reading'; t: seconds into this step; show: 0..1
  *   overlay.hide()
  */
 export function createNerves(svg, host) {
@@ -203,10 +249,16 @@ export function createNerves(svg, host) {
     cornea: el('path', { fill: 'none', stroke: '#5cff8a', 'stroke-width': 1.5 }, L.eye),
     muscles: MUSCLES.map((m) => ({ ...m, path: el('path', { fill: 'rgba(222, 82, 92, .72)', stroke: 'rgba(255, 160, 160, .8)', 'stroke-width': 0.8 }, L.eye) })),
     sensors: MUSCLES.flatMap((m) => m.sensors.map((at) => ({ at, e: el('circle', { fill: '#fff1b0', filter: 'url(#nv-glow)' }, L.eye) }))),
+    mito: el('g', {}, L.eye), // energy-producing mitochondria, scattered through the muscles
   };
-  // Hidden paths that the signals travel along
-  const routes = [...ROUTES, ...SHORT].map((pts, i) => ({ pts, short: i >= ROUTES.length, path: el('path', { fill: 'none', stroke: 'none' }, svg), len: 1 }));
-  const POOL = 90;
+  const mito = MUSCLES.flatMap((m) => Array.from({ length: 9 }, (_, i) => ({ m, t: 0.14 + 0.09 * i, side: (i % 2 ? 1 : -1) * (0.15 + 0.2 * ((i * 7) % 3) / 2), e: el('circle', { fill: '#ffb347' }, eye.mito) })));
+  // Hidden paths that the signals travel along: eye muscle sensors to the brainstem (eye), sensor to the back of
+  // the socket (short), the face's own branches in to the brainstem (branch), and blood along each eye muscle (blood)
+  const ROUTE_KINDS = { eye: { secs: 1.25, fill: '#fff6cf' }, short: { secs: 0.55, fill: '#fff6cf' }, branch: { secs: 1.7, fill: '#dcecff' }, blood: { secs: 0.8, fill: '#ff4d5e' } };
+  const route = (pts, kind) => ({ pts, kind, path: el('path', { fill: 'none', stroke: 'none' }, svg), len: 1 });
+  const routes = [...ROUTES.map((p) => route(p, 'eye')), ...SHORT.map((p) => route(p, 'short')), ...BRANCH_ROUTES.map((p) => route(p, 'branch')), ...MUSCLES.map((m) => route([m.from, m.to], 'blood'))];
+  const byKind = (kind) => routes.filter((r) => r.kind === kind);
+  const POOL = 140;
   const dots = Array.from({ length: POOL }, () => ({ e: el('circle', { fill: '#fff6cf', filter: 'url(#nv-glow)', r: 0 }, L.dots), on: false, s: 0, r: null, v: 1 }));
 
   // Labels (HTML, so they stay crisp and readable) and the reading clock
@@ -218,9 +270,14 @@ export function createNerves(svg, host) {
   clock.className = 'nv-clock';
   clock.hidden = true;
   host.appendChild(clock);
+  const meter = document.createElement('div');
+  meter.className = 'nv-meter';
+  meter.hidden = true;
+  meter.innerHTML = '<span>Trigeminal traffic</span><i><b></b></i>';
+  host.appendChild(meter);
 
   const level = { ...BASE };
-  let key = '', spawnDebt = 0, burstAt = 0, buzz = 0, readT = 0, lastMode = '';
+  let key = '', spawnDebt = 0, branchDebt = 0, bloodDebt = 0, burstAt = 0, buzz = 0, readT = 0, lastMode = '', flexed = 0;
   let proj = null, k = 1, W = 0, H = 0;
 
   function reshape() {
@@ -255,10 +312,20 @@ export function createNerves(svg, host) {
     eye.cornea.setAttribute('d', `M${arc(a0 - 0.95)}A${f(cr)},${f(cr)} 0 0 1 ${arc(a0 + 0.95)}`);
     eye.optic.setAttribute('d', smooth(P([[EYE[0] - EYE_R, -0.004], [0.03, -0.004], APEX])));
     eye.optic.setAttribute('stroke-width', f(0.02 * k));
-    for (const m of eye.muscles) m.path.setAttribute('d', spindle(proj(m.from), proj(m.to), m.w, k));
+    shapeMuscles(flexed);
     for (const s of eye.sensors) { const c = proj(s.at); s.e.setAttribute('cx', f(c.x)); s.e.setAttribute('cy', f(c.y)); }
+    for (const d of mito) {
+      const a = proj(d.m.from), b = proj(d.m.to), L2 = Math.hypot(b.x - a.x, b.y - a.y) || 1, w = d.m.w[1] * k * d.side;
+      d.e.setAttribute('cx', f(a.x + (b.x - a.x) * d.t - ((b.y - a.y) / L2) * w)); d.e.setAttribute('cy', f(a.y + (b.y - a.y) * d.t + ((b.x - a.x) / L2) * w));
+      d.e.setAttribute('r', f(clamp(0.0035 * k, 1, 3.2)));
+    }
     for (const r of routes) { r.path.setAttribute('d', smooth(P(r.pts))); r.len = r.path.getTotalLength(); }
     for (const [, lab] of labels) place(lab);
+  }
+
+  // The eye muscles; flex (0..1) thickens their bellies as they contract
+  function shapeMuscles(flex) {
+    for (const m of eye.muscles) m.path.setAttribute('d', spindle(proj(m.from), proj(m.to), [m.w[0], m.w[1] * (1 + 0.28 * flex), m.w[2]], k));
   }
 
   function place(lab) {
@@ -293,7 +360,9 @@ export function createNerves(svg, host) {
     const d = dots.find((p) => !p.on);
     if (!d) return;
     Object.assign(d, { on: true, s: 0, r: route, v });
+    d.e.setAttribute('fill', ROUTE_KINDS[route.kind].fill);
   }
+  const pickOf = (list) => list[Math.floor(Math.random() * list.length)];
 
   return {
     draw({ project, k: scale, mode, t, dt, show }) {
@@ -312,11 +381,8 @@ export function createNerves(svg, host) {
       for (const g of Object.keys(level)) level[g] += (goal[g] - level[g]) * (1 - Math.exp(-dt / 0.25));
 
       // Signals: a steady stream, bursts with every word while reading, or a flood
-      let rate = 0;
-      if (mode === 'sense') rate = 7;
-      if (mode === 'route' || mode === 'map' || mode === 'figure') rate = 6;
-      if (mode === 'weight') rate = 2;
-      if (mode === 'flood') rate = 42;
+      let rate = RATES[mode] || 0;
+      const busy = rate >= 30;
       let clockText = '';
       if (mode === 'reading') {
         // Real time for the first few words, then a time-lapse to an hour of reading (150 words a minute)
@@ -329,7 +395,7 @@ export function createNerves(svg, host) {
           while (burstAt <= 0) {
             burstAt += Math.max(0.4 / lapse, 1 / 30); // one burst of signals per word
             buzz = Math.min(1.6, buzz + 0.6);
-            for (const r of routes.slice(0, 3)) if (Math.random() < 0.8) spawn(r, 1);
+            for (const r of byKind('eye')) if (Math.random() < 0.8) spawn(r, 1);
           }
         } else {
           // After a long stretch of reading the signals arrive in waves: the nerve almost pulses
@@ -342,29 +408,43 @@ export function createNerves(svg, host) {
       }
       buzz *= Math.exp(-dt / 0.18);
       spawnDebt += rate * dt;
-      while (spawnDebt >= 1) {
-        spawnDebt -= 1;
-        const pick = mode === 'sense' ? routes.slice(3) : routes.slice(0, 3);
-        spawn(pick[Math.floor(Math.random() * pick.length)], mode === 'flood' ? 1.4 : 1);
-      }
+      for (; spawnDebt >= 1; spawnDebt -= 1) spawn(pickOf(byKind(mode === 'sense' ? 'short' : 'eye')), busy ? 1.3 : 1);
+      branchDebt += (BRANCH_RATES[mode] || 0) * dt;
+      for (; branchDebt >= 1; branchDebt -= 1) spawn(pickOf(byKind('branch')), 1);
+      bloodDebt += (mode === 'built' ? 14 : 0) * dt;
+      for (; bloodDebt >= 1; bloodDebt -= 1) spawn(pickOf(byKind('blood')), 0.8 + 0.4 * Math.random());
       clock.hidden = !clockText;
       if (clockText && clock.innerHTML !== clockText) clock.innerHTML = clockText;
+
+      // How busy the nerve is
+      meter.hidden = !(goal.meter > 0 || level.meter > 0.02);
+      if (!meter.hidden) {
+        const v = clamp(level.meter * (busy ? 0.97 + 0.03 * Math.sin(t * 23) : 1), 0, 1);
+        const bar = meter.querySelector('b');
+        bar.style.width = `${(100 * v).toFixed(1)}%`;
+        bar.style.background = v > 0.85 ? '#ff6a4d' : v > 0.55 ? '#ffcf5a' : '#2bd47a';
+      }
+
+      // The eye muscles flex easily: they are far stronger than they need to be
+      const flex = mode === 'weight' ? Math.sin(t * 2.4) ** 2 : 0;
+      if (Math.abs(flex - flexed) > 0.002) { flexed = flex; shapeMuscles(flex); }
 
       // Apply
       const vis = (e, v) => { e.style.opacity = v.toFixed(3); e.style.display = v < 0.01 ? 'none' : ''; };
       const pulse = 0.5 + 0.5 * Math.sin(t * 6);
       vis(L.brain, level.brain + 0.25 * level.mening);
       brain.dura.setAttribute('stroke', level.mening > 0.05 ? TRIG : 'rgba(255, 235, 240, .45)');
-      brain.dura.setAttribute('stroke-width', f(1 + 1.6 * level.mening + 1.5 * level.glow * pulse));
+      brain.dura.setAttribute('stroke-width', f(1 + 1.6 * level.mening + 1.5 * level.gHead * pulse));
       vis(L.jaw, level.jaw); vis(L.neckm, Math.max(level.neck, level.jaw) * 0.6);
-      vis(L.glow, level.glow * (0.55 + 0.45 * pulse));
+      for (const g of glows) vis(g.e, level[g.g] * (0.55 + 0.45 * pulse));
+      vis(eye.mito, level.built);
       vis(L.stem, Math.max(level.route, level.neck, 0.15 * level.brain));
       for (const g of Object.keys(groups)) vis(groups[g], g === 'route' ? Math.min(1, level.route + 0.45 * buzz) : level[g]);
-      ganglion.setAttribute('filter', buzz > 0.3 ? 'url(#nv-glow)' : '');
+      ganglion.setAttribute('filter', buzz > 0.3 || busy ? 'url(#nv-glow)' : '');
       junction.setAttribute('r', f(clamp((0.02 + 0.012 * pulse) * k, 4, 14)));
       vis(junction, level.neck);
       vis(L.eye, Math.max(level.eye, 0.25 * level.route));
-      const blink = mode === 'sense' || mode === 'flood' ? 0.5 + 0.5 * Math.sin(t * 9) : 0.6;
+      const blink = mode === 'sense' || busy ? 0.5 + 0.5 * Math.sin(t * 9) : 0.6;
       for (const [i, s] of eye.sensors.entries()) s.e.setAttribute('r', f(clamp((0.006 + 0.004 * (i % 2 ? 1 - blink : blink)) * k, 1.5, 7)));
       for (const [, lab] of labels) {
         const v = lab.g ? level[lab.g] : 1;
@@ -372,20 +452,21 @@ export function createNerves(svg, host) {
       }
 
       // Move the signals
-      const speed = mode === 'flood' ? 1.7 : 1;
+      const speed = busy ? 1.4 : 1;
       for (const d of dots) {
         if (!d.on) { if (d.e.getAttribute('r') !== '0') d.e.setAttribute('r', 0); continue; }
-        d.s += (dt * speed * d.v) / (d.r.short ? 0.55 : 1.25);
+        const kind = d.r.kind;
+        d.s += (dt * speed * d.v) / ROUTE_KINDS[kind].secs;
         if (d.s >= 1) { d.on = false; d.e.setAttribute('r', 0); continue; }
         const p = d.r.path.getPointAtLength(d.s * d.r.len);
         d.e.setAttribute('cx', f(p.x)); d.e.setAttribute('cy', f(p.y));
-        const fade = d.r.short ? 1 - d.s : d.s > 0.9 ? (1 - d.s) * 10 : 1;
-        d.e.setAttribute('r', f(clamp(0.011 * k, 1.4, 5) * (0.4 + 0.6 * fade)));
+        const fade = kind === 'short' ? 1 - d.s : d.s > 0.9 ? (1 - d.s) * 10 : d.s < 0.1 ? d.s * 10 : 1;
+        d.e.setAttribute('r', f(clamp((kind === 'blood' ? 0.006 : 0.011) * k, 1.2, 5) * (0.4 + 0.6 * fade)));
       }
     },
     hide() {
       svg.toggleAttribute('hidden', true);
-      labelBox.hidden = clock.hidden = true;
+      labelBox.hidden = clock.hidden = meter.hidden = true;
       lastMode = '';
       for (const d of dots) { d.on = false; d.e.setAttribute('r', 0); }
       Object.assign(level, BASE);
