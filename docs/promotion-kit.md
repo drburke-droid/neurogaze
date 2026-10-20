@@ -3,12 +3,12 @@
 Everything here is ready to paste into Squarespace or send.
 The goal is a simulator that Google and interested visitors can find, without putting it in front of patients who don't care.
 
-**The plan in one line:** give the simulator a real, text-rich page at `calgaryvisioncentre.com/gaze`, add five short condition pages that each open the simulator on a case, link to them quietly from relevant places, tell Google, and ask a few education sites to link to it.
+**The plan in one line:** give the simulator a real, text-rich page at `calgaryvisioncentre.com/gaze`, add seven short condition pages that each open the simulator on a case, link to them quietly from relevant places, tell Google, and ask a few education sites to link to it.
 
 ## Checklist
 
 1. Update the main page at `/gaze`: page text, search settings, social image, structured data (section 1).
-2. Add five condition pages (section 2). Put them in the **Not Linked** area of the Pages panel. They stay public and searchable but stay out of your menu.
+2. Add seven condition pages (section 2). If you already made the first five, add the two pupil pages (2f and 2g). Put them in the **Not Linked** area of the Pages panel. They stay public and searchable but stay out of your menu.
 3. Add quiet links: footer, About Me, related service pages, and point the Vision Science Lab link at `/gaze` (section 3).
 4. Submit the pages in Google Search Console (section 4).
 5. Send the outreach messages (section 5).
@@ -61,7 +61,7 @@ This replaces your current code block. On the main page leave `START` empty. On 
 | Page title (navigation) | Gaze Simulator |
 | URL slug | gaze |
 | SEO title | Eye Movement & Cranial Nerve Palsy Simulator · Calgary Vision Centre |
-| SEO description | Free 3D simulator of the extraocular muscles and cranial nerves III, IV and VI. See sixth, fourth and third nerve palsy, INO and thyroid eye disease in the nine positions of gaze. |
+| SEO description | Free 3D simulator of the eye muscles, cranial nerves III, IV and VI, and the pupils. See nerve palsies, INO and thyroid eye disease, and run the swinging flashlight test. |
 | Social image | Upload `og-image.jpg` from the repository (download link below) |
 
 Download: `https://drburke-droid.github.io/neurogaze/og-image.jpg`
@@ -72,7 +72,7 @@ Put a **Text block** above the code block with this:
 
 > # Interactive Gaze Simulator
 >
-> A free 3D teaching model of how the eyes move, created by Dr Robert Burke, optometrist at Calgary Vision Centre. Move the target and watch both eyes follow, then apply a sixth, fourth or third nerve palsy, internuclear ophthalmoplegia, thyroid eye disease or another eye-movement disorder and see how the eyes behave in each direction of gaze.
+> A free 3D teaching model of how the eyes move, created by Dr Robert Burke, optometrist at Calgary Vision Centre. Move the target and watch both eyes follow, then apply a sixth, fourth or third nerve palsy, internuclear ophthalmoplegia, thyroid eye disease or another eye-movement disorder and see how the eyes behave in each direction of gaze. You can also examine the pupils with a penlight: run the swinging flashlight test, and see Horner syndrome, an Adie pupil and other causes of unequal pupils.
 >
 > There are two modes. The **Simulator** lets you explore a condition. The **Motility chart** works the other way round: record where each eye pointed in the nine positions of gaze and it suggests which conditions best fit.
 
@@ -90,6 +90,7 @@ Then a **Text block** below the simulator:
 > - Pick a condition and the affected side. Each one has a short teaching card with the signs and the red flags.
 > - Click the face to lock the gaze; press and hold the face to compare with a healthy patient.
 > - Switch the fixing eye to see the larger secondary deviation, or switch to a near target to see convergence.
+> - Use the pupil exam under the face: dim the room, shine the penlight into either eye, swing it between the eyes, or add diagnostic drops. Pupil cases have a **Run the key test** button that walks through the exam.
 > - Every case has its own link, so you can share exactly what you are looking at.
 >
 > ## Conditions
@@ -99,11 +100,13 @@ Then a **Text block** below the simulator:
 > - [Third nerve palsy](/third-nerve-palsy-simulator): ptosis, a dilated pupil and an eye that rests down and out.
 > - [Internuclear ophthalmoplegia](/internuclear-ophthalmoplegia-simulator): one eye fails to adduct on side gaze.
 > - [Thyroid eye disease](/thyroid-eye-disease-eye-movements): tight muscles limit elevation and abduction.
-> - Also in the simulator: orbital floor fracture, Brown syndrome, Duane syndrome, cavernous sinus syndrome, myasthenia gravis, Miller Fisher syndrome and skew deviation.
+> - [Horner syndrome](/horner-syndrome-simulator): a small pupil and mild ptosis, clearest in dim light.
+> - [Swinging flashlight test (RAPD)](/swinging-flashlight-test-rapd): both pupils dilate when the light reaches the affected eye.
+> - Also in the simulator: orbital floor fracture, Brown syndrome, Duane syndrome, cavernous sinus syndrome, myasthenia gravis, Miller Fisher syndrome, skew deviation, Adie tonic pupil, Argyll Robertson pupils, pharmacological dilation and physiological anisocoria.
 >
 > ## About the model
 >
-> This is a qualitative teaching model, not a biomechanical simulation. It keeps eye movements within normal ranges, separates weak muscles from tight ones, and applies Hering's law through the fixing eye. It does not model pupil light reactions, torsion or head tilt.
+> This is a qualitative teaching model, not a biomechanical simulation. It keeps eye movements within normal ranges, separates weak muscles from tight ones, and applies Hering's law through the fixing eye. The pupils have their own model of the light and near reflexes. It does not model torsion or head tilt.
 >
 > *Educational use only. This simulator does not examine anyone's eyes and is not a diagnostic tool. New double vision, a drooping eyelid, a change in pupil size, or eye-movement problems with headache, weakness or dizziness need urgent medical assessment.*
 
@@ -117,14 +120,14 @@ Then a **Text block** below the simulator:
   "name": "Interactive Gaze Simulator",
   "url": "https://calgaryvisioncentre.com/gaze",
   "image": "https://drburke-droid.github.io/neurogaze/og-image.jpg",
-  "description": "Free interactive 3D teaching model of the extraocular muscles and cranial nerves III, IV and VI, showing nerve palsies, INO, restrictive and supranuclear disorders in the nine diagnostic positions of gaze.",
+  "description": "Free interactive 3D teaching model of the extraocular muscles, cranial nerves III, IV and VI, and the pupils, showing nerve palsies, INO, restrictive and supranuclear disorders in the nine diagnostic positions of gaze, and a pupil exam with the swinging flashlight test.",
   "applicationCategory": "EducationalApplication",
   "operatingSystem": "Any (web browser)",
   "isAccessibleForFree": true,
   "inLanguage": "en",
   "educationalLevel": "Optometry, ophthalmology and neurology students and clinicians",
   "learningResourceType": "Simulation",
-  "teaches": ["Extraocular muscle actions", "Cranial nerve palsies", "Diagnostic positions of gaze", "Hering's law"],
+  "teaches": ["Extraocular muscle actions", "Cranial nerve palsies", "Diagnostic positions of gaze", "Hering's law", "Pupillary light reflex", "Swinging flashlight test", "Anisocoria"],
   "author": {
     "@type": "Person",
     "name": "Dr Robert Burke",
@@ -137,7 +140,7 @@ Then a **Text block** below the simulator:
 
 ---
 
-## 2. Five condition pages
+## 2. Seven condition pages
 
 Create each as a new page in the **Not Linked** section. Each page has three parts:
 - a Text block with the copy;
@@ -148,7 +151,9 @@ Upload the matching social image from `https://drburke-droid.github.io/neurogaze
 
 Use the closing block on every condition page:
 
-> [Open the full simulator](/gaze) · [Sixth](/sixth-nerve-palsy-simulator) · [Fourth](/fourth-nerve-palsy-simulator) · [Third](/third-nerve-palsy-simulator) · [INO](/internuclear-ophthalmoplegia-simulator) · [Thyroid eye disease](/thyroid-eye-disease-eye-movements)
+> [Open the full simulator](/gaze) · [Sixth](/sixth-nerve-palsy-simulator) · [Fourth](/fourth-nerve-palsy-simulator) · [Third](/third-nerve-palsy-simulator) · [INO](/internuclear-ophthalmoplegia-simulator) · [Thyroid eye disease](/thyroid-eye-disease-eye-movements) · [Horner syndrome](/horner-syndrome-simulator) · [Swinging flashlight test](/swinging-flashlight-test-rapd)
+>
+> If you already published the first five pages, add the last two links to their closing blocks too.
 >
 > *Educational simulation by Dr Robert Burke, optometrist, Calgary Vision Centre. Not a diagnostic tool. If you have new double vision or a drooping eyelid, see an eye doctor promptly.*
 
@@ -242,6 +247,42 @@ Use the closing block on every condition page:
 >
 > **Red flag:** reduced vision, faded colours or a relative afferent pupillary defect can mean the optic nerve is being compressed, which is an emergency.
 
+### 2f. Horner syndrome
+
+| Field | Paste this |
+|---|---|
+| URL slug | horner-syndrome-simulator |
+| SEO title | Horner Syndrome Simulator: Miosis, Ptosis and Dilation Lag in 3D |
+| SEO description | See Horner syndrome in 3D: a small pupil and mild ptosis, anisocoria worse in dim light, dilation lag, and reversal with apraclonidine. Free teaching simulator. |
+| Social image | `horner-syndrome.jpg` |
+| `START` | `#case=horner&side=R` |
+
+> # Horner syndrome simulator
+>
+> Horner syndrome comes from a break anywhere along the sympathetic pathway to the eye, which runs from the brain down into the chest and back up along the carotid artery. The iris dilator and a small muscle that helps lift the upper lid both weaken. The result is a smaller pupil and a mild droop of the upper lid on the same side. The difference between the pupils is largest in dim light, and the small pupil is slow to dilate when the lights go down.
+>
+> The simulator below opens on a right Horner syndrome in a dim room. Press **Run the key test** to watch the dilation lag and the effect of apraclonidine drops, or switch the room light between bright and dim.
+>
+> **Red flag:** a new, painful Horner syndrome is treated as a carotid artery dissection until proven otherwise and needs same-day imaging. Other causes include a tumour at the top of the lung, neck or chest surgery, and stroke.
+
+### 2g. Swinging flashlight test (RAPD)
+
+| Field | Paste this |
+|---|---|
+| URL slug | swinging-flashlight-test-rapd |
+| SEO title | Swinging Flashlight Test Simulator: Relative Afferent Pupillary Defect (RAPD) |
+| SEO description | Practise the swinging flashlight test in 3D: see how an optic nerve problem makes both pupils dilate when the light reaches the affected eye. Free teaching simulator. |
+| Social image | `relative-afferent-pupillary-defect.jpg` |
+| `START` | `#case=rapd&side=L` |
+
+> # Swinging flashlight test: relative afferent pupillary defect (RAPD)
+>
+> Light shone into either eye makes both pupils constrict, because each pupil is driven by the light signal from both eyes. When one optic nerve is damaged, that eye sends a weaker signal. The pupils stay equal in size, but in the swinging flashlight test both pupils dilate when the light moves from the healthy eye to the affected one. This is a relative afferent pupillary defect, or RAPD.
+>
+> The simulator below opens on a left RAPD with the swinging flashlight test running in a dim room. Watch both pupils widen each time the light reaches the left eye. Press **Run the key test** for a step-by-step version with captions.
+>
+> **Causes clinicians consider:** optic neuritis, ischaemic optic neuropathy (including giant cell arteritis in older adults), compression of the optic nerve, severe glaucoma in one eye, and large retinal detachments or vascular occlusions. A new RAPD with vision loss needs same-day assessment.
+
 ---
 
 ## 3. Quiet links
@@ -275,6 +316,8 @@ Use the closing block on every condition page:
    - `/third-nerve-palsy-simulator`
    - `/internuclear-ophthalmoplegia-simulator`
    - `/thyroid-eye-disease-eye-movements`
+   - `/horner-syndrome-simulator`
+   - `/swinging-flashlight-test-rapd`
 4. After a few weeks, open **Performance → Search results** to see which searches bring people in. That tells you which condition page to add next.
 
 ---
@@ -291,7 +334,7 @@ Send it to the course coordinator for ocular motility or binocular vision, or th
 >
 > Dear Dr ___,
 >
-> I'm an optometrist at Calgary Vision Centre and I've built a free, browser-based 3D simulator of the extraocular muscles and cranial nerves III, IV and VI. Students can move the target through the nine diagnostic positions and see sixth, fourth and third nerve palsies, INO, thyroid eye disease, Brown and Duane syndrome, with Hering's law, ptosis and pupil involvement shown. A second mode lets them chart a motility exam and see which conditions fit.
+> I'm an optometrist at Calgary Vision Centre and I've built a free, browser-based 3D simulator of the extraocular muscles and cranial nerves III, IV and VI. Students can move the target through the nine diagnostic positions and see sixth, fourth and third nerve palsies, INO, thyroid eye disease, Brown and Duane syndrome, with Hering's law and ptosis shown. A pupil exam covers the light and near reflexes, the swinging flashlight test and diagnostic drops, with RAPD, Horner syndrome, Adie pupil and Argyll Robertson pupils. A second mode lets them chart a motility exam and see which conditions fit.
 >
 > Each case has its own link, so it can be dropped into lecture slides or an LMS. For example, this opens a right sixth nerve palsy: https://calgaryvisioncentre.com/gaze#case=cn6&side=R&gaze=4
 >
@@ -303,7 +346,7 @@ Send it to the course coordinator for ocular motility or binocular vision, or th
 
 ### Note for professional associations (newsletter or member resources)
 
-> Calgary optometrist Dr Robert Burke has released a free 3D simulator of eye movements and cranial nerve palsies for students and clinicians. It shows sixth, fourth and third nerve palsies, INO and thyroid eye disease in the nine positions of gaze, and can suggest likely diagnoses from a charted motility exam. Try it at calgaryvisioncentre.com/gaze.
+> Calgary optometrist Dr Robert Burke has released a free 3D simulator of eye movements and cranial nerve palsies for students and clinicians. It shows sixth, fourth and third nerve palsies, INO and thyroid eye disease in the nine positions of gaze, includes a pupil exam with the swinging flashlight test, and can suggest likely diagnoses from a charted motility exam. Try it at calgaryvisioncentre.com/gaze.
 
 ### Reddit (r/optometry, r/Ophthalmology, r/medicalschool)
 
@@ -311,13 +354,13 @@ Check each subreddit's self-promotion rules first, and post as yourself.
 
 > **Title:** I made a free 3D simulator for learning cranial nerve palsies and the nine positions of gaze
 >
-> Optometrist here. I built this to teach EOM actions and CN III/IV/VI palsies: you move the target and watch both eyes, switch the fixing eye to see secondary deviation, and there's a "motility chart" mode where you drag each eye to match an exam and it suggests what fits. Ptosis and pupil are shown for third nerve palsy. It's free and runs in the browser: calgaryvisioncentre.com/gaze
+> Optometrist here. I built this to teach EOM actions and CN III/IV/VI palsies: you move the target and watch both eyes, switch the fixing eye to see secondary deviation, and there's a "motility chart" mode where you drag each eye to match an exam and it suggests what fits. There's also a pupil exam: penlight, swinging flashlight test, bright and dim room for anisocoria (Horner vs Adie vs CN III), near response, and pilocarpine and apraclonidine drops. It's free and runs in the browser: calgaryvisioncentre.com/gaze
 >
 > Feedback and corrections very welcome. It's a teaching model, so I'd love to hear where it doesn't match what you see clinically.
 
 ### LinkedIn, Facebook or Instagram
 
-> Students and colleagues: I've built a free 3D eye-movement simulator. Pick a cranial nerve palsy, move the target, and watch both eyes respond in all nine positions of gaze, or chart an exam and see which conditions fit. Try it: calgaryvisioncentre.com/gaze
+> Students and colleagues: I've built a free 3D eye-movement simulator. Pick a cranial nerve palsy, move the target, and watch both eyes respond in all nine positions of gaze, run a swinging flashlight test, or chart an exam and see which conditions fit. Try it: calgaryvisioncentre.com/gaze
 > #optometry #ophthalmology #neuroophthalmology #meded
 
 Attach one of the share images. They make a strong post image.
@@ -343,7 +386,7 @@ Lab page settings:
 | Field | Paste this |
 |---|---|
 | SEO title | Visual Systems Lab: Free Interactive Vision Science Tools · Calgary Vision Centre |
-| SEO description | 13 free interactive vision science tools by Dr Robert Burke: eye movement and cranial nerve simulator, contact lens and IOL simulators, contrast sensitivity, myopia risk and glaucoma vision. |
+| SEO description | 13 free interactive vision science tools by Dr Robert Burke: eye movement, pupil and cranial nerve simulator, contact lens and IOL simulators, contrast sensitivity, myopia risk and glaucoma vision. |
 
 ---
 

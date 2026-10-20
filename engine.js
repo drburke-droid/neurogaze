@@ -18,6 +18,8 @@
 //   gaze V     degrees, + = up
 //   per-eye h  degrees, + = abduction (temporal), − = adduction (nasal)
 
+import { normalPupil } from './pupil.js';
+
 export const MUSCLES = ['LR', 'MR', 'SR', 'IR', 'SO', 'IO'];
 export const EYES = ['R', 'L'];
 export const NERVE_OF = { LR: 6, MR: 3, SR: 3, IR: 3, IO: 3, SO: 4 };
@@ -45,7 +47,7 @@ export function defaultState() {
     duane: { R: 0, L: 0 },     // Duane type I: no abduction, retraction on adduction
     fatigue: null,             // myasthenia: { severity, f: { R: {...}, L: {...} } }
     lid: { R: 0, L: 0 },       // ptosis: 0 none … 1 complete
-    pupil: { R: 1, L: 1 },     // pupil size relative to normal: 2 dilated, 0.55 small
+    pupil: { R: normalPupil(), L: normalPupil() }, // pupil pathways (see pupil.js)
   };
 }
 
@@ -218,8 +220,6 @@ export function lidDroop(state, eye) {
   if (state.fatigue) p += 0.6 * Math.max(state.fatigue.f[eye].SR, state.fatigue.f[eye].IO);
   return Math.min(1, p);
 }
-
-export const PUPIL = { normal: 1, dilated: 2, small: 0.55 };
 
 export const prism = (deg) => Math.round(100 * Math.tan((Math.abs(deg) * Math.PI) / 180));
 

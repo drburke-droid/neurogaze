@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Interactive Gaze Simulator: Cranial Nerve Palsies and Eye Movement Disorders</title>
-  <meta name="description" content="Free interactive 3D simulator of the six extraocular muscles and cranial nerves III, IV and VI. Explore sixth, fourth and third nerve palsy, INO, thyroid eye disease, Brown and Duane syndrome in the nine diagnostic positions of gaze. Created by Dr Robert Burke, optometrist.">
+  <title>Interactive Gaze Simulator: Cranial Nerve Palsies, Eye Movements and Pupils</title>
+  <meta name="description" content="Free interactive 3D simulator of the extraocular muscles, cranial nerves III, IV and VI, and the pupils. Explore sixth, fourth and third nerve palsy, INO and thyroid eye disease in the nine positions of gaze, and test the pupils for an RAPD, Horner syndrome or an Adie pupil. Created by Dr Robert Burke, optometrist.">
   <meta name="author" content="Dr Robert Burke">
   <meta name="theme-color" content="#0b0d12">
   <!-- Canonical home is the clinic page that embeds the simulator; the preview image is served from GitHub Pages -->
@@ -14,7 +14,7 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Calgary Vision Centre">
   <meta property="og:title" content="Interactive Gaze Simulator: see a cranial nerve palsy in 3D">
-  <meta property="og:description" content="Move the target and watch each extraocular muscle work. Apply a sixth nerve palsy, INO, thyroid eye disease and more. Free, in the browser.">
+  <meta property="og:description" content="Move the target and watch each extraocular muscle work. Apply a sixth nerve palsy, INO, thyroid eye disease and more, or run the swinging flashlight test. Free, in the browser.">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="3D face with a right sixth nerve palsy: the right eye cannot turn outward when looking right.">
@@ -30,14 +30,14 @@
     "name": "Interactive Gaze Simulator",
     "url": "https://calgaryvisioncentre.com/gaze",
     "image": "https://drburke-droid.github.io/neurogaze/og-image.jpg",
-    "description": "Interactive 3D teaching model of the extraocular muscles and cranial nerves III, IV and VI, with nerve palsies, INO, restrictive and supranuclear disorders shown in the nine diagnostic positions of gaze.",
+    "description": "Interactive 3D teaching model of the extraocular muscles, cranial nerves III, IV and VI, and the pupils, with nerve palsies, INO, restrictive and supranuclear disorders shown in the nine diagnostic positions of gaze, and a pupil exam (light reflex, swinging flashlight test, near response and diagnostic drops) for RAPD, Horner syndrome, Adie tonic pupil, Argyll Robertson pupils and pharmacological dilation.",
     "applicationCategory": "EducationalApplication",
     "operatingSystem": "Any (web browser with WebGL)",
     "isAccessibleForFree": true,
     "inLanguage": "en",
     "educationalLevel": "Professional and student (optometry, ophthalmology, neurology)",
     "learningResourceType": "Simulation",
-    "teaches": ["Extraocular muscle actions", "Cranial nerve palsies", "Diagnostic positions of gaze", "Hering's law"],
+    "teaches": ["Extraocular muscle actions", "Cranial nerve palsies", "Diagnostic positions of gaze", "Hering's law", "Pupillary light reflex", "Swinging flashlight test", "Anisocoria"],
     "author": { "@type": "Person", "name": "Dr Robert Burke", "jobTitle": "Optometrist", "affiliation": { "@type": "Organization", "name": "Calgary Vision Centre", "url": "https://calgaryvisioncentre.com/" } },
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CAD" }
   }
@@ -101,6 +101,9 @@
     .case-btn .sub { display: none; }
     .case-select { display: none; width: 100%; min-height: 42px; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font: inherit; font-weight: 600; }
     .cases-label { display: none; font-size: 12px; color: var(--muted); }
+    #case-list { flex-direction: column; align-items: flex-start; }
+    .case-group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .case-group .group-label { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
     .side-row { display: inline-flex; align-items: center; gap: 8px; margin-left: 6px; }
     .side-row[hidden] { display: none; }
     .side-row .label { color: var(--muted); font-size: 13px; }
@@ -129,6 +132,13 @@
     #target { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 2px rgba(0,0,0,.6), 0 0 12px rgba(255, 244, 224, .9); background: rgba(255, 244, 224, .9); pointer-events: none; }
     .loader { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: var(--muted); padding: 20px; }
     .loader[hidden] { display: none; }
+    .stage.dim { background: radial-gradient(ellipse at 50% 40%, #0d0f15 0%, #050608 70%); }
+    .pupil-chip { bottom: 52px; left: 12px; font-family: var(--mono); font-size: 13px; }
+    .pupil-chip[hidden], .exam-caption[hidden], .penlight[hidden] { display: none; }
+    .exam-caption { top: 64px; left: 50%; transform: translateX(-50%); width: max-content; max-width: min(560px, calc(100% - 24px)); text-align: center; border-color: var(--accent); font-weight: 600; line-height: 1.35; }
+    .exam-caption .n { color: var(--accent); margin-right: 6px; }
+    .penlight { position: absolute; width: 12px; height: 46px; margin-left: -6px; border-radius: 3px; background: linear-gradient(90deg, #5d636e, #d7dbe2 45%, #5d636e); box-shadow: 0 2px 6px rgba(0, 0, 0, .6); pointer-events: none; transition: left .3s ease, top .3s ease; }
+    .penlight::before { content: ""; position: absolute; left: -2px; right: -2px; top: -5px; height: 8px; border-radius: 50%; background: #fffbea; box-shadow: 0 0 10px 5px rgba(255, 246, 214, .85); }
 
     /* Controls under the stage */
     .controls { display: flex; gap: 16px; align-items: center; padding: 12px 0 0; flex-wrap: wrap; }
@@ -138,6 +148,9 @@
     .options { display: flex; gap: 10px 14px; flex-wrap: wrap; align-items: flex-end; flex: 1; min-width: 0; }
     .opt { display: flex; flex-direction: column; gap: 3px; }
     .opt .label { font-size: 12px; color: var(--muted); }
+    .pupil-exam { flex-basis: 100%; display: flex; gap: 10px 14px; flex-wrap: wrap; align-items: flex-end; border-top: 1px solid var(--line); padding-top: 10px; }
+    .pupil-exam .group-title { flex-basis: 100%; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0; }
+    .pupil-exam select { min-height: 38px; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font: inherit; font-size: 13.5px; }
     .toggle[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
 
     /* Mode switch */
@@ -199,6 +212,9 @@
     .badge[data-mech="Nerve palsy"] { color: var(--paresis); border-color: var(--paresis); }
     .badge[data-mech="Supranuclear"], .badge[data-mech="Congenital miswiring"] { color: var(--accent); border-color: var(--accent); }
     .badge[data-mech="Neuromuscular junction"] { color: var(--fatigue); border-color: var(--fatigue); }
+    .badge[data-mech="Afferent defect"], .badge[data-mech="Sympathetic"], .badge[data-mech="Parasympathetic"], .badge[data-mech="Midbrain"] { color: var(--paresis); border-color: var(--paresis); }
+    .badge[data-mech="Pharmacological"] { color: var(--restricted); border-color: var(--restricted); }
+    .badge[data-mech="Normal variant"] { color: var(--fatigue); border-color: var(--fatigue); }
     .card p { margin: 0 0 10px; }
     .card h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 14px 0 6px; }
     .card ul { margin: 0; padding-left: 18px; }
@@ -289,6 +305,8 @@
       .chip, .credit { font-size: 12px; padding: 4px 8px; }
       .case-chip { top: 8px; left: 8px; }
       .dev-chip { bottom: 44px; left: 8px; }
+      .pupil-chip { bottom: 116px; left: 8px; }
+      .exam-caption { top: 56px; }
       .lock-chip { top: auto; right: auto; left: 8px; bottom: 80px; max-width: calc(100% - 16px); }
       .credit { bottom: 8px; right: 8px; }
     }
@@ -347,11 +365,14 @@
         <div class="stage" id="stage" tabindex="0" aria-label="Simulator view. Arrow keys move the gaze; keys 1 to 9 jump to the nine diagnostic positions.">
           <canvas id="view" role="img" aria-label="3D face showing the current eye position."></canvas>
           <div class="loader" id="loader">Loading the 3D model… <span id="load-pct"></span></div>
+          <div class="penlight" id="penlight" aria-hidden="true" hidden></div>
           <div class="chip case-chip" id="case-chip" aria-hidden="true"></div>
           <div class="chip dev-chip" id="dev-chip" aria-hidden="true"></div>
           <div id="target" aria-hidden="true"></div>
           <div id="target-tip" aria-hidden="true" hidden>Click to lock</div>
           <div class="chip lock-chip" id="lock-chip" hidden></div>
+          <div class="chip pupil-chip" id="pupil-chip" aria-hidden="true" hidden></div>
+          <div class="chip exam-caption" id="exam-caption" hidden></div>
           <a class="credit" href="https://calgaryvisioncentre.com/" target="_top" rel="author">Created by Dr Robert Burke</a>
         </div>
         <div class="controls">
@@ -374,7 +395,26 @@
               <button class="btn toggle" id="lock" type="button" aria-pressed="false" title="Stop the eyes following the pointer (or press L)">Lock gaze</button>
             </div>
           </div>
-          <p class="hint" style="flex-basis:100%; margin:0"><strong>On the face:</strong> move to aim the eyes, click to lock or unlock the gaze, press and hold to compare with normal. On touch, tap or drag to aim and press and hold to compare. Keys: 1–9 positions, L lock, hold N compare. Positions are shown as you, the examiner, see the patient.</p>
+          <div class="pupil-exam" role="group" aria-labelledby="pupil-exam-title">
+            <span class="group-title" id="pupil-exam-title">Pupil exam</span>
+            <div class="opt"><span class="label" id="room-label">Room light</span>
+              <div class="seg" id="room-picker" role="group" aria-labelledby="room-label">
+                <button type="button" data-room="bright">Bright</button><button type="button" data-room="dim">Dim</button>
+              </div></div>
+            <div class="opt"><span class="label" id="pen-label">Penlight</span>
+              <div class="seg" id="pen-picker" role="group" aria-labelledby="pen-label">
+                <button type="button" data-pen="off">Off</button><button type="button" data-pen="R">Right OD</button><button type="button" data-pen="L">Left OS</button><button type="button" data-pen="swing" title="Swinging flashlight test">Swing</button>
+              </div></div>
+            <div class="opt"><label class="label" for="drop-select">Drops in both eyes</label>
+              <select id="drop-select">
+                <option value="">None</option>
+                <option value="pilo01">Pilocarpine 0.1% (Adie)</option>
+                <option value="pilo1">Pilocarpine 1% (drug vs CN III)</option>
+                <option value="apra">Apraclonidine 0.5% (Horner)</option>
+              </select></div>
+            <button class="btn" id="run-test" type="button" hidden>Run the key test</button>
+          </div>
+          <p class="hint" style="flex-basis:100%; margin:0"><strong>On the face:</strong> move to aim the eyes, click to lock or unlock the gaze, press and hold to compare with normal. On touch, tap or drag to aim and press and hold to compare. Keys: 1–9 positions, L lock, hold N compare. Positions are shown as you, the examiner, see the patient. For the pupils, the Eyes view gives a close-up; the Near target also tests the near response. Drops act over 30 to 45 minutes in clinic and are sped up here.</p>
         </div>
       </section>
 
@@ -450,10 +490,11 @@
         <li><strong>Lock the gaze:</strong> click the face to freeze the eyes where you clicked, so you can move to the controls without changing the gaze. Click again to unlock.</li>
         <li><strong>Pick a case</strong> from the list and choose the affected side. The card explains the signs and the red flags.</li>
         <li><strong>Fixing eye:</strong> switch fixation to the affected eye to see the larger secondary deviation predicted by Hering's law.</li>
-        <li><strong>Near target:</strong> shows convergence, which is spared in internuclear ophthalmoplegia.</li>
+        <li><strong>Near target:</strong> shows convergence, which is spared in internuclear ophthalmoplegia, and the pupils constricting for near.</li>
+        <li><strong>Pupil exam:</strong> dim or brighten the room, shine the penlight into either eye, run the swinging flashlight test, and add diagnostic drops (pilocarpine 0.1% or 1%, apraclonidine). Pupil cases have a "Run the key test" button that walks through the examination with captions.</li>
         <li><strong>Compare with normal:</strong> press and hold anywhere on the face (or hold the N key) to flip to a healthy patient in the same gaze.</li>
         <li><strong>Motility chart:</strong> switch to "Motility chart" to record what you see in clinic. Each of the nine boxes shows the eyes in one cardinal position; drag each eye to where you observed it, then press Enter. The app compares your chart with every condition in the model, at several severities and with either eye fixing, and lists the most likely patterns with their usual causes. It is pattern matching against a teaching model, not a diagnosis.</li>
-        <li><strong>Share:</strong> the address bar always holds the current case and gaze, so "Copy link" opens exactly what you see. "Save image" downloads a labelled picture.</li>
+        <li><strong>Share:</strong> the address bar always holds the current case, gaze and pupil exam, so "Copy link" opens exactly what you see. "Save image" downloads a labelled picture.</li>
       </ul>
 
       <h2>The six extraocular muscles</h2>
@@ -491,10 +532,25 @@
       <h3><a href="#case=mfs&amp;side=B&amp;gaze=4">Miller Fisher syndrome</a></h3>
       <p>A Guillain–Barré variant with ophthalmoplegia, ataxia and areflexia, usually after an infection.</p>
       <h3><a href="#case=skew&amp;side=R&amp;gaze=5">Skew deviation (Wallenberg syndrome)</a></h3>
-      <p>A supranuclear vertical misalignment: the eye on the side of a lateral medullary stroke sits lower, by about the same amount in every gaze. Acute vertical diplopia with vertigo is a stroke until proven otherwise.</p>
+      <p>A supranuclear vertical misalignment: the eye on the side of a lateral medullary stroke sits lower, by about the same amount in every gaze, with a Horner syndrome on the same side. Acute vertical diplopia with vertigo is a stroke until proven otherwise.</p>
+
+      <h2>Pupil conditions in the simulator</h2>
+      <p>Each pupil receives light signals from both eyes, so a light in one eye constricts both pupils (direct and consensual reflexes). Anisocoria (unequal pupils) that is larger in dim light points to the small pupil (a sympathetic problem); anisocoria that is larger in bright light points to the large pupil (a parasympathetic problem).</p>
+      <h3><a href="#case=rapd&amp;side=L">Relative afferent pupillary defect (RAPD)</a></h3>
+      <p>Damage to one optic nerve weakens that eye's light signal. The pupils stay equal, but in the swinging flashlight test both pupils dilate when the light moves to the affected eye. Common causes are optic neuritis, ischaemic optic neuropathy and compression.</p>
+      <h3><a href="#case=horner&amp;side=R">Horner syndrome</a></h3>
+      <p>A smaller pupil with a mild ptosis on the same side, from a break in the sympathetic pathway. The anisocoria is largest in dim light and the small pupil dilates slowly. Apraclonidine drops reverse it. A new painful Horner syndrome suggests carotid artery dissection.</p>
+      <h3><a href="#case=adie&amp;side=R">Adie tonic pupil</a></h3>
+      <p>A larger pupil that barely reacts to light but constricts slowly to a near target and redilates slowly. It constricts to dilute pilocarpine 0.1% because the iris sphincter has lost its nerve supply. Usually benign.</p>
+      <h3><a href="#case=argyll&amp;side=B">Argyll Robertson pupils</a></h3>
+      <p>Small, irregular pupils that do not react to light but constrict briskly for near: light-near dissociation. The classic cause is neurosyphilis.</p>
+      <h3><a href="#case=pharm&amp;side=R">Pharmacological dilation</a></h3>
+      <p>A very large pupil that reacts to neither light nor near, with normal lids and eye movements, from an anticholinergic drug such as a scopolamine patch. Pilocarpine 1% constricts a third nerve palsy pupil but not a drug-blocked one.</p>
+      <h3><a href="#case=physaniso&amp;side=B">Physiological anisocoria</a></h3>
+      <p>Pupils that differ by up to about 1 mm in otherwise healthy people. The difference stays about the same in bright and dim light, and both pupils react normally.</p>
 
       <h2>What the model does and does not show</h2>
-      <p>This is a qualitative teaching model, not a biomechanical simulation. It limits eye movements to physiological ranges, separates weak muscles (paresis) from tight ones (restriction), applies Hering's law through a selectable fixing eye, and treats MLF and skew lesions as supranuclear. Ptosis and pupil size can be shown for each eye (a third nerve palsy shows both by default, and myasthenic ptosis worsens on sustained upgaze), and the lids follow the eyes in downgaze. It does not model pupil light reactions, torsion, head tilt or saccade velocities, and the numbers it displays are illustrative.</p>
+      <p>This is a qualitative teaching model, not a biomechanical simulation. It limits eye movements to physiological ranges, separates weak muscles (paresis) from tight ones (restriction), applies Hering's law through a selectable fixing eye, and treats MLF and skew lesions as supranuclear. Ptosis can be shown for each eye (myasthenic ptosis worsens on sustained upgaze), and the lids follow the eyes in downgaze. The pupils follow a separate model of the light and near reflexes: light from either eye drives both pupils, the sphincter (third nerve) and dilator (sympathetic) are separate, and reactions have a latency, constrict faster than they dilate, and partly fade under a steady light. It does not model torsion, head tilt, saccade velocities or segmental iris palsy, and the numbers it displays are illustrative.</p>
 
       <h2>Author</h2>
       <p>Created by <a href="https://calgaryvisioncentre.com/" rel="author">Dr Robert Burke</a>, optometrist, Calgary Vision Centre, Calgary, Alberta.</p>

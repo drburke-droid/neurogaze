@@ -5,12 +5,13 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import {
   MUSCLES, MUSCLE_NAMES, NERVE_OF, defaultState, solve, stepFatigue, muscleState,
-  describeDeviation, GAZE_POSITIONS, GAZE_NAMES, strength, prism, lidDroop, PUPIL,
+  describeDeviation, GAZE_POSITIONS, GAZE_NAMES, strength, prism, lidDroop,
 } from './engine.js';
-import { CASES, CASE_BY_ID, SIDE_LABEL, CAUSES, sidedName } from './cases.js';
+import { createPupilKinetics, normalPupil, pupilKind, samePupil, DROPS } from './pupil.js';
+import { CASES, CASE_BY_ID, CAUSES, sidedName } from './cases.js';
 import { KEYS as CHART_KEYS, chartFromState, normalChart, rankPatterns, describeFindings } from './diagnose.js';
 
-const VERSION = 'v3.0';
+const VERSION = 'v3.1';
 const MODEL_URL = './head_eyes_v2.glb';
 const DEG = Math.PI / 180;
 const $ = (id) => document.getElementById(id);
@@ -41,6 +42,7 @@ const sim = {
   locked: false,
   comparing: false,
   solution: null,
+  exam: { room: 'bright', pen: 'off', drop: null }, // pupil exam; the near target is sim.near
 };
 // Eased eye angles actually drawn (per eye: h = abduction +, v = up +)
 const shown = { R: { h: 0, v: 0 }, L: { h: 0, v: 0 } };
@@ -58,7 +60,8 @@ function resolve() {
 const stage = $('stage');
 const canvas = $('view');
 const targetDot = $('target');
-let renderer = null, scene, camera, penlight, eyes = null, eyeMid = new THREE.Vector3();
+let renderer = null, scene, camera, penlight, examLight, eyes = null, eyeMid = new THREE.Vector3();
+const roomLights = [], envMats = []; // dimmed together for a dim room
 let rafId = 0, lastT = 0;
 
 function initRenderer() {
@@ -81,7 +84,8 @@ function initRenderer() {
   camera = new THREE.PerspectiveCamera(28, 1, 0.05, 50);
   camera.position.set(0, 0, 4);
 
-  scene.add(new THREE.HemisphereLight(0xf2f4ff, 0x2a2420, 0.55));
+  const hemi = new THREE.HemisphereLight(0xf2f4ff, 0x2a2420, 0.55);
+  scene.add(hemi);
   const key = new THREE.DirectionalLight(0xffffff, 1.5);
   key.position.set(1.5, 2.2, 4);
   scene.add(key);
@@ -91,6 +95,10 @@ function initRenderer() {
   // The penlight follows the fixation target and puts a corneal reflex in each eye
   penlight = new THREE.PointLight(0xfff4e0, 2.2, 0, 2);
   scene.add(penlight);
+  for (const l of [hemi, key, fill, penlight]) roomLights.push({ light: l, base: l.intensity });
+  // Pupil exam: a second penlight held just below and in front of one eye
+  examLight = new THREE.PointLight(0xfff6e6, 0, 0, 2);
+  scene.add(examLight);
 
   const ro = new ResizeObserver(resize);
   ro.observe(stage);
@@ -114,7 +122,7 @@ function frameCamera() {
   if (!camera) return;
   if (!eyes) { camera.updateProjectionMatrix(); return; }
   const box = sim.view === 'eyes'
-    ? { w: 0.95, h: 0.55, y: eyeMid.y - 0.02 }
+    ? { w: 0.62, h: 0.55, y: eyeMid.y - 0.02 }
     : { w: 1.05, h: 1.0, y: eyeMid.y - 0.14 };
   const t = Math.tan((camera.fov * DEG) / 2);
   const dist = Math.max(box.h / 2 / t, box.w / 2 / (t * camera.aspect)) + 0.1;
@@ -161,6 +169,7 @@ function onModel(gltf) {
     const m = o.material;
     if (m.map) m.map.anisotropy = Math.min(8, maxAniso);
     m.envMapIntensity = 0.35;
+    envMats.push(m);
     if (m.transmission > 0) {
       // The cornea: a thin glossy shell. Transmission would cost an extra render pass per frame.
       m.transmission = 0;
@@ -186,6 +195,8 @@ function onModel(gltf) {
   eyes = { R: eyeR, L: eyeL };
   setupPupils();
   setupLids(model);
+  for (const m of envMats) m.userData.env0 = m.envMapIntensity;
+  applyRoomLight();
   $('loader').hidden = true;
   frameCamera();
   requestFrame();
@@ -202,17 +213,21 @@ function setupPupils() {
       const size = box.getSize(new THREE.Vector3());
       if (size.z > size.x * 0.2) return; // the iris is the flat disc; the sclera is a sphere
       const m = o.material.clone();
-      const u = { value: 1 };
+      envMats.push(m);
+      const u = { value: 1 }, irr = { value: 0 };
       m.onBeforeCompile = (shader) => {
         shader.uniforms.pupilScale = u;
+        shader.uniforms.pupilIrreg = irr;
         shader.fragmentShader = shader.fragmentShader
-          .replace('#include <common>', '#include <common>\nuniform float pupilScale;')
+          .replace('#include <common>', '#include <common>\nuniform float pupilScale;\nuniform float pupilIrreg;')
           .replace('#include <map_fragment>', `
             #ifdef USE_MAP
               vec2 pc = vec2(0.4955, 0.4961);
               vec2 d = vMapUv - pc;
               float r = length(d);
-              float rp0 = 0.14, R = 0.42, rp = clamp(rp0 * pupilScale, 0.04, 0.36);
+              float th = atan(d.y, d.x);
+              float wobble = 1.0 + pupilIrreg * (0.16 * sin(3.0 * th + 0.7) + 0.08 * sin(5.0 * th + 2.1));
+              float rp0 = 0.14, R = 0.42, rp = clamp(rp0 * pupilScale * wobble, 0.04, 0.36);
               float r2 = r < rp ? r * rp0 / rp : (r < R ? rp0 + (r - rp) * (R - rp0) / (R - rp) : r);
               vec2 uv2 = pc + (r > 1e-5 ? d / r * r2 : vec2(0.0));
               diffuseColor *= texture2D(map, uv2);
@@ -221,6 +236,7 @@ function setupPupils() {
       m.customProgramCacheKey = () => 'pupil';
       o.material = m;
       eyes[eye].userData.pupil = u;
+      eyes[eye].userData.irregular = irr;
     });
   }
 }
@@ -259,6 +275,7 @@ function setupLids(model) {
     }
     geo.setIndex(idx);
     const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75, metalness: 0, envMapIntensity: 0.35 });
+    envMats.push(mat);
     const mesh = new THREE.Mesh(geo, mat);
     mesh.visible = false;
     eyes[eye].getWorldPosition(mesh.position); // the eye node sits at the centre of the globe
@@ -317,24 +334,102 @@ function shapeLid(eye, marginDeg) {
   L.mesh.geometry.computeBoundingSphere();
 }
 
-// Margin elevation: the model's own lid sits near +26°; a complete ptosis reaches about −38°.
+// Margin elevation (degrees) at the ends of the lid for a given droop; the arch lifts the middle
+// about 8° higher. An open lid's middle sits at the face model's own margin (about 14°); mild ptosis
+// drops it about 1.5 mm, marked to the top of the pupil, complete over the cornea.
 // Lids also follow the eye down, as real lids do (the face model's own lids cannot).
-const LID_OPEN_DEG = 26, LID_CLOSED_DEG = -38;
+const LID_CURVE = [[0, 6], [0.25, -2], [0.55, -9], [1, -38]];
+function lidMargin(droop) {
+  for (let i = 1; i < LID_CURVE.length; i++) {
+    const [d0, m0] = LID_CURVE[i - 1], [d1, m1] = LID_CURVE[i];
+    if (droop <= d1) return m0 + ((m1 - m0) * (droop - d0)) / (d1 - d0);
+  }
+  return LID_CURVE[LID_CURVE.length - 1][1];
+}
+const LID_OPEN_DEG = LID_CURVE[0][1];
 function updateLidsAndPupils(st, chartView = false, chartV = null) {
   if (!eyes || !lids.R) return;
   for (const eye of ['R', 'L']) {
-    const droop = chartView ? 0 : lidDroop(st, eye);
+    const droop = chartView ? 0 : Math.max(0, lidDroop(st, eye) - pupilOut[eye].lift);
     const L = lids[eye];
     const v = chartV ? chartV[eye] : shown[eye].v;
-    const follow = v < 0 ? 0.85 * v : 0;
-    const margin = LID_OPEN_DEG + (LID_CLOSED_DEG - LID_OPEN_DEG) * droop + follow * (1 - 0.4 * droop);
+    const follow = v < 0 ? 0.75 * v : 0;
+    const margin = lidMargin(droop) + follow * (1 - 0.4 * droop);
     if (margin > LID_OPEN_DEG - 2) { L.mesh.visible = false; }
     else {
       shapeLid(eye, margin);
       L.mesh.visible = true;
     }
-    if (eyes[eye].userData.pupil) eyes[eye].userData.pupil.value = chartView ? 1 : st.pupil[eye];
+    if (eyes[eye].userData.pupil) {
+      eyes[eye].userData.pupil.value = chartView ? 1 : pupilOut[eye].mm / PAINTED_PUPIL_MM;
+      eyes[eye].userData.irregular.value = chartView ? 0 : st.pupil[eye].irregular;
+    }
   }
+}
+
+// ── Pupil exam: room light, penlight (fixed on one eye or swinging), drops ───
+const PAINTED_PUPIL_MM = 4; // the pupil painted in the iris texture is about 4 mm across
+const pupilKin = createPupilKinetics();
+let pupilOut = { R: { mm: 4, lift: 0 }, L: { mm: 4, lift: 0 } };
+let swingStart = 0;
+const SWING_DWELL = 2.4, SWING_MOVE = 0.3; // s on each eye, s moving between them
+
+// Where the penlight is: { eye: 'R'|'L'|null (between eyes), pos: 0 at OD … 1 at OS }
+function penNow(tSec) {
+  const pen = sim.exam.pen;
+  if (pen === 'R' || pen === 'L') return { eye: pen, pos: pen === 'R' ? 0 : 1 };
+  if (pen !== 'swing') return null;
+  const T = 2 * (SWING_DWELL + SWING_MOVE);
+  const ph = (((tSec - swingStart) % T) + T) % T;
+  if (ph < SWING_DWELL) return { eye: 'R', pos: 0 };
+  if (ph < SWING_DWELL + SWING_MOVE) return { eye: null, pos: (ph - SWING_DWELL) / SWING_MOVE };
+  if (ph < 2 * SWING_DWELL + SWING_MOVE) return { eye: 'L', pos: 1 };
+  return { eye: null, pos: 1 - (ph - 2 * SWING_DWELL - SWING_MOVE) / SWING_MOVE };
+}
+
+function examNow(tSec = performance.now() / 1000) {
+  const pen = penNow(tSec);
+  return { room: sim.exam.room, light: pen ? pen.eye : null, near: sim.near, drop: sim.exam.drop };
+}
+
+/** Jump the pupils to their resting size for the current state (a new case, not a reflex). */
+function snapPupils() { pupilOut = pupilKin.snap(currentState().pupil, examNow()); }
+
+function applyRoomLight() {
+  const k = mode === 'sim' && sim.exam.room === 'dim' ? 0.3 : 1; // the chart is always drawn in full light
+  for (const { light, base } of roomLights) light.intensity = base * k;
+  for (const m of envMats) if (m.userData.env0 != null) m.envMapIntensity = m.userData.env0 * k;
+  stage.classList.toggle('dim', k < 1);
+}
+
+// Penlight: a 3D light just below and in front of the lit eye, and a drawn penlight under it
+const penEl = $('penlight');
+const _v = new THREE.Vector3();
+function placePenlight(pen) {
+  if (!pen || !eyes) { examLight.intensity = 0; penEl.hidden = true; return; }
+  const a = eyes.R.getWorldPosition(new THREE.Vector3()), b = eyes.L.getWorldPosition(new THREE.Vector3());
+  const at = a.lerp(b, pen.pos);
+  if (pen.eye) {
+    examLight.position.set(at.x, at.y - 0.05, at.z + 0.13);
+    examLight.intensity = 0.035;
+  } else examLight.intensity = 0;
+  _v.set(at.x, at.y - 0.1, at.z + 0.07).project(camera);
+  penEl.style.left = `${(_v.x * 0.5 + 0.5) * stage.clientWidth}px`;
+  penEl.style.top = `${(-_v.y * 0.5 + 0.5) * stage.clientHeight}px`;
+  penEl.hidden = false;
+}
+
+// The pupil chip shows sizes whenever the pupils are part of the picture
+let pupilChipText = '';
+function updatePupilChip() {
+  const st = currentState();
+  const relevant = CASE_BY_ID[sim.caseId].group === 'pupil' || demo || sim.exam.room !== 'bright' || sim.exam.pen !== 'off' || sim.exam.drop
+    || ['R', 'L'].some((e) => pupilKind(st.pupil[e]) !== 'normal');
+  const chip = $('pupil-chip');
+  chip.hidden = !relevant || mode !== 'sim';
+  if (chip.hidden) return;
+  const t = `Pupils OD ${pupilOut.R.mm.toFixed(1)} · OS ${pupilOut.L.mm.toFixed(1)} mm`;
+  if (t !== pupilChipText) { pupilChipText = t; chip.textContent = t; }
 }
 
 function requestFrame() {
@@ -344,7 +439,8 @@ function requestFrame() {
 function frame(t) {
   rafId = 0;
   if (mode === 'chart') { renderChart(); lastT = 0; return; }
-  const elapsed = lastT ? Math.min(0.5, (t - lastT) / 1000) : 1 / 60;
+  const raw = lastT ? (t - lastT) / 1000 : 1 / 60;
+  const elapsed = Math.min(0.5, raw);
   const dt = Math.min(0.05, elapsed);
   lastT = t;
   let active = false;
@@ -394,6 +490,13 @@ function frame(t) {
     // Penlight sits on the fixation target, ~1.6 units in front of the eyes
     const H = sim.gazeH * DEG, V = sim.gazeV * DEG;
     penlight.position.set(eyeMid.x - Math.sin(H) * Math.cos(V) * 1.6, eyeMid.y + Math.sin(V) * 1.6, eyeMid.z + Math.cos(H) * Math.cos(V) * 1.6);
+    // Pupils react to the room light, the exam penlight, the near target and drops
+    const pen = penNow(t / 1000);
+    // (a generous cap keeps the pupils in step with the timed demos on slow devices)
+    pupilOut = pupilKin.step(st.pupil, examNow(t / 1000), Math.min(2, raw));
+    if (pupilKin.moving || sim.exam.pen === 'swing') active = true;
+    placePenlight(pen);
+    updatePupilChip();
     updateLidsAndPupils(st);
     renderer.render(scene, camera);
   }
@@ -518,24 +621,41 @@ stage.addEventListener('contextmenu', (e) => { if (press) e.preventDefault(); })
 // UI
 // ═══════════════════════════════════════════════════════════════
 const caseList = $('case-list');
-for (const c of CASES) {
-  const b = document.createElement('button');
-  b.type = 'button';
-  b.className = 'case-btn';
-  b.dataset.case = c.id;
-  b.innerHTML = '<span class="name"></span><span class="sub"></span>';
-  b.querySelector('.name').textContent = c.name;
-  b.querySelector('.sub').textContent = c.sub;
-  b.title = c.sub;
-  b.addEventListener('click', () => {
-    const keep = sim.caseId !== 'normal' && c.sides.includes(sim.side);
-    applyCase(c.id, keep ? sim.side : (c.sides.includes('R') ? 'R' : c.sides[0]));
-  });
-  caseList.append(b);
+const GROUPS = [['motility', 'Eye movements'], ['pupil', 'Pupils']];
+const inGroup = (g) => CASES.filter((c) => (c.group || 'motility') === g);
+for (const [g, label] of GROUPS) {
+  const row = document.createElement('div');
+  row.className = 'case-group';
+  row.setAttribute('role', 'group');
+  row.setAttribute('aria-label', label);
+  const l = document.createElement('span');
+  l.className = 'group-label'; l.textContent = label; l.setAttribute('aria-hidden', 'true');
+  row.append(l);
+  for (const c of inGroup(g)) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'case-btn';
+    b.dataset.case = c.id;
+    b.innerHTML = '<span class="name"></span><span class="sub"></span>';
+    b.querySelector('.name').textContent = c.name;
+    b.querySelector('.sub').textContent = c.sub;
+    b.title = c.sub;
+    b.addEventListener('click', () => {
+      const keep = sim.caseId !== 'normal' && c.sides.includes(sim.side);
+      applyCase(c.id, keep ? sim.side : (c.sides.includes('R') ? 'R' : c.sides[0]));
+    });
+    row.append(b);
+  }
+  caseList.append(row);
 }
 
 const caseSelect = $('case-select');
-for (const c of CASES) caseSelect.add(new Option(`${c.name} (${c.sub})`, c.id));
+for (const [g, label] of GROUPS) {
+  const og = document.createElement('optgroup');
+  og.label = label;
+  for (const c of inGroup(g)) og.append(new Option(`${c.name} (${c.sub})`, c.id));
+  caseSelect.append(og);
+}
 caseSelect.add(new Option('Custom nerve settings', 'custom'));
 caseSelect.options[caseSelect.options.length - 1].hidden = true;
 caseSelect.addEventListener('change', () => {
@@ -559,7 +679,13 @@ function applyCase(id, side, { keepGaze = false, announce: say = true } = {}) {
   sim.custom = false;
   sim.fixing = side === 'R' ? 'L' : 'R';
   if (!keepGaze) { const [H, V] = GAZE_POSITIONS[c.worst(side)]; sim.gazeH = H; sim.gazeV = V; }
+  stopDemo();
+  // Every case starts from its own pupil exam (bright room, penlight off, unless it says otherwise);
+  // pupil cases also open in close-up
+  setExamState(examPreset(c));
+  if (c.group === 'pupil' && !keepGaze) { sim.view = 'eyes'; frameCamera(); }
   resolve();
+  snapPupils();
   refreshAll();
   if (say) announce(`${caseTitle()}. ${c.card.look}`);
   requestFrame();
@@ -573,7 +699,8 @@ document.querySelectorAll('.nerve-btn:not(.sign-btn)').forEach((b) => {
     sim.state.nerves[eye][nerve] = next;
     if (nerve === '3') { // the third nerve also lifts the lid and constricts the pupil
       sim.state.lid[eye] = next === 0 ? 0.55 : next === 0.5 ? 0.25 : 0;
-      sim.state.pupil[eye] = next === 0 ? PUPIL.dilated : PUPIL.normal;
+      sim.state.pupil[eye] = pupilPreset(next === 0 ? 'dilated' : 'normal');
+      snapPupils();
     }
     if (NERVE_ONLY.has(sim.caseId)) sim.caseId = 'normal'; // the nerve grid now describes the whole state
     sim.custom = true;
@@ -586,15 +713,23 @@ document.querySelectorAll('.nerve-btn:not(.sign-btn)').forEach((b) => {
 const LID_STEPS = [0, 0.25, 0.55, 1];
 const LID_NAMES = ['None', 'Mild ptosis', 'Marked ptosis', 'Complete ptosis'];
 const lidIndex = (v) => LID_STEPS.reduce((best, x, i) => (Math.abs(x - v) < Math.abs(LID_STEPS[best] - v) ? i : best), 0);
-const PUPIL_STEPS = [PUPIL.normal, PUPIL.small, PUPIL.dilated]; // from dilated, one tap gives a normal (spared) pupil
-const pupilName = (v) => (v > 1.2 ? 'Dilated' : v < 0.8 ? 'Small' : 'Normal');
+// The pupil button cycles the efferent states: from dilated, one tap gives a normal (spared) pupil
+const PUPIL_STEPS = ['normal', 'small', 'dilated'];
+const pupilPreset = (k) => ({ ...normalPupil(), ...(k === 'small' ? { symp: 0 } : k === 'dilated' ? { para: 0 } : {}) });
+const PUPIL_HASH = { normal: 100, small: 55, dilated: 200 }; // relative size, kept from earlier links
+const PUPIL_NAMES = {
+  normal: 'Normal', small: 'Small', dilated: 'Dilated', 'fixed-mid': 'Mid-dilated', drug: 'Drug-dilated',
+  tonic: 'Tonic', 'light-near': 'Light-near', rapd: 'RAPD', smaller: 'Smaller', larger: 'Larger',
+};
+const pupilName = (p) => PUPIL_NAMES[pupilKind(p)];
 document.querySelectorAll('.sign-btn').forEach((b) => {
   b.addEventListener('click', () => {
     const { eye, sign } = b.dataset;
     if (sign === 'lid') sim.state.lid[eye] = LID_STEPS[(lidIndex(sim.state.lid[eye]) + 1) % LID_STEPS.length];
     else {
-      const i = PUPIL_STEPS.findIndex((x) => Math.abs(x - sim.state.pupil[eye]) < 0.05);
-      sim.state.pupil[eye] = PUPIL_STEPS[(i + 1) % PUPIL_STEPS.length];
+      const i = PUPIL_STEPS.indexOf(pupilKind(sim.state.pupil[eye]));
+      sim.state.pupil[eye] = pupilPreset(PUPIL_STEPS[(i + 1) % PUPIL_STEPS.length]);
+      snapPupils();
     }
     sim.custom = true;
     refreshAll();
@@ -625,8 +760,84 @@ $('fix-picker').addEventListener('click', (e) => {
 });
 $('near-picker').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-near]'); if (!b) return;
+  stopDemo();
   sim.near = b.dataset.near === '1'; resolve(); refreshAll(); requestFrame();
 });
+
+// Pupil exam controls
+function examPreset(c) { return { room: 'bright', pen: 'off', drop: null, ...(c.exam || {}) }; }
+const defaultView = (id) => (CASE_BY_ID[id].group === 'pupil' ? 'eyes' : 'face'); // pupil cases open in close-up
+function setExamState({ near, ...patch }) {
+  if (patch.pen === 'swing' && sim.exam.pen !== 'swing') swingStart = performance.now() / 1000;
+  Object.assign(sim.exam, patch);
+  if (near !== undefined) { sim.near = near; resolve(); } // the near target is shared with the motility exam
+  applyRoomLight();
+}
+function setExam(patch) {
+  stopDemo();
+  setExamState(patch);
+  refreshAll();
+  requestFrame();
+}
+$('room-picker').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-room]'); if (!b) return;
+  setExam({ room: b.dataset.room });
+  announce(b.dataset.room === 'dim' ? 'Room light dimmed.' : 'Room light bright.');
+});
+$('pen-picker').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-pen]'); if (!b) return;
+  setExam({ pen: b.dataset.pen });
+  announce({ off: 'Penlight off.', R: 'Penlight on the right eye.', L: 'Penlight on the left eye.', swing: 'Swinging flashlight test.' }[b.dataset.pen]);
+});
+$('drop-select').addEventListener('change', (e) => {
+  setExam({ drop: e.target.value || null });
+  if (e.target.value) announce(`${DROPS[e.target.value]} in both eyes.`);
+});
+
+// Scripted key tests: timed exam steps with captions
+let demo = null;
+const caption = $('exam-caption');
+function stopDemo() {
+  if (!demo) return;
+  for (const id of demo.timers) clearTimeout(id);
+  demo = null;
+  caption.hidden = true;
+  updateDemoButtons();
+}
+function runDemo() {
+  const c = CASE_BY_ID[sim.caseId];
+  if (!c.demo) return;
+  stopDemo();
+  const steps = c.demo(sim.side);
+  demo = { timers: [] };
+  setExamState({ room: 'bright', pen: 'off', drop: null, near: false });
+  if (sim.view !== 'eyes') { sim.view = 'eyes'; frameCamera(); }
+  const [H, V] = GAZE_POSITIONS[5];
+  sim.gazeH = H; sim.gazeV = V; resolve();
+  snapPupils();
+  steps.forEach((st, i) => {
+    demo.timers.push(setTimeout(() => {
+      if (st.exam) setExamState(st.exam);
+      caption.innerHTML = `<span class="n">${i + 1}/${steps.length}</span>`;
+      caption.append(st.say);
+      caption.hidden = false;
+      announce(st.say);
+      refreshAll();
+      requestFrame();
+    }, st.at * 1000));
+  });
+  demo.timers.push(setTimeout(stopDemo, (steps[steps.length - 1].at + 7) * 1000));
+  refreshAll();
+  requestFrame();
+}
+function updateDemoButtons() {
+  const has = !!CASE_BY_ID[sim.caseId].demo && !sim.custom;
+  for (const b of document.querySelectorAll('[data-demo], #run-test')) {
+    b.hidden = !has;
+    b.textContent = demo ? 'Stop the test' : (sim.caseId === 'normal' ? 'Run a pupil exam' : 'Run the key test');
+  }
+}
+$('run-test').addEventListener('click', () => (demo ? stopDemo() : runDemo()));
 $('view-picker').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-view]'); if (!b) return;
   sim.view = b.dataset.view; frameCamera(); refreshAll(); requestFrame();
@@ -635,7 +846,7 @@ $('lock').addEventListener('click', () => setLocked(!sim.locked));
 
 function setComparing(on) {
   if (sim.comparing === on) return;
-  sim.comparing = on; resolve(); updateReadouts(); requestFrame();
+  sim.comparing = on; resolve(); snapPupils(); updateReadouts(); requestFrame();
 }
 const cmp = $('compare');
 cmp.addEventListener('pointerdown', () => setComparing(true));
@@ -879,11 +1090,14 @@ $('chart-from-sim').addEventListener('click', () => {
 $('chart-suggest').addEventListener('click', () => suggest());
 
 function setMode(m) {
+  stopDemo();
   mode = m === 'chart' ? 'chart' : 'sim';
   document.body.classList.toggle('chart-mode', mode === 'chart');
   $('chart').hidden = mode !== 'chart';
   $('results').hidden = mode !== 'chart';
   (mode === 'chart' ? chartGrid : stage).prepend(canvas);
+  applyRoomLight();
+  if (examLight) examLight.intensity = 0;
   for (const b of $('mode-picker').children) { b.setAttribute('aria-selected', String(b.dataset.mode === mode)); b.tabIndex = b.dataset.mode === mode ? 0 : -1; }
   if (mode === 'chart') { updateChartUI(); if (!chart.suggested) showChartIntro(); }
   resize();
@@ -981,9 +1195,9 @@ function caseTitle() {
     }
     for (const eye of ['R', 'L']) {
       if (Math.abs(sim.state.lid[eye] - base.lid[eye]) > 0.01) parts.push(`${eye === 'R' ? 'Right' : 'Left'} ${LID_NAMES[lidIndex(sim.state.lid[eye])].toLowerCase().replace('none', 'no ptosis')}`);
-      if (Math.abs(sim.state.pupil[eye] - base.pupil[eye]) > 0.05) parts.push(`${eye === 'R' ? 'Right' : 'Left'} pupil ${pupilName(sim.state.pupil[eye]).toLowerCase()}`);
+      if (!samePupil(sim.state.pupil[eye], base.pupil[eye])) parts.push(`${eye === 'R' ? 'Right' : 'Left'} pupil ${pupilName(sim.state.pupil[eye]).toLowerCase()}`);
     }
-    const prefix = sim.caseId !== 'normal' ? `${SIDE_LABEL[sim.side]} ${CASE_BY_ID[sim.caseId].name.toLowerCase()} + ` : '';
+    const prefix = sim.caseId !== 'normal' ? `${sidedName(sim.caseId, sim.side)} + ` : '';
     return parts.length ? `${prefix}${parts.join(', ')}` : (prefix ? prefix.slice(0, -3) : 'Normal');
   }
   return sidedName(sim.caseId, sim.side);
@@ -1013,17 +1227,26 @@ function renderCard() {
   if (c.card.redFlags) { add('h3', 'Red flags'); add('p', c.card.redFlags, 'redflag'); }
   add('h3', 'Not shown in the model');
   add('p', c.card.notModelled);
-  const go = document.createElement('button');
-  go.type = 'button'; go.className = 'btn go';
-  const k = c.worst(sim.side);
-  go.textContent = `Show the key position: ${GAZE_NAMES[k]}`;
-  go.addEventListener('click', () => { const [H, V] = GAZE_POSITIONS[k]; setGaze(H, V); });
-  card.append(go);
+  if (c.group !== 'pupil') {
+    const go = document.createElement('button');
+    go.type = 'button'; go.className = 'btn go';
+    const k = c.worst(sim.side);
+    go.textContent = `Show the key position: ${GAZE_NAMES[k]}`;
+    go.addEventListener('click', () => { const [H, V] = GAZE_POSITIONS[k]; setGaze(H, V); });
+    card.append(go);
+  }
+  if (c.demo) {
+    const run = document.createElement('button');
+    run.type = 'button'; run.className = `btn go${c.group === 'pupil' ? ' primary' : ''}`;
+    run.dataset.demo = '';
+    run.addEventListener('click', () => (demo ? stopDemo() : runDemo()));
+    card.append(' ', run);
+  }
 }
 
 function refreshAll() {
   const c = CASE_BY_ID[sim.caseId];
-  for (const b of caseList.children) b.setAttribute('aria-pressed', String(!sim.custom && b.dataset.case === sim.caseId));
+  for (const b of caseList.querySelectorAll('.case-btn')) b.setAttribute('aria-pressed', String(!sim.custom && b.dataset.case === sim.caseId));
   caseSelect.value = sim.custom ? 'custom' : sim.caseId;
   for (const b of $('side-picker').children) {
     b.disabled = !c.sides.includes(b.dataset.side);
@@ -1033,7 +1256,7 @@ function refreshAll() {
   document.querySelectorAll('.sign-btn').forEach((b) => {
     const { eye, sign } = b.dataset;
     const label = sign === 'lid' ? LID_NAMES[lidIndex(sim.state.lid[eye])] : pupilName(sim.state.pupil[eye]);
-    const abnormal = sign === 'lid' ? sim.state.lid[eye] > 0.01 : Math.abs(sim.state.pupil[eye] - 1) > 0.05;
+    const abnormal = sign === 'lid' ? sim.state.lid[eye] > 0.01 : pupilKind(sim.state.pupil[eye]) !== 'normal';
     b.dataset.state = abnormal ? 'paresis' : 'normal';
     b.innerHTML = `${eye === 'R' ? 'OD' : 'OS'}<span class="st">${label}</span>`;
     b.setAttribute('aria-label', `${eye === 'R' ? 'Right' : 'Left'} ${sign}: ${label}`);
@@ -1048,15 +1271,20 @@ function refreshAll() {
   for (const b of $('fix-picker').children) b.setAttribute('aria-pressed', String(b.dataset.fix === sim.fixing));
   for (const b of $('near-picker').children) b.setAttribute('aria-pressed', String((b.dataset.near === '1') === sim.near));
   for (const b of $('view-picker').children) b.setAttribute('aria-pressed', String(b.dataset.view === sim.view));
+  for (const b of $('room-picker').children) b.setAttribute('aria-pressed', String(b.dataset.room === sim.exam.room));
+  for (const b of $('pen-picker').children) b.setAttribute('aria-pressed', String(b.dataset.pen === sim.exam.pen));
+  $('drop-select').value = sim.exam.drop || '';
   $('lock').setAttribute('aria-pressed', String(sim.locked));
   $('lock').textContent = sim.locked ? 'Unlock gaze' : 'Lock gaze';
   updateLockHint();
   targetDot.classList.toggle('locked', sim.locked);
   renderCard();
+  updateDemoButtons();
+  updatePupilChip();
   positionTargetDot();
   updateReadouts();
   document.title = sim.caseId === 'normal' && !sim.custom
-    ? 'Interactive Gaze Simulator: Cranial Nerve Palsies and Eye Movement Disorders'
+    ? 'Interactive Gaze Simulator: Cranial Nerve Palsies, Eye Movements and Pupils'
     : `${caseTitle()} · Interactive Gaze Simulator`;
   scheduleHash();
 }
@@ -1103,7 +1331,12 @@ function writeHash() {
   const defaultFix = sim.side === 'R' ? 'L' : 'R';
   if (sim.fixing !== defaultFix) p.set('fix', sim.fixing);
   if (sim.near) p.set('near', '1');
-  if (sim.view !== 'face') p.set('view', sim.view);
+  if (sim.view !== defaultView(sim.caseId)) p.set('view', sim.view);
+  // Pupil exam, where it differs from the case's starting exam
+  const pre = examPreset(CASE_BY_ID[sim.caseId]);
+  if (sim.exam.room !== pre.room) p.set('room', sim.exam.room);
+  if (sim.exam.pen !== pre.pen) p.set('pen', sim.exam.pen);
+  if (sim.exam.drop) p.set('drop', sim.exam.drop);
   if (sim.custom) {
     const n = [];
     for (const eye of ['R', 'L']) for (const k of [3, 4, 6]) { const v = sim.state.nerves[eye][k]; if (v < 0.999) n.push(`${eye}${k}:${Math.round(v * 100)}`); }
@@ -1112,7 +1345,8 @@ function writeHash() {
     const lp = [];
     for (const eye of ['R', 'L']) {
       if (Math.abs(sim.state.lid[eye] - base.lid[eye]) > 0.01) lp.push(`${eye}lid:${Math.round(sim.state.lid[eye] * 100)}`);
-      if (Math.abs(sim.state.pupil[eye] - base.pupil[eye]) > 0.05) lp.push(`${eye}pup:${Math.round(sim.state.pupil[eye] * 100)}`);
+      const kind = pupilKind(sim.state.pupil[eye]);
+      if (!samePupil(sim.state.pupil[eye], base.pupil[eye]) && PUPIL_HASH[kind]) lp.push(`${eye}pup:${PUPIL_HASH[kind]}`);
     }
     if (lp.length) p.set('lp', lp.join(','));
   }
@@ -1142,7 +1376,13 @@ function readHash() {
   else if (p.has('h') || p.has('v')) { sim.gazeH = clamp(+p.get('h') || 0, -50, 50); sim.gazeV = clamp(+p.get('v') || 0, -45, 45); }
   if (p.get('fix') === 'R' || p.get('fix') === 'L') sim.fixing = p.get('fix');
   sim.near = p.get('near') === '1';
-  sim.view = p.get('view') === 'eyes' ? 'eyes' : 'face';
+  sim.view = ['face', 'eyes'].includes(p.get('view')) ? p.get('view') : defaultView(id);
+  const pre = examPreset(CASE_BY_ID[id]);
+  setExamState({
+    room: ['bright', 'dim'].includes(p.get('room')) ? p.get('room') : pre.room,
+    pen: ['off', 'R', 'L', 'swing'].includes(p.get('pen')) ? p.get('pen') : pre.pen,
+    drop: DROPS[p.get('drop')] ? p.get('drop') : null,
+  });
   if (p.get('n')) {
     for (const part of p.get('n').split(',')) {
       const m = /^([RL])([346]):(\d{1,3})$/.exec(part);
@@ -1153,11 +1393,12 @@ function readHash() {
     for (const part of p.get('lp').split(',')) {
       const m = /^([RL])(lid|pup):(\d{1,3})$/.exec(part);
       if (!m) continue;
-      if (m[2] === 'lid') sim.state.lid[m[1]] = clamp(+m[3] / 100, 0, 1); else sim.state.pupil[m[1]] = clamp(+m[3] / 100, 0.4, 2.2);
+      if (m[2] === 'lid') sim.state.lid[m[1]] = clamp(+m[3] / 100, 0, 1);
+      else sim.state.pupil[m[1]] = pupilPreset(+m[3] > 120 ? 'dilated' : +m[3] < 80 ? 'small' : 'normal');
       sim.custom = true;
     }
   }
-  resolve(); frameCamera(); refreshAll(); requestFrame();
+  resolve(); snapPupils(); frameCamera(); refreshAll(); requestFrame();
   return true;
 }
 window.addEventListener('hashchange', () => {
@@ -1207,7 +1448,13 @@ function exportImage() {
   y = text('INTERACTIVE GAZE SIMULATOR', 800, y, `600 16px ${sans}`, '#a9b2c3');
   y = text(caseTitle(), 800, y + 34, `700 38px ${sans}`, '#e9edf4');
   y = text(`Patient looking ${gazeName()}`, 800, y + 6, `400 22px ${sans}`, '#a9b2c3');
-  y = text(describeDeviation(sim.solution.deviation, sim.near), 800, y + 18, `600 22px ${sans}`, '#4cc9f0');
+  const pupilCase = CASE_BY_ID[sim.caseId].group === 'pupil';
+  if (!pupilCase) y = text(describeDeviation(sim.solution.deviation, sim.near), 800, y + 18, `600 22px ${sans}`, '#4cc9f0');
+  if (!$('pupil-chip').hidden) {
+    const pen = { R: 'light in right eye', L: 'light in left eye', swing: 'swinging flashlight' }[sim.exam.pen];
+    const how = [sim.exam.room === 'dim' ? 'dim room' : 'bright room', pen, sim.exam.drop && DROPS[sim.exam.drop]].filter(Boolean).join(' · ');
+    y = text(`Pupils OD ${pupilOut.R.mm.toFixed(1)} mm · OS ${pupilOut.L.mm.toFixed(1)} mm (${how})`, 800, y + (pupilCase ? 18 : 4), `600 20px ${sans}`, '#4cc9f0');
+  }
   if (!sim.custom && sim.caseId !== 'normal') {
     // Keep the clinical description; drop sentences that are on-screen instructions
     const look = CASE_BY_ID[sim.caseId].card.look.split(/(?<=\.)\s+/).filter((t) => !/\b(switch|toggle|hold|tap|click|press)\b/i.test(t)).join(' ');
@@ -1241,6 +1488,7 @@ $('version').textContent = VERSION;
 for (const b of $('mode-picker').children) { b.setAttribute('aria-selected', String(b.dataset.mode === mode)); b.tabIndex = b.dataset.mode === mode ? 0 : -1; }
 if (!readHash()) { sim.gazeH = 0; sim.gazeV = 0; applyCase('normal', 'B', { keepGaze: true, announce: false }); }
 for (const eye of ['R', 'L']) { shown[eye].h = sim.solution[eye].h; shown[eye].v = sim.solution[eye].v; }
+snapPupils();
 if (initRenderer()) loadModel();
 
 // In an embed, report our height so the host page sizes the iframe and does all the scrolling
@@ -1255,4 +1503,4 @@ if (EMBED && window.parent !== window) {
 }
 
 // Small hook for automated checks and the preview-image build
-window.__gaze = { sim, applyCase, setGaze, exportImage, readHash, shareUrl, chart, setMode, suggest, nudge, selectCell };
+window.__gaze = { sim, applyCase, setGaze, exportImage, readHash, shareUrl, chart, setMode, suggest, nudge, selectCell, setExam, runDemo, stopDemo, pupils: () => pupilOut };

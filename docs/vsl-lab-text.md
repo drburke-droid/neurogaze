@@ -6,7 +6,7 @@ In the lab, the programs live on the desktop of a 1990s computer: click an icon 
 
 ### Neuro and binocular vision
 
-- **[Interactive Gaze Simulator](https://calgaryvisioncentre.com/gaze)**: a 3D model of the six extraocular muscles and cranial nerves III, IV and VI. See sixth, fourth and third nerve palsy, internuclear ophthalmoplegia, thyroid eye disease and more in the nine positions of gaze, or chart a motility exam and see which conditions fit.
+- **[Interactive Gaze Simulator](https://calgaryvisioncentre.com/gaze)**: a 3D model of the six extraocular muscles and cranial nerves III, IV and VI. See sixth, fourth and third nerve palsy, internuclear ophthalmoplegia, thyroid eye disease and more in the nine positions of gaze, run the swinging flashlight test and other pupil tests, or chart a motility exam and see which conditions fit.
 - **[BVD Diagnostic Screener](https://calgaryvisioncentre.com/bbfi)**: a short symptom questionnaire that screens for binocular vision dysfunction, such as headaches, dizziness and reading strain.
 - **[Historical Ophthalmology Quiz](https://calgaryvisioncentre.com/quiz)**: test yourself on the history of ophthalmology and optometry, from couching to the phoropter.
 
