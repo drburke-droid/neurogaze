@@ -13,7 +13,8 @@
 //     partly wear off under a steady light (pupillary escape).
 //
 // Diameters are in millimetres. Light reaches each eye from the room and,
-// optionally, a penlight held in front of one eye.
+// optionally, a penlight held in front of one eye. The room light is a level
+// from 0 (lights off) to 100 (bright); 35 is a dim exam room.
 
 const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 const other = (eye) => (eye === 'R' ? 'L' : 'R');
@@ -33,7 +34,9 @@ export function normalPupil() {
   };
 }
 
-export const ROOM = { bright: 1, dim: 0.06 };
+export const ROOM = { bright: 100, dim: 35, dark: 0 };
+/** Room light level 0–100 from a number or a name ('bright', 'dim', 'dark'). */
+export const roomLevel = (room) => clamp(typeof room === 'number' ? room : ROOM[room] ?? ROOM.bright, 0, 100);
 const PEN = 12;            // penlight luminance relative to a bright room
 const NEAR = 0.85;         // sphincter drive of the near response
 const LATENCY = 0.22;      // s, light/near reflex latency
@@ -47,10 +50,13 @@ export const DROPS = {
 
 // Pupillomotor response to retinal illuminance (log-like, 1 for a bright room)
 const lum = (L) => Math.log10(1 + 9 * L);
+// Room illuminance for a level, spaced so the pupils change evenly along the slider:
+// the response is (level / 100)^1.5 of a bright room's.
+const roomIlluminance = (room) => (Math.pow(10, Math.pow(roomLevel(room) / 100, 1.5)) - 1) / 9;
 
 /** Light falling on one eye: room light plus the penlight if it points at that eye. */
 export function illuminance(exam, eye) {
-  return (ROOM[exam.room] ?? ROOM.bright) + (exam.light === eye ? PEN : 0);
+  return roomIlluminance(exam.room) + (exam.light === eye ? PEN : 0);
 }
 
 // Pretectal light signal reaching one Edinger–Westphal nucleus. Input from the
@@ -65,7 +71,7 @@ function pretectal(pupil, exam, eye) {
 
 /**
  * Instantaneous drives for both eyes, before any latency or kinetics.
- * exam = { room: 'bright'|'dim', light: 'R'|'L'|null, near: bool, drop: null|'pilo01'|'pilo1'|'apra' }
+ * exam = { room: 0–100 or 'bright'|'dim'|'dark', light: 'R'|'L'|null, near: bool, drop: null|'pilo01'|'pilo1'|'apra' }
  */
 export function pupilDrive(pupil, exam) {
   const out = {};

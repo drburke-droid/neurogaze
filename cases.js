@@ -255,8 +255,8 @@ export const CASES = [
     },
     demo: (side) => [
       { at: 0, exam: { room: 'bright' }, say: `Bright room: the ${word(side)} pupil is a little smaller, with a mild ptosis.` },
-      { at: 3, exam: { room: 'dim' }, say: `Lights down: the ${word(side)} pupil dilates slowly (dilation lag).` },
-      { at: 8, say: 'In dim light the difference between the pupils is largest.' },
+      { at: 3, exam: { room: 'dark' }, say: `Lights off: the ${word(side)} pupil dilates slowly (dilation lag).` },
+      { at: 8, say: 'In the dark the difference between the pupils is largest.' },
       { at: 11, exam: { drop: 'apra' }, say: `Apraclonidine 0.5% in both eyes (sped up from 45 minutes): the ${word(side)} pupil dilates and its lid lifts. The anisocoria reverses.` },
     ],
   },
@@ -328,7 +328,7 @@ export const CASES = [
     exam: { room: 'bright' },
     card: {
       summary: 'About one person in five has pupils that differ by up to 1 mm. The nerves and muscles are normal, so the difference stays about the same in bright and dim light.',
-      look: 'Switch the room light between Bright and Dim: the difference between the pupils barely changes, and both react briskly to light and near. Compare Horner syndrome (larger difference in dim light) with a third nerve palsy or Adie pupil (larger difference in bright light).',
+      look: 'Slide the room light from bright to dark: the difference between the pupils barely changes, and both react briskly to light and near. Compare Horner syndrome (larger difference in dim light) with a third nerve palsy or Adie pupil (larger difference in bright light).',
       signs: ['Anisocoria usually 1 mm or less', 'Similar in bright and dim light', 'Brisk light and near reactions, no dilation lag', 'No ptosis; often visible in old photographs'],
       redFlags: 'New anisocoria with ptosis, double vision, pain or headache is not physiological.',
       notModelled: 'Day-to-day variation, including the pupils switching which is larger.',

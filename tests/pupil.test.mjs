@@ -27,6 +27,20 @@ test('normal: equal pupils, larger in dim light, constrict to light (direct and 
   assert.ok(bright.R - at('normal', { near: true }).R > 1, 'near response');
 });
 
+test('room light: pupils widen steadily as the light falls; Horner and third nerve anisocoria move in opposite directions', () => {
+  let prev = null;
+  for (let room = 100; room >= 0; room -= 10) {
+    const n = at('normal', { room }).R, h = aniso(at('horner', { room })), c = aniso(at('cn3', { room }));
+    if (prev) {
+      assert.ok(n > prev.n, `normal pupil grows as the room dims (${room})`);
+      assert.ok(h < prev.h, `Horner anisocoria grows as the room dims (${room})`);
+      assert.ok(c < prev.c, `third nerve anisocoria shrinks as the room dims (${room})`);
+    }
+    prev = { n, h, c };
+  }
+  assert.ok(at('normal', { room: 'dark' }).R > 7.5 && at('normal', { room: 'dark' }).R < 9, 'dark-adapted size');
+});
+
 test('light reflex has a latency and partly escapes under a steady light', () => {
   const p = defaultState().pupil;
   const tr = trace(p, { room: 'dim' }, { room: 'dim', light: 'R' }, 8);
@@ -119,7 +133,7 @@ test('every case gives valid pupils, and its key test is well formed', () => {
     for (const st of steps) {
       assert.ok(typeof st.say === 'string' && st.say.length > 0);
       for (const [k, v] of Object.entries(st.exam || {})) {
-        const ok = { room: ['bright', 'dim'], pen: ['off', 'R', 'L', 'swing'], near: [true, false], drop: [null, 'pilo01', 'pilo1', 'apra'] }[k];
+        const ok = { room: ['bright', 'dim', 'dark'], pen: ['off', 'R', 'L', 'swing'], near: [true, false], drop: [null, 'pilo01', 'pilo1', 'apra'] }[k];
         assert.ok(ok && ok.includes(v), `${c.id}: ${k}=${v}`);
       }
     }

@@ -150,6 +150,8 @@
     .opt .label { font-size: 12px; color: var(--muted); }
     .pupil-exam { flex-basis: 100%; display: flex; gap: 10px 14px; flex-wrap: wrap; align-items: flex-end; border-top: 1px solid var(--line); padding-top: 10px; }
     .pupil-exam .group-title { flex-basis: 100%; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0; }
+    .room-row { display: flex; gap: 8px; align-items: center; }
+    .room-row input[type="range"] { width: 150px; min-height: 36px; margin: 0; accent-color: var(--accent); cursor: pointer; }
     .pupil-exam select { min-height: 38px; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font: inherit; font-size: 13.5px; }
     .toggle[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
 
@@ -397,9 +399,10 @@
           </div>
           <div class="pupil-exam" role="group" aria-labelledby="pupil-exam-title">
             <span class="group-title" id="pupil-exam-title">Pupil exam</span>
-            <div class="opt"><span class="label" id="room-label">Room light</span>
-              <div class="seg" id="room-picker" role="group" aria-labelledby="room-label">
-                <button type="button" data-room="bright">Bright</button><button type="button" data-room="dim">Dim</button>
+            <div class="opt"><label class="label" for="room-slider">Room light: <span id="room-value">Bright</span></label>
+              <div class="room-row">
+                <input type="range" id="room-slider" min="0" max="100" step="1" value="100" title="Drag, or scroll over the slider">
+                <button class="btn toggle" id="lights" type="button" aria-pressed="false" title="Turn the room lights off and back on (or press D)">Lights off</button>
               </div></div>
             <div class="opt"><span class="label" id="pen-label">Penlight</span>
               <div class="seg" id="pen-picker" role="group" aria-labelledby="pen-label">
@@ -414,7 +417,7 @@
               </select></div>
             <button class="btn" id="run-test" type="button" hidden>Run the key test</button>
           </div>
-          <p class="hint" style="flex-basis:100%; margin:0"><strong>On the face:</strong> move to aim the eyes, click to lock or unlock the gaze, press and hold to compare with normal. On touch, tap or drag to aim and press and hold to compare. Keys: 1–9 positions, L lock, hold N compare. Positions are shown as you, the examiner, see the patient. For the pupils, the Eyes view gives a close-up; the Near target also tests the near response. Drops act over 30 to 45 minutes in clinic and are sped up here.</p>
+          <p class="hint" style="flex-basis:100%; margin:0"><strong>On the face:</strong> move to aim the eyes, click to lock or unlock the gaze, press and hold to compare with normal. On touch, tap or drag to aim and press and hold to compare. Keys: 1–9 positions, L lock, hold N compare, D lights off and on. Positions are shown as you, the examiner, see the patient. For the pupils, the Eyes view gives a close-up; the Near target also tests the near response. Drops act over 30 to 45 minutes in clinic and are sped up here.</p>
         </div>
       </section>
 
@@ -491,7 +494,7 @@
         <li><strong>Pick a case</strong> from the list and choose the affected side. The card explains the signs and the red flags.</li>
         <li><strong>Fixing eye:</strong> switch fixation to the affected eye to see the larger secondary deviation predicted by Hering's law.</li>
         <li><strong>Near target:</strong> shows convergence, which is spared in internuclear ophthalmoplegia, and the pupils constricting for near.</li>
-        <li><strong>Pupil exam:</strong> dim or brighten the room, shine the penlight into either eye, run the swinging flashlight test, and add diagnostic drops (pilocarpine 0.1% or 1%, apraclonidine). Pupil cases have a "Run the key test" button that walks through the examination with captions.</li>
+        <li><strong>Pupil exam:</strong> set the room light with the slider (or flick the lights off and on with the D key), shine the penlight into either eye (tap its button again to turn it off), run the swinging flashlight test, and add diagnostic drops (pilocarpine 0.1% or 1%, apraclonidine). Pupil cases have a "Run the key test" button that walks through the examination with captions.</li>
         <li><strong>Compare with normal:</strong> press and hold anywhere on the face (or hold the N key) to flip to a healthy patient in the same gaze.</li>
         <li><strong>Motility chart:</strong> switch to "Motility chart" to record what you see in clinic. Each of the nine boxes shows the eyes in one cardinal position; drag each eye to where you observed it, then press Enter. The app compares your chart with every condition in the model, at several severities and with either eye fixing, and lists the most likely patterns with their usual causes. It is pattern matching against a teaching model, not a diagnosis.</li>
         <li><strong>Share:</strong> the address bar always holds the current case, gaze and pupil exam, so "Copy link" opens exactly what you see. "Save image" downloads a labelled picture.</li>

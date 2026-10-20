@@ -261,7 +261,7 @@ Use the closing block on every condition page:
 >
 > Horner syndrome comes from a break anywhere along the sympathetic pathway to the eye, which runs from the brain down into the chest and back up along the carotid artery. The iris dilator and a small muscle that helps lift the upper lid both weaken. The result is a smaller pupil and a mild droop of the upper lid on the same side. The difference between the pupils is largest in dim light, and the small pupil is slow to dilate when the lights go down.
 >
-> The simulator below opens on a right Horner syndrome in a dim room. Press **Run the key test** to watch the dilation lag and the effect of apraclonidine drops, or switch the room light between bright and dim.
+> The simulator below opens on a right Horner syndrome in a dim room. Press **Run the key test** to watch the dilation lag and the effect of apraclonidine drops, or slide the room light from bright to dark and watch the difference between the pupils grow.
 >
 > **Red flag:** a new, painful Horner syndrome is treated as a carotid artery dissection until proven otherwise and needs same-day imaging. Other causes include a tumour at the top of the lung, neck or chest surgery, and stroke.
 

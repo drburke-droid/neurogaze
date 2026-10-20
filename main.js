@@ -7,7 +7,7 @@ import {
   MUSCLES, MUSCLE_NAMES, NERVE_OF, defaultState, solve, stepFatigue, muscleState,
   describeDeviation, GAZE_POSITIONS, GAZE_NAMES, strength, prism, lidDroop,
 } from './engine.js';
-import { createPupilKinetics, normalPupil, pupilKind, samePupil, DROPS } from './pupil.js';
+import { createPupilKinetics, normalPupil, pupilKind, samePupil, roomLevel, ROOM, DROPS } from './pupil.js';
 import { CASES, CASE_BY_ID, CAUSES, sidedName } from './cases.js';
 import { KEYS as CHART_KEYS, chartFromState, normalChart, rankPatterns, describeFindings } from './diagnose.js';
 
@@ -42,7 +42,7 @@ const sim = {
   locked: false,
   comparing: false,
   solution: null,
-  exam: { room: 'bright', pen: 'off', drop: null }, // pupil exam; the near target is sim.near
+  exam: { room: 100, pen: 'off', drop: null }, // pupil exam (room light 0–100); the near target is sim.near
 };
 // Eased eye angles actually drawn (per eye: h = abduction +, v = up +)
 const shown = { R: { h: 0, v: 0 }, L: { h: 0, v: 0 } };
@@ -395,12 +395,16 @@ function examNow(tSec = performance.now() / 1000) {
 /** Jump the pupils to their resting size for the current state (a new case, not a reflex). */
 function snapPupils() { pupilOut = pupilKin.snap(currentState().pupil, examNow()); }
 
+// The scene darkens with the room light but never goes black, as a clinician still sees the pupils
+// with a little background light. The chart is always drawn in full light.
 function applyRoomLight() {
-  const k = mode === 'sim' && sim.exam.room === 'dim' ? 0.3 : 1; // the chart is always drawn in full light
+  const s = sim.exam.room / 100;
+  const k = mode === 'sim' ? 0.16 + 0.84 * s * s : 1;
   for (const { light, base } of roomLights) light.intensity = base * k;
   for (const m of envMats) if (m.userData.env0 != null) m.envMapIntensity = m.userData.env0 * k;
-  stage.classList.toggle('dim', k < 1);
+  stage.classList.toggle('dim', k < 0.7);
 }
+const roomName = (level) => (level <= 5 ? 'Lights off' : level < 25 ? 'Very dim' : level < 55 ? 'Dim' : level < 85 ? 'Moderate' : 'Bright');
 
 // Penlight: a 3D light just below and in front of the lit eye, and a drawn penlight under it
 const penEl = $('penlight');
@@ -423,7 +427,7 @@ function placePenlight(pen) {
 let pupilChipText = '';
 function updatePupilChip() {
   const st = currentState();
-  const relevant = CASE_BY_ID[sim.caseId].group === 'pupil' || demo || sim.exam.room !== 'bright' || sim.exam.pen !== 'off' || sim.exam.drop
+  const relevant = CASE_BY_ID[sim.caseId].group === 'pupil' || demo || sim.exam.room < 100 || sim.exam.pen !== 'off' || sim.exam.drop
     || ['R', 'L'].some((e) => pupilKind(st.pupil[e]) !== 'normal');
   const chip = $('pupil-chip');
   chip.hidden = !relevant || mode !== 'sim';
@@ -680,7 +684,7 @@ function applyCase(id, side, { keepGaze = false, announce: say = true } = {}) {
   sim.fixing = side === 'R' ? 'L' : 'R';
   if (!keepGaze) { const [H, V] = GAZE_POSITIONS[c.worst(side)]; sim.gazeH = H; sim.gazeV = V; }
   stopDemo();
-  // Every case starts from its own pupil exam (bright room, penlight off, unless it says otherwise);
+  // Every case starts from its own pupil exam (bright room, penlight off, unless it says otherwise),
   // pupil cases also open in close-up
   setExamState(examPreset(c));
   if (c.group === 'pupil' && !keepGaze) { sim.view = 'eyes'; frameCamera(); }
@@ -765,10 +769,11 @@ $('near-picker').addEventListener('click', (e) => {
 });
 
 // Pupil exam controls
-function examPreset(c) { return { room: 'bright', pen: 'off', drop: null, ...(c.exam || {}) }; }
+function examPreset(c) { const e = { room: 'bright', pen: 'off', drop: null, ...(c.exam || {}) }; return { ...e, room: roomLevel(e.room) }; }
 const defaultView = (id) => (CASE_BY_ID[id].group === 'pupil' ? 'eyes' : 'face'); // pupil cases open in close-up
 function setExamState({ near, ...patch }) {
   if (patch.pen === 'swing' && sim.exam.pen !== 'swing') swingStart = performance.now() / 1000;
+  if ('room' in patch) patch.room = Math.round(roomLevel(patch.room));
   Object.assign(sim.exam, patch);
   if (near !== undefined) { sim.near = near; resolve(); } // the near target is shared with the motility exam
   applyRoomLight();
@@ -779,15 +784,35 @@ function setExam(patch) {
   refreshAll();
   requestFrame();
 }
-$('room-picker').addEventListener('click', (e) => {
-  const b = e.target.closest('button[data-room]'); if (!b) return;
-  setExam({ room: b.dataset.room });
-  announce(b.dataset.room === 'dim' ? 'Room light dimmed.' : 'Room light bright.');
-});
+// Room light: a slider (the wheel works only while the pointer is on the slider, so it never
+// traps page scrolling), plus a switch and the D key that turn the lights off and back on.
+const roomSlider = $('room-slider');
+let lightsOnLevel = 100; // where the lights come back to
+function setRoom(level) {
+  stopDemo();
+  setExamState({ room: level });
+  updateExamControls();
+  updatePupilChip();
+  scheduleHash(300);
+  requestFrame();
+}
+roomSlider.addEventListener('input', () => setRoom(+roomSlider.value));
+roomSlider.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const notches = e.deltaMode === 1 ? e.deltaY / 3 : e.deltaY / 100; // a mouse notch moves it 5
+  setRoom(sim.exam.room - 5 * notches);
+}, { passive: false });
+function toggleLights() {
+  if (sim.exam.room > 0) { lightsOnLevel = sim.exam.room; setRoom(0); announce('Lights off.'); }
+  else { setRoom(lightsOnLevel || 100); announce(`Lights on: ${roomName(sim.exam.room).toLowerCase()}.`); }
+}
+$('lights').addEventListener('click', toggleLights);
+// Penlight buttons toggle: tap the lit eye again to turn the light off
 $('pen-picker').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-pen]'); if (!b) return;
-  setExam({ pen: b.dataset.pen });
-  announce({ off: 'Penlight off.', R: 'Penlight on the right eye.', L: 'Penlight on the left eye.', swing: 'Swinging flashlight test.' }[b.dataset.pen]);
+  const pen = b.dataset.pen !== 'off' && b.dataset.pen === sim.exam.pen ? 'off' : b.dataset.pen;
+  setExam({ pen });
+  announce({ off: 'Penlight off.', R: 'Penlight on the right eye.', L: 'Penlight on the left eye.', swing: 'Swinging flashlight test.' }[pen]);
 });
 $('drop-select').addEventListener('change', (e) => {
   setExam({ drop: e.target.value || null });
@@ -810,7 +835,7 @@ function runDemo() {
   stopDemo();
   const steps = c.demo(sim.side);
   demo = { timers: [] };
-  setExamState({ room: 'bright', pen: 'off', drop: null, near: false });
+  setExamState({ room: ROOM.bright, pen: 'off', drop: null, near: false });
   if (sim.view !== 'eyes') { sim.view = 'eyes'; frameCamera(); }
   const [H, V] = GAZE_POSITIONS[5];
   sim.gazeH = H; sim.gazeV = V; resolve();
@@ -862,6 +887,7 @@ document.addEventListener('keydown', (e) => {
   if (nudge && document.activeElement === stage) { e.preventDefault(); setGaze(sim.gazeH + nudge[0], sim.gazeV + nudge[1]); return; }
   if (e.key === 'n' || e.key === 'N') setComparing(true);
   if (e.key === 'l' || e.key === 'L') setLocked(!sim.locked);
+  if (e.key === 'd' || e.key === 'D') toggleLights();
 });
 document.addEventListener('keyup', (e) => { if (e.key === 'n' || e.key === 'N') setComparing(false); });
 
@@ -1271,9 +1297,7 @@ function refreshAll() {
   for (const b of $('fix-picker').children) b.setAttribute('aria-pressed', String(b.dataset.fix === sim.fixing));
   for (const b of $('near-picker').children) b.setAttribute('aria-pressed', String((b.dataset.near === '1') === sim.near));
   for (const b of $('view-picker').children) b.setAttribute('aria-pressed', String(b.dataset.view === sim.view));
-  for (const b of $('room-picker').children) b.setAttribute('aria-pressed', String(b.dataset.room === sim.exam.room));
-  for (const b of $('pen-picker').children) b.setAttribute('aria-pressed', String(b.dataset.pen === sim.exam.pen));
-  $('drop-select').value = sim.exam.drop || '';
+  updateExamControls();
   $('lock').setAttribute('aria-pressed', String(sim.locked));
   $('lock').textContent = sim.locked ? 'Unlock gaze' : 'Lock gaze';
   updateLockHint();
@@ -1287,6 +1311,17 @@ function refreshAll() {
     ? 'Interactive Gaze Simulator: Cranial Nerve Palsies, Eye Movements and Pupils'
     : `${caseTitle()} · Interactive Gaze Simulator`;
   scheduleHash();
+}
+
+function updateExamControls() {
+  const lvl = sim.exam.room, name = roomName(lvl);
+  roomSlider.value = String(lvl);
+  roomSlider.setAttribute('aria-valuetext', `${name}, ${lvl}%`);
+  $('room-value').textContent = name;
+  $('lights').setAttribute('aria-pressed', String(lvl === 0));
+  $('lights').textContent = lvl === 0 ? 'Lights on' : 'Lights off';
+  for (const b of $('pen-picker').children) b.setAttribute('aria-pressed', String(b.dataset.pen === sim.exam.pen));
+  $('drop-select').value = sim.exam.drop || '';
 }
 
 function announce(msg) {
@@ -1334,7 +1369,7 @@ function writeHash() {
   if (sim.view !== defaultView(sim.caseId)) p.set('view', sim.view);
   // Pupil exam, where it differs from the case's starting exam
   const pre = examPreset(CASE_BY_ID[sim.caseId]);
-  if (sim.exam.room !== pre.room) p.set('room', sim.exam.room);
+  if (sim.exam.room !== pre.room) p.set('room', String(sim.exam.room));
   if (sim.exam.pen !== pre.pen) p.set('pen', sim.exam.pen);
   if (sim.exam.drop) p.set('drop', sim.exam.drop);
   if (sim.custom) {
@@ -1379,7 +1414,7 @@ function readHash() {
   sim.view = ['face', 'eyes'].includes(p.get('view')) ? p.get('view') : defaultView(id);
   const pre = examPreset(CASE_BY_ID[id]);
   setExamState({
-    room: ['bright', 'dim'].includes(p.get('room')) ? p.get('room') : pre.room,
+    room: /^\d{1,3}$/.test(p.get('room') || '') ? +p.get('room') : ROOM[p.get('room')] ?? pre.room, // older links say bright or dim
     pen: ['off', 'R', 'L', 'swing'].includes(p.get('pen')) ? p.get('pen') : pre.pen,
     drop: DROPS[p.get('drop')] ? p.get('drop') : null,
   });
@@ -1452,7 +1487,8 @@ function exportImage() {
   if (!pupilCase) y = text(describeDeviation(sim.solution.deviation, sim.near), 800, y + 18, `600 22px ${sans}`, '#4cc9f0');
   if (!$('pupil-chip').hidden) {
     const pen = { R: 'light in right eye', L: 'light in left eye', swing: 'swinging flashlight' }[sim.exam.pen];
-    const how = [sim.exam.room === 'dim' ? 'dim room' : 'bright room', pen, sim.exam.drop && DROPS[sim.exam.drop]].filter(Boolean).join(' · ');
+    const room = sim.exam.room <= 5 ? 'lights off' : `${roomName(sim.exam.room).toLowerCase()} room`;
+    const how = [room, pen, sim.exam.drop && DROPS[sim.exam.drop]].filter(Boolean).join(' · ');
     y = text(`Pupils OD ${pupilOut.R.mm.toFixed(1)} mm · OS ${pupilOut.L.mm.toFixed(1)} mm (${how})`, 800, y + (pupilCase ? 18 : 4), `600 20px ${sans}`, '#4cc9f0');
   }
   if (!sim.custom && sim.caseId !== 'normal') {

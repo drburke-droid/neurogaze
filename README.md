@@ -14,10 +14,10 @@ Created by **Dr Robert Burke**, optometrist, Calgary Vision Centre.
 - **Nine diagnostic positions** from a 3×3 pad or keys 1–9, laid out as the examiner sees the patient. The pointer or a finger also moves the target.
 - **Manual nerve control:** cycle each CN III, IV and VI between normal, paresis and palsy.
 - **Fixing eye switch** to show primary vs secondary deviation (Hering's law), a **near target** to show convergence and the near pupil response, and a **hold-to-compare** view of a healthy patient.
-- **Pupil exam:** bright or dim room, a penlight on either eye or swinging between them, and drops in both eyes (pilocarpine 0.1% and 1%, apraclonidine 0.5%). A live readout gives both pupil diameters. Each pupil case, plus the third nerve palsy and the normal case, has a **Run the key test** button that steps through the examination with captions.
+- **Pupil exam:** a room-light slider from bright to lights off (the mouse wheel works over the slider; a Lights off/on switch and the D key flick the lights), a penlight on either eye or swinging between them (tap the lit eye's button again to turn it off), and drops in both eyes (pilocarpine 0.1% and 1%, apraclonidine 0.5%). A live readout gives both pupil diameters. Each pupil case, plus the third nerve palsy and the normal case, has a **Run the key test** button that steps through the examination with captions.
 - **Live readouts:** effort and force for every muscle, and the deviation in degrees and prism dioptres.
 - **Motility chart → suggested diagnosis:** record the nine cardinal positions by dragging each eye in a 3×3 grid of close-up views, press Enter, and get the conditions that best reproduce the chart, with fit percentages and usual causes (`diagnose.js`). Boxes you don't touch count only weakly as normal, and common conditions get a slight head start over rare ones. Charts are shareable links too.
-- **Shareable state:** the address bar always encodes the current case, gaze and pupil exam, e.g. `#case=cn6&side=R&gaze=4` or `#case=rapd&side=L&pen=swing`. "Copy link" and "Save image" (a labelled 1200×630 PNG) are in the header.
+- **Shareable state:** the address bar always encodes the current case, gaze and pupil exam, e.g. `#case=cn6&side=R&gaze=4` or `#case=horner&side=R&room=0`. "Copy link" and "Save image" (a labelled 1200×630 PNG) are in the header.
 
 ## The model, honestly
 
