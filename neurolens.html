@@ -106,6 +106,10 @@
     .story-nav .progress { color: rgba(255, 255, 255, .7); font-weight: 700; font-size: 14px; min-width: 3.5em; }
     .story-nav .next.ready { animation: ready 1.4s ease-in-out infinite; }
     @keyframes ready { 50% { box-shadow: 0 0 0 7px rgba(255, 255, 255, .28); } }
+    /* Inside the head on a wide stage: the story sits in a column beside the profile */
+    .stage.inside-wide .story { right: auto; bottom: 0; width: clamp(270px, 40%, 440px); display: flex; flex-direction: column; justify-content: center; padding: 24px 40px 24px 28px; text-align: left; font-size: clamp(16px, 1.65vw, 21px); background: linear-gradient(90deg, rgba(8, 11, 16, .92), rgba(8, 11, 16, .8) 75%, rgba(8, 11, 16, 0)); }
+    .stage.inside-wide .story p { margin: 0; }
+    .stage.inside-wide .story-nav { justify-content: flex-start; margin-top: 16px; }
     .nav { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
     .nav:empty { display: none; }
 
@@ -116,6 +120,19 @@
     /* Sleeping: an X-ray band across the closed eyelids */
     .xray { position: absolute; z-index: 4; left: 0; right: 0; border-top: 2px solid rgba(92, 255, 138, .8); border-bottom: 2px solid rgba(92, 255, 138, .8); background: repeating-linear-gradient(rgba(92, 255, 138, .16) 0 1px, transparent 1px 4px); pointer-events: none; transition: opacity .5s; }
     .xray span { position: absolute; left: 50%; bottom: -2px; transform: translate(-50%, 100%); background: var(--xray); color: #06240f; font: 800 12px var(--body); letter-spacing: .06em; padding: 4px 10px; border-radius: 0 0 8px 8px; white-space: nowrap; }
+    /* Inside the head, in profile: the trigeminal nerve */
+    .veil { position: absolute; inset: 0; z-index: 2; background: radial-gradient(ellipse at 50% 60%, rgba(8, 11, 16, .42), rgba(8, 11, 16, .62)); pointer-events: none; }
+    .veil[hidden], .nerves[hidden], .nv-labels[hidden], .nv-clock[hidden] { display: none; }
+    .nerves { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; overflow: visible; }
+    .nv-labels { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
+    .nv-label { position: absolute; white-space: nowrap; background: rgba(12, 18, 28, .86); color: #f1f4f9; font: 700 13px/1.2 var(--body); padding: 4px 10px; border-radius: 99px; border: 1px solid rgba(255, 207, 90, .45); transition: opacity .3s; }
+    .nv-label.hot { background: #ffcf5a; color: #1b2230; border-color: #ffcf5a; }
+    .nv-label.sym { background: #ff6a4d; color: #fff; border-color: #ff6a4d; }
+    .nv-label.num { width: 28px; height: 28px; padding: 0; display: grid; place-items: center; border-radius: 50%; background: #ffcf5a; color: #1b2230; border: 2px solid #1b2230; font: 800 15px var(--body); }
+    .nv-dot { position: absolute; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #ffcf5a; transition: opacity .3s; }
+    .nv-dot.sym { background: #ff6a4d; }
+    .nv-clock { position: absolute; right: 12px; bottom: 50px; z-index: 6; background: rgba(16, 20, 28, .86); color: #e9edf4; border-radius: 99px; padding: 6px 14px; font: 600 14px var(--body); font-variant-numeric: tabular-nums; }
+    .nv-clock b { color: #ffcf5a; }
     .speed { display: inline-flex; border: 2px solid var(--line); border-radius: 99px; overflow: hidden; }
     .speed[hidden] { display: none; }
     .speed button { border: 0; background: #fff; padding: 9px 16px; font-weight: 700; font-size: 16px; cursor: pointer; color: var(--muted); }
@@ -134,7 +151,11 @@
     .step { background: var(--soft); border-radius: var(--radius); padding: 20px; display: flex; flex-direction: column; gap: 10px; }
     .step .num { width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; font: 600 16px var(--head); }
     .step p { color: #34405a; font-size: 17px; }
-    .step svg { width: 100%; max-width: 230px; height: auto; align-self: center; margin-top: 4px; }
+    .tri { margin: 18px 0 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: center; background: var(--soft); border-radius: var(--radius); padding: 20px; }
+    .tri img { display: block; width: 100%; height: auto; border-radius: 12px; background: var(--stage); }
+    .tri-key { margin: 12px 0 0; padding: 0; list-style: none; counter-reset: key; display: grid; gap: 10px; }
+    .tri-key li { counter-increment: key; position: relative; padding-left: 38px; color: #34405a; font-size: 16.5px; line-height: 1.45; }
+    .tri-key li::before { content: counter(key); position: absolute; left: 0; top: -1px; width: 26px; height: 26px; border-radius: 50%; background: #ffcf5a; color: #1b2230; border: 2px solid #1b2230; display: grid; place-items: center; font: 800 13px/1 var(--body); }
     .aside { margin-top: 16px; color: var(--muted); font-size: 16px; }
 
     .cta { background: linear-gradient(135deg, #eaf2fd, #f4f8ff); border-radius: var(--radius); padding: 26px; display: grid; gap: 14px; }
@@ -153,7 +174,7 @@
     .note { color: var(--muted); font-size: 14px; text-align: center; padding: 6px 0 20px; }
 
     @media (max-width: 900px) {
-      .steps { grid-template-columns: 1fr; }
+      .steps, .tri { grid-template-columns: 1fr; }
       .posts { grid-template-columns: 1fr 1fr; }
     }
     @media (max-width: 560px) {
@@ -168,6 +189,8 @@
       .linkish { margin-left: 0; }
       .posts { grid-template-columns: 1fr; }
       .credit { font-size: 12px; }
+      .nv-label { font-size: 11.5px; padding: 3px 8px; }
+      .nv-clock { font-size: 12.5px; right: 8px; bottom: 44px; }
     }
     @media (prefers-reduced-motion: reduce) { .paddle, .post, .card-text span, .xray { transition: none; } .callout, .story-nav .next.ready { animation: none; } }
   </style>
@@ -191,6 +214,8 @@
             <circle id="stick-ball" fill="url(#ball-shade)"/>
           </svg>
           <div class="xray" id="xray" hidden><span>X-ray: looking through the closed eyelids</span></div>
+          <div class="veil" id="veil" hidden></div>
+          <svg class="nerves" id="nerves" aria-hidden="true" hidden></svg>
           <div class="target" id="target" hidden></div>
           <div class="target dim" id="target-b" hidden></div>
           <div class="card" id="card" hidden>
@@ -253,20 +278,7 @@
         <article class="step">
           <div class="num" aria-hidden="true">2</div>
           <h3>The effect</h3>
-          <p>That eye-position information travels through the trigeminal nerve, which also carries feeling from the face, jaw and neck. The idea behind Neurolens is that constant corrections over-stimulate this nerve, which may show up as headaches, eye strain, neck pain, a dry-eye feeling or motion sickness.</p>
-          <svg viewBox="0 0 230 150" role="img" aria-label="The trigeminal nerve's three branches: to the forehead and eyes, the cheek, and the jaw.">
-            <ellipse cx="82" cy="78" rx="52" ry="66" fill="#fff" stroke="#c9d2df" stroke-width="2"/>
-            <path d="M52 64 q10-7 20 0 q-10 6-20 0z M92 64 q10-7 20 0 q-10 6-20 0z" fill="#c9d2df"/>
-            <path d="M82 70 v24 q-6 4 0 6" fill="none" stroke="#c9d2df" stroke-width="2"/>
-            <path d="M68 116 q14 8 28 0" fill="none" stroke="#c9d2df" stroke-width="2"/>
-            <circle cx="126" cy="84" r="5" fill="#1b2230"/>
-            <path d="M126 84 C122 66 114 56 104 54 C100 44 100 30 102 18" fill="none" stroke="#1f6fd1" stroke-width="3" stroke-linecap="round"/>
-            <path d="M126 84 C118 84 110 80 102 78 C98 84 96 90 94 98" fill="none" stroke="#12a594" stroke-width="3" stroke-linecap="round"/>
-            <path d="M126 84 C128 100 124 116 112 128 C104 134 96 136 88 136" fill="none" stroke="#e5484d" stroke-width="3" stroke-linecap="round"/>
-            <text x="150" y="40" font-size="12" fill="#1f6fd1" font-weight="700">Forehead, eyes</text>
-            <text x="150" y="88" font-size="12" fill="#12a594" font-weight="700">Cheek</text>
-            <text x="150" y="132" font-size="12" fill="#e5484d" font-weight="700">Jaw</text>
-          </svg>
+          <p>That eye-position information travels along the trigeminal nerve, which also carries feeling from the face and jaw and from the covering of the brain, and meets the nerves from the back of the head and neck in the brainstem. The idea behind Neurolens is that constant corrections over-stimulate this nerve, which may show up as headaches, eye strain, neck pain, a dry-eye feeling or motion sickness.</p>
         </article>
         <article class="step">
           <div class="num" aria-hidden="true">3</div>
@@ -274,6 +286,21 @@
           <p>Prism in a glasses lens shifts what you see very slightly, so your eyes don't have to work as hard to line up. Eyes are usually further out of line up close than far away, so Neurolens uses a contoured prism: more toward the bottom of the lens, where you read, and less at the top. Neurolens is backed by a 100% satisfaction guarantee.</p>
         </article>
       </div>
+      <figure class="tri">
+        <img src="img/trigeminal.webp" width="960" height="962" loading="lazy" decoding="async" alt="Side view of a head showing the trigeminal nerve running from the eye muscles back to the brainstem, with branches to the forehead, the cheek, the jaw and chewing muscles and the covering of the brain, and the upper neck nerves meeting it at the top of the spinal cord.">
+        <figcaption>
+          <h3>The trigeminal nerve</h3>
+          <ol class="tri-key">
+            <li><b>Eye muscle sensors.</b> They report where each eye is pointing.</li>
+            <li><b>Trigeminal nerve.</b> It carries those reports back to the brainstem.</li>
+            <li><b>Forehead and eyes.</b> Feeling from the forehead, the front of the scalp and the surface of the eye.</li>
+            <li><b>Cheeks and upper teeth.</b> Feeling from the cheek, the side of the nose, the upper lip and the upper teeth.</li>
+            <li><b>Jaw and chewing muscles.</b> Feeling from the lower jaw, chin and tongue, and the nerve that works the chewing muscles.</li>
+            <li><b>Covering of the brain.</b> The brain itself can't feel pain, but its covering (the meninges) can, through this nerve.</li>
+            <li><b>Back of the head and neck.</b> The upper neck nerves meet the trigeminal nerve at the top of the spinal cord, so pain from one can be felt in the other.</li>
+          </ol>
+        </figcaption>
+      </figure>
       <p class="aside"><strong>What about blue-light filters or the 20-20-20 rule?</strong> They can make screen time more comfortable, and newer lens designs can make screens sharper, but none of them change how well your eyes line up.</p>
     </div>
   </section>

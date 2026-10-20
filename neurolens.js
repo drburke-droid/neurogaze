@@ -2,6 +2,7 @@
 // Created by Dr Robert Burke
 import { createHead } from './head3d.js';
 import { NEAR_CONVERGENCE, RESTING, landingOffset, coveredOffset } from './fixation.js';
+import { createNerves } from './nerves.js';
 
 const $ = (id) => document.getElementById(id);
 const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
@@ -38,6 +39,10 @@ const drift = { R: 0, L: 0 }; // each eye's drift toward rest, degrees outward (
 let peekShown = 0;            // 0..1, how far the X-ray window has opened
 let sleepT = 0;               // seconds into the sleep step: lids close, then the X-ray view appears
 let wakeT = 0, fromSleep = false; // seconds into the waking step: the lids open, then the eyes straighten
+let turnK = 0;                // 0..1: the head turning from facing us to its profile, for the steps inside the head
+let sideBox = null;           // how the camera frames the profile (eases between steps)
+let nerveMode = null;         // draw the nerve this way instead of as the step says (for rendering the still diagram)
+let nerveT = 0, nerveShow = 0, nerveOn = false, frameDt = 0; // seconds into a step inside the head; the nerve drawing fading in
 let pullT = 0, pull = 1;      // the target pulling back from the face toward the viewer (step 2): 0 near the face, 1 far
 const STICK_NEAR = 12;        // degrees each eye turns in for the target close to the face
 const STICK_DROP = 0.42;      // once pulled back toward us, the ball sits this far below the eyes (× geo.u), out of our line of sight
@@ -50,7 +55,8 @@ const way = () => (st.drift === 'exo' ? 'outward' : 'inward');
 // ═══════════════════════════════════════════════════════════════
 // scene: what the eyes do. still = looking straight ahead (at a fixation stick held out toward us);
 // sleep = lids close, then an X-ray view shows both eyes at rest; wake = lids open and the eyes straighten;
-// saccades, mirror, reading = repeated jumps.
+// saccades, mirror, reading = repeated jumps; nerve = the head in profile, with the trigeminal nerve drawn in
+// (nerve: what it shows, see nerves.js).
 // task: what the visitor is asked to do.
 const STEPS = [
   { say: () => 'This is what your eyes might look like in the mirror. Looking straight, right?', scene: 'still' },
@@ -70,7 +76,13 @@ const STEPS = [
   { say: () => `And remember: an eye whose input is switched off heads for its resting position. So during every saccade both eyes start to drift ${way()}, and they land slightly out of line until the brain switches them back on and pulls them together.`, scene: 'saccades', slow: true, input: true, rings: true },
   { say: () => 'Reading is a long chain of saccades: word, to word, to word. Here is someone reading at full speed, about 150 words a minute. Looks normal.', scene: 'reading', input: true, rings: true },
   { say: () => 'Now the same reading, slowed down and magnified. After each jump the eyes land slightly out of line, and the brain has to pull them back together. That small miss is called fixation disparity.', scene: 'reading', slow: true, input: true, rings: true },
-  { say: () => 'It happens with every word, thousands of times a day. Constantly pulling the eyes back into line is thought to contribute to headaches, eye strain and neck pain. Read on to see why, and how Neurolens can help.', scene: 'reading', alternate: true, input: true, rings: true },
+  { say: () => 'It happens with every word, thousands of times a day. And to make each of those corrections, your brain needs to know exactly where each eye is pointing. So how does it know?', scene: 'reading', alternate: true, input: true, rings: true },
+  { say: () => 'Your brain is constantly asking each eye: where are you pointing right now? Tiny sensors in the eye muscles, called proprioceptors, keep answering, many times a second.', scene: 'nerve', nerve: 'sense' },
+  { say: () => 'Those answers travel to the brain along the trigeminal nerve, the main sensory nerve of the face.', scene: 'nerve', nerve: 'route' },
+  { say: () => 'The same nerve carries feeling from the forehead, the cheeks and the jaw, controls the chewing muscles, and supplies the covering of the brain. In the brainstem, it also meets the nerves from the back of the head and neck.', scene: 'nerve', nerve: 'map' },
+  { say: () => 'Now picture reading. Every correction, after every word, sends another burst of signals along that nerve. Over a long stretch of reading, the nerve almost pulses with them.', scene: 'nerve', nerve: 'reading' },
+  { say: () => "Yet each eye weighs only about 7.5 grams, and the muscles that move it are far stronger than they need to be. They're built not to tire, with their own special kind of myosin, the protein that makes muscle contract, and a rich blood supply.", scene: 'nerve', nerve: 'weight' },
+  { say: () => "So it's probably not tired eye muscles. It's more like a bandwidth problem: their sensors keep flooding the brain, through the trigeminal nerve, with updates on where the eyes are. That constant traffic is thought to contribute to headaches, eye strain and neck pain. Read on to see how Neurolens can help.", scene: 'nerve', nerve: 'flood' },
 ];
 const step = () => STEPS[st.step];
 
@@ -100,6 +112,7 @@ function goStep(n) {
   const s = step();
   clearTimeout(showTimer);
   if (st.step === 1) pullT = 0; // the target starts close to the face and pulls back toward the viewer
+  nerveT = 0;
   if (s.scene === 'wake') { // waking up: start with the lids shut and both eyes at rest
     fromSleep = STEPS[st.step - 1]?.scene === 'sleep' && back === false && lids.xray > 0.5;
     wakeT = 0;
@@ -162,12 +175,14 @@ function refresh() {
   paddle.hidden = !s.paddle;
   card.hidden = s.scene !== 'reading';
   $('input-chip').hidden = !s.input;
+  storyLayout();
 }
 
 // ═══════════════════════════════════════════════════════════════
 // 3D head and stage geometry
 // ═══════════════════════════════════════════════════════════════
 const stage = $('stage');
+const nerves = createNerves($('nerves'), stage);
 let head = null, geo = null;
 try {
   head = createHead($('view'), stage, {
@@ -184,7 +199,10 @@ try {
 function layout() {
   if (!head?.loaded) return;
   head.setView('story');
+  storyLayout();
+  head.setTurn(0); // the stage geometry comes from the face-on view
   const R = head.project('R'), L = head.project('L');
+  head.setTurn(ease(turnK));
   const u = (L.x - R.x) / 2;
   // The card spans most of a narrow stage; gaze angles scale with it so the eyes turn as far as on a wide one
   const W = stage.clientWidth, cardW = W < 600 ? 0.94 * W : Math.min(3.6 * u, 0.94 * W);
@@ -195,6 +213,21 @@ function layout() {
   draw();
 }
 new ResizeObserver(() => { if (head?.loaded) { head.resize(); layout(); } }).observe(stage);
+
+// In profile: the region to show (head units), fitted into the stage beside the story (wide stages) or below it.
+// The eye steps close in on the eye socket.
+const ROI = { full: { z: [-1.0, 0.72], y: [-0.85, 0.62] }, eye: { z: [-0.32, 0.56], y: [-0.3, 0.3] } };
+function sideFrame(mode) {
+  const W = stage.clientWidth, H = stage.clientHeight, story = $('story');
+  const wide = stage.classList.contains('inside-wide');
+  const left = wide ? story.offsetWidth : 0, top = wide ? 0 : story.offsetHeight;
+  const r = ROI[mode === 'sense' || mode === 'weight' ? 'eye' : 'full'];
+  const s = 0.94 * Math.min((W - left) / (r.z[1] - r.z[0]), (H - top) / (r.y[1] - r.y[0])); // pixels per head unit
+  // Centre the region in the space the story leaves (the face looks left, so screen right is toward the back of the head)
+  return { w: W / s, h: H / s, z: (r.z[0] + r.z[1]) / 2 + left / 2 / s, y: (r.y[0] + r.y[1]) / 2 + top / 2 / s };
+}
+// Wide stages put the story in a column beside the head while inside it
+function storyLayout() { stage.classList.toggle('inside-wide', step().scene === 'nerve' && stage.clientWidth >= 560); }
 
 // Gaze (degrees, + = patient's right / up) ↔ stage pixels, in a stylised geometry that makes movements easy to see
 const gazeToScreen = (H, V) => ({ x: geo.o.x - Math.tan(H * DEG) * geo.D, y: geo.o.y - Math.tan(V * DEG) * geo.D });
@@ -380,6 +413,24 @@ function tick(now) {
   if (waking) { close = 1 - ease(clamp((wakeT - 0.5) / 0.6, 0, 1)); xray = fromSleep ? 1 - ease(clamp(wakeT / 0.5, 0, 1)) : 0; }
   if (close !== lids.close || xray !== lids.xray) { lids.close = close; lids.xray = xray; head.setLids(lids); lastAim = ''; }
   if ((sleeping && sleepT < 2.4) || (waking && wakeT < 2.6)) active = true;
+
+  // Inside the head: swing round to the profile (framed beside or below the story), then draw the nerve in
+  const side = step().scene === 'nerve';
+  let moved = false;
+  if (side) {
+    const goal = sideFrame(step().nerve);
+    if (!sideBox || turnK === 0) sideBox = goal;
+    for (const c of ['w', 'h', 'y', 'z']) {
+      const d = goal[c] - sideBox[c];
+      if (Math.abs(d) > 1e-4) { sideBox[c] += d * (1 - Math.exp(-dt / 0.4)); moved = true; } else sideBox[c] = goal[c];
+    }
+  }
+  if (turnK !== (side ? 1 : 0)) { turnK = side ? Math.min(1, turnK + dt / 1.3) : Math.max(0, turnK - dt / 1); moved = true; }
+  if (moved) { head.setTurn(ease(turnK), sideBox); lastAim = ''; active = true; }
+  nerveT = side ? nerveT + dt : 0;
+  nerveShow = side && turnK === 1 ? Math.min(1, nerveShow + dt / 0.45) : 0;
+  if (side) active = true; // the signals keep moving
+  frameDt = dt;
   for (const e of EYES) {
     const goal = st.cover === e || (sleeping && sleepT > 0.5) || (waking && wakeT < 1.5) ? coveredOffset(posture()) : 0;
     drift[e] += (goal - drift[e]) * (1 - Math.exp(-dt / (goal ? 0.6 : 0.3)));
@@ -414,7 +465,8 @@ function draw() {
   const aimR = g.H - conv + turn('R'), aimL = -g.H - conv + turn('L');
   head.aim('R', aimR, V);
   head.aim('L', aimL, V);
-  const key = `${aimR.toFixed(3)}|${aimL.toFixed(3)}|${V.toFixed(3)}|${lids.close.toFixed(3)}|${lids.xray.toFixed(3)}`;
+  const box = sideBox ? `${sideBox.w.toFixed(4)},${sideBox.h.toFixed(4)},${sideBox.y.toFixed(4)},${sideBox.z.toFixed(4)}` : '';
+  const key = `${aimR.toFixed(3)}|${aimL.toFixed(3)}|${V.toFixed(3)}|${lids.close.toFixed(3)}|${lids.xray.toFixed(3)}|${turnK.toFixed(4)}|${box}`;
   if (key !== lastAim) { head.render(); lastAim = key; }
 
   // The target, and where each eye is aiming relative to it
@@ -445,6 +497,18 @@ function draw() {
   const xr = $('xray');
   xr.hidden = lids.xray < 0.02;
   Object.assign(xr.style, { top: `${geo.o.y - 0.42 * geo.u}px`, height: `${0.84 * geo.u}px`, opacity: lids.xray });
+  // Inside the head: the trigeminal nerve over the profile, with the head dimmed behind it
+  const veil = $('veil');
+  veil.hidden = nerveShow < 0.01;
+  veil.style.opacity = nerveShow.toFixed(3);
+  if (nerveShow > 0) {
+    const XP = 0.17; // the drawing lies in the plane of the near eye
+    const project = ([z, y]) => head.projectXYZ(XP, y, z);
+    const a = project([0, 0]), b = project([0, 0.1]);
+    nerves.draw({ project, k: Math.hypot(b.x - a.x, b.y - a.y) / 0.1, mode: nerveMode || s.nerve, t: nerveT, dt: frameDt, show: nerveShow });
+    nerveOn = true;
+  } else if (nerveOn) { nerves.hide(); nerveOn = false; }
+  frameDt = 0;
   const chip = $('input-chip');
   chip.classList.toggle('off', off);
   chip.lastChild.textContent = off ? 'Input switched off during the jump' : 'Both eyes switched on';
@@ -494,4 +558,4 @@ if (EMBED) {
 refresh();
 
 // Small hook for automated checks
-window.__nl = { st, drift, goStep, next, paddleOver, get geo() { return geo; }, get peek() { return peekShown; } };
+window.__nl = { st, drift, goStep, next, paddleOver, get geo() { return geo; }, get peek() { return peekShown; }, set nerveMode(m) { nerveMode = m; request(); }, goNerve: (m) => goStep(STEPS.findIndex((s) => s.nerve === m)) };

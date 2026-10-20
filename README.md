@@ -26,8 +26,9 @@ Created by **Dr Robert Burke**, optometrist, Calgary Vision Centre.
 - **Cover test, hands on:** the visitor drags a solid paddle over an eye and clicks it to peek through an X-ray window; the covered eye has drifted. Covering the other eye swaps the roles.
 - **Saccades:** the brain switches off the eyes' input during each jump (with the across-the-room and mirror-versus-phone-camera exercises), so both eyes start to drift and land slightly out of line.
 - **Reading:** a chain of saccades across a see-through card, at full speed (150 words a minute, true size) where it looks normal, and slowed and magnified where the miss after each jump (fixation disparity) shows.
+- **Inside the head:** the head turns to its profile and the trigeminal nerve is drawn over it. Position sensors in the eye muscles report along the nerve to the brainstem; the nerve's other territories light up (forehead, cheeks, jaw and chewing muscles, the covering of the brain), and the upper neck nerves meet it at the top of the spinal cord. An hour of reading in time-lapse makes the nerve almost pulse, and the last step frames the problem as bandwidth, not tired muscles.
 
-Below the demonstration are the cause, effect and solution, a call to action and the clinic's Neurolens articles. Eye movements are exaggerated; `fixation.js` holds the model (tests in `tests/fixation.test.mjs`) and `head3d.js` loads the shared 3D head.
+Below the demonstration are the cause, effect and solution, a call to action and the clinic's Neurolens articles. Eye movements are exaggerated; `fixation.js` holds the model (tests in `tests/fixation.test.mjs`), `head3d.js` loads the shared 3D head and `nerves.js` draws the trigeminal nerve. The still diagram on the page (`img/trigeminal.webp`) is rendered from the same drawing by `tools/trigeminal-figure.mjs`.
 
 ## The model, honestly
 
@@ -72,6 +73,8 @@ Then open the printed address. Run the model tests with `npm test` (Node 18 or l
 | `neurolens.html`, `neurolens.js` | Patient-facing embed for the clinic's Neurolens page |
 | `fixation.js` | Resting position and fixation disparity model for that page (pure functions) |
 | `head3d.js` | The 3D head as a reusable module, used by the Neurolens page |
+| `nerves.js` | The trigeminal nerve drawn over the head in profile, for that page |
+| `img/trigeminal.webp`, `tools/trigeminal-figure.mjs` | The still trigeminal nerve diagram on that page, and the script that renders it |
 | `vendor/fonts/` | Poppins and Urbanist for the Neurolens page, matching the clinic site (SIL Open Font Licence) |
 | `head_eyes_v2.glb` | Head and eye model (meshopt geometry, WebP textures, 320 KB) |
 | `vendor/three/` | three.js r160 and the add-ons used, served locally (MIT licence) |

@@ -31,8 +31,10 @@ const SIDE_YAW = 78; // degrees the camera swings round to the patient's left si
  *   head.aim(eye, h, v)   degrees; h + = abduction, v + = up
  *   head.setLids({ close, xray })  0..1: close both upper lids; make them see-through (X-ray)
  *   head.setView(v)       'face' | 'mid' | 'story' | 'eyes'
- *   head.setTurn(k)       0..1: swing round from the view above (0) to the patient's left side in profile (1)
+ *   head.setTurn(k, box)  0..1: swing round from the view above (0) to the patient's left side in profile (1);
+ *                         box { w, h, y, z } (world units) frames the profile, default FRAMES.side
  *   head.project(eye)     { x, y } in host pixels of the eye centre (also accepts a world Vector3)
+ *   head.projectXYZ(x, y, z)  { x, y } in host pixels of a world point
  *   head.render()
  */
 export function createHead(canvas, host, { url = './head_eyes_v2.glb', onProgress } = {}) {
@@ -55,7 +57,7 @@ export function createHead(canvas, host, { url = './head_eyes_v2.glb', onProgres
   const glint = new THREE.PointLight(0xfff4e0, 2.2, 0, 2); // corneal reflex from a light in front of the face
   scene.add(glint);
 
-  let eyes = null, view = 'face', turn = 0;
+  let eyes = null, view = 'face', turn = 0, sideBox = null;
   const lidState = { close: 0, xray: 0 };
   const eyeMid = new THREE.Vector3();
   const lids = {};
@@ -67,7 +69,7 @@ export function createHead(canvas, host, { url = './head_eyes_v2.glb', onProgres
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     if (eyes) {
-      const a = FRAMES[view](eyeMid), b = FRAMES.side(eyeMid), mix = (p, q) => p + (q - p) * turn;
+      const a = FRAMES[view](eyeMid), b = sideBox || FRAMES.side(eyeMid), mix = (p, q) => p + (q - p) * turn;
       const box = { w: mix(a.w, b.w), h: mix(a.h, b.h), y: mix(a.y, b.y), z: mix(eyeMid.z, b.z) };
       const t = Math.tan((camera.fov * DEG) / 2);
       const dist = Math.max(box.h / 2 / t, box.w / 2 / (t * camera.aspect)) + 0.1;
@@ -215,13 +217,14 @@ export function createHead(canvas, host, { url = './head_eyes_v2.glb', onProgres
       for (const e of ['R', 'L']) api.aim(e, shown[e].h, shown[e].v);
     },
     setView(v) { view = v; frame(); },
-    setTurn(k) { turn = k; frame(); },
+    setTurn(k, box) { turn = k; if (box) sideBox = { ...box }; frame(); },
     resize: frame,
     project(p) {
       const v = typeof p === 'string' ? eyes[p].getWorldPosition(new THREE.Vector3()) : p.clone();
       v.project(camera);
       return { x: (v.x * 0.5 + 0.5) * host.clientWidth, y: (-v.y * 0.5 + 0.5) * host.clientHeight };
     },
+    projectXYZ(x, y, z) { return api.project(new THREE.Vector3(x, y, z)); },
     render() { renderer.render(scene, camera); },
   };
   return api;
