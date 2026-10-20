@@ -37,6 +37,7 @@ const st = {
 const drift = { R: 0, L: 0 }; // each eye's drift toward rest, degrees outward (true size)
 let peekShown = 0;            // 0..1, how far the X-ray window has opened
 let sleepT = 0;               // seconds into the sleep step: lids close, then the X-ray view appears
+let wakeT = 0, fromSleep = false; // seconds into the waking step: the lids open, then the eyes straighten
 let pullT = 0, pull = 1;      // the target pulling back from the face toward the viewer (step 2): 0 near the face, 1 far
 const STICK_NEAR = 12;        // degrees each eye turns in for the target close to the face
 const STICK_DROP = 0.42;      // once pulled back toward us, the ball sits this far below the eyes (× geo.u), out of our line of sight
@@ -48,7 +49,8 @@ const way = () => (st.drift === 'exo' ? 'outward' : 'inward');
 // The story
 // ═══════════════════════════════════════════════════════════════
 // scene: what the eyes do. still = looking straight ahead (at a fixation stick held out toward us);
-// sleep = lids close, then an X-ray view shows both eyes at rest; saccades, mirror, reading = repeated jumps.
+// sleep = lids close, then an X-ray view shows both eyes at rest; wake = lids open and the eyes straighten;
+// saccades, mirror, reading = repeated jumps.
 // task: what the visitor is asked to do.
 const STEPS = [
   { say: () => 'This is what your eyes might look like in the mirror. Looking straight, right?', scene: 'still' },
@@ -60,6 +62,7 @@ const STEPS = [
   { say: () => "Let's keep the paddle in X-ray mode to see what happens when we cover the other eye. Go ahead, move the paddle over the other eye.", scene: 'still', rings: true, stick: true, paddle: true, need: 'peek', task: 'other' },
   { say: () => `Now the eye that isn't being used has drifted ${way()}, and the other eye, which the brain is calling on again, has straightened out.`, scene: 'still', rings: true, stick: true, paddle: true, need: 'other' },
   { say: () => "So when an eye isn't being used, it moves to its resting position. When you sleep and neither eye is being used, both go to their resting position.", scene: 'sleep' },
+  { say: () => "But when both eyes are open and your brain is paying attention to both of them, they're straight again, lined up on the same target.", scene: 'wake', rings: true, stick: true },
   { say: () => "Here's what most people don't realize: when you make a fast eye movement, called a saccade, your brain briefly switches off the input from your eyes to avoid a smeared, jittery view, then switches it back on once you reach your target.", scene: 'saccades', slow: true, mag: 1, input: true, rings: true },
   { say: () => "Try it yourself: look at something across the room, then quickly look at something on the other side. Notice you don't see a streak of blur, like you would if you swung a video camera too fast?", scene: 'saccades', input: true, rings: true },
   { say: () => "To really drive this home, look at yourself in a mirror and glance from one of your eyes to the other, and back. Notice you can't see your eyes move?", scene: 'mirror', input: true },
@@ -97,6 +100,11 @@ function goStep(n) {
   const s = step();
   clearTimeout(showTimer);
   if (st.step === 1) pullT = 0; // the target starts close to the face and pulls back toward the viewer
+  if (s.scene === 'wake') { // waking up: start with the lids shut and both eyes at rest
+    fromSleep = STEPS[st.step - 1]?.scene === 'sleep' && back === false && lids.xray > 0.5;
+    wakeT = 0;
+    drift.R = drift.L = coveredOffset(posture());
+  }
   // Put the paddle where this part of the story needs it
   if (st.step < 4 || (st.step === 4 && back)) { st.peek = false; st.firstEye = null; parkPaddle(); }
   if (s.need === 'peek' && !(st.cover && st.peek)) { st.peek = true; paddleOver(st.cover || st.firstEye || 'R'); }
@@ -362,15 +370,18 @@ function tick(now) {
   pull = st.step === 1 ? ease(clamp((pullT - 0.9) / 2.4, 0, 1)) : 1;
   if (st.step === 1 && pullT < 3.4) active = true;
 
-  // Asleep: the lids close, then turn see-through (X-ray) to show both eyes turned to rest
-  const sleeping = step().scene === 'sleep';
+  // Asleep: the lids close, then turn see-through (X-ray) to show both eyes turned to rest.
+  // Waking: the X-ray view fades, the lids open, then the brain pulls both eyes straight.
+  const sleeping = step().scene === 'sleep', waking = step().scene === 'wake';
   sleepT = sleeping ? sleepT + dt : 0;
-  const close = sleeping ? ease(clamp((sleepT - 0.3) / 0.8, 0, 1)) : 0;
-  const xray = sleeping ? ease(clamp((sleepT - 1.6) / 0.6, 0, 1)) : 0;
+  wakeT = waking ? wakeT + dt : 0;
+  let close = 0, xray = 0;
+  if (sleeping) { close = ease(clamp((sleepT - 0.3) / 0.8, 0, 1)); xray = ease(clamp((sleepT - 1.6) / 0.6, 0, 1)); }
+  if (waking) { close = 1 - ease(clamp((wakeT - 0.5) / 0.6, 0, 1)); xray = fromSleep ? 1 - ease(clamp(wakeT / 0.5, 0, 1)) : 0; }
   if (close !== lids.close || xray !== lids.xray) { lids.close = close; lids.xray = xray; head.setLids(lids); lastAim = ''; }
-  if (sleeping && sleepT < 2.4) active = true;
+  if ((sleeping && sleepT < 2.4) || (waking && wakeT < 2.6)) active = true;
   for (const e of EYES) {
-    const goal = st.cover === e || (sleeping && sleepT > 0.5) ? coveredOffset(posture()) : 0;
+    const goal = st.cover === e || (sleeping && sleepT > 0.5) || (waking && wakeT < 1.5) ? coveredOffset(posture()) : 0;
     drift[e] += (goal - drift[e]) * (1 - Math.exp(-dt / (goal ? 0.6 : 0.3)));
     if (Math.abs(goal - drift[e]) > 1e-3) active = true;
   }
@@ -427,7 +438,7 @@ function draw() {
     const ring = $(`ring-${e}`), label = $(`label-${e}`);
     ring.hidden = !s.rings;
     const dx = Math.tan(turn(e) * DEG) * geo.D * (e === 'R' ? -1 : 1); // outward = toward that eye's own side
-    Object.assign(ring.style, { left: `${p.x + dx}px`, top: `${p.y}px`, opacity: off ? 0.25 : 1 });
+    Object.assign(ring.style, { left: `${p.x + dx}px`, top: `${p.y}px`, opacity: (off ? 0.25 : 1) * (1 - lids.close) });
     label.hidden = !s.labels;
     Object.assign(label.style, { left: `${p.x}px`, top: `${p.y + discR + 6}px` }); // either side of the stick, below the ball
   }
