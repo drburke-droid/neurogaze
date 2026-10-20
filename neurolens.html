@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Fixation Disparity and the Trigeminal Nerve: Interactive Demo</title>
+  <meta name="description" content="Interactive 3D demonstration of fixation disparity: watch the eyes land slightly out of line after each saccade and while reading, and see the proposed role of the trigeminal nerve in eye strain, headaches and neck tension. Created by Dr Robert Burke, optometrist.">
+  <meta name="author" content="Dr Robert Burke">
+  <meta name="theme-color" content="#0b0d12">
+  <!-- Meant to be embedded on the clinic's page; indexed only as part of that page -->
+  <meta name="robots" content="noindex, indexifembedded">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="modulepreload" href="vendor/three/three.module.min.js">
+  <link rel="preload" href="head_eyes_v2.glb" as="fetch" crossorigin>
+  <style>
+    :root {
+      --bg: #0b0d12;
+      --panel: #12151c;
+      --panel-2: #181c25;
+      --line: #262c39;
+      --text: #e9edf4;
+      --muted: #a9b2c3;
+      --accent: #4cc9f0;
+      --accent-ink: #062330;
+      --amber: #ffb703;
+      --hot: #ff4d6d;
+      --od: #ff6b85;
+      --os: #7ee0b5;
+      --radius: 10px;
+      --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 var(--font); }
+    a { color: var(--accent); }
+    h1, h2, h3 { line-height: 1.25; margin: 0; }
+    button, select { font: inherit; color: inherit; }
+    :focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+
+    .topbar { padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+    .topbar h1 { font-size: 18px; font-weight: 700; }
+    .topbar p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+
+    /* ── Layout: one page, no inner scrolling ───────── */
+    .app { max-width: 1320px; margin: 0 auto; padding: 14px 16px 20px; display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr) clamp(280px, 30%, 340px); }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
+    .section-title { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+    .hint { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+    .side { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+    /* Stage */
+    .stage { position: relative; aspect-ratio: 4 / 3; max-height: 600px; width: 100%; border-radius: var(--radius); border: 1px solid var(--line); background: radial-gradient(ellipse at 50% 40%, #171b25 0%, var(--bg) 70%); overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
+    .stage canvas, .stage .overlay { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .stage .overlay { pointer-events: none; overflow: visible; }
+    .chip { position: absolute; background: rgba(11, 13, 18, .84); border: 1px solid var(--line); border-radius: 8px; padding: 5px 10px; font-size: 13px; pointer-events: none; max-width: calc(100% - 24px); }
+    .posture-chip { top: 12px; left: 12px; font-weight: 600; }
+    .posture-chip small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+    .caption { top: 64px; left: 50%; transform: translateX(-50%); width: max-content; max-width: min(560px, calc(100% - 24px)); text-align: center; border-color: var(--accent); font-weight: 600; line-height: 1.35; }
+    .caption .n { color: var(--accent); margin-right: 6px; }
+    .caption[hidden], .loader[hidden], .marker[hidden], .target[hidden], .passage[hidden] { display: none; }
+    .credit { position: absolute; right: 12px; bottom: 12px; background: rgba(11, 13, 18, .84); border: 1px solid var(--line); border-radius: 8px; padding: 5px 10px; font-size: 13px; font-weight: 600; color: var(--text); text-decoration: none; z-index: 3; }
+    .credit:hover { border-color: var(--accent); }
+    .loader { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: var(--muted); padding: 20px; }
+
+    /* Fixation targets and where each eye's line of sight lands */
+    .target { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; border: 2px solid #fff; background: rgba(255, 244, 224, .9); box-shadow: 0 0 0 2px rgba(0,0,0,.6), 0 0 10px rgba(255, 244, 224, .8); pointer-events: none; }
+    .target.dim { opacity: .35; }
+    .marker { position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; border: 2.5px solid; pointer-events: none; }
+    .marker.od { border-color: var(--od); }
+    .marker.os { border-color: var(--os); width: 12px; height: 12px; margin: -6px 0 0 -6px; }
+
+    /* Reading passage: seen from the patient's side of the page, so mirrored */
+    .passage { position: absolute; transform: scaleX(-1); color: rgba(255, 255, 255, .62); text-shadow: 0 1px 2px rgba(0,0,0,.7); line-height: 1.5; font-family: Georgia, "Times New Roman", serif; pointer-events: none; }
+    .passage span { padding: 0 1px; border-radius: 3px; transition: background-color .15s; }
+    .passage span.cur { background: rgba(255, 214, 102, .8); color: #111; text-shadow: none; }
+
+    /* Occluder paddle */
+    .paddle { position: absolute; z-index: 4; cursor: grab; touch-action: none; transition: left .45s ease, top .45s ease; }
+    .paddle.dragging { cursor: grabbing; transition: none; }
+    .paddle svg { display: block; width: 100%; height: 100%; overflow: visible; }
+    .paddle .head { fill: url(#paddle-fill); stroke: #5a6272; stroke-width: 2; }
+    .paddle .stick { fill: #2a2f3a; stroke: #5a6272; stroke-width: 2; }
+    .paddle .grip { font: 600 13px var(--font); fill: #a9b2c3; }
+    .paddle.covering .grip, .paddle.see-through .grip { display: none; }
+    .paddle.see-through .head { fill: rgba(20, 24, 32, .22); stroke: var(--accent); stroke-dasharray: 6 4; }
+    .paddle.see-through .stick { fill: rgba(32, 36, 45, .35); }
+    .paddle:focus-visible { outline: none; }
+    .paddle:focus-visible .head { stroke: #fff; stroke-width: 3; }
+
+    /* Nerve overlay on the face */
+    .branch { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .route { fill: none; stroke: rgba(255, 183, 3, .35); stroke-width: 1.5; stroke-dasharray: 3 4; }
+    .pulse { fill: #fff6d6; filter: drop-shadow(0 0 4px var(--amber)); }
+    .ring { fill: none; stroke: var(--accent); filter: drop-shadow(0 0 4px var(--accent)); }
+    .ganglion { stroke: none; }
+    .nerve-label { font: 600 11px var(--font); fill: var(--muted); }
+    .symptom { font: 700 12px var(--font); fill: #ffd0d8; paint-order: stroke; stroke: rgba(11,13,18,.9); stroke-width: 3px; }
+
+    /* Controls under the stage */
+    .controls { display: flex; flex-direction: column; gap: 12px; padding-top: 12px; }
+    .row { display: flex; gap: 10px 14px; flex-wrap: wrap; align-items: flex-end; }
+    .row + .row { border-top: 1px solid var(--line); padding-top: 12px; }
+    .row .group-title { flex-basis: 100%; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0; }
+    .opt { display: flex; flex-direction: column; gap: 3px; }
+    .opt .label { font-size: 12px; color: var(--muted); }
+    .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
+    .seg button { background: transparent; border: 0; padding: 6px 11px; min-height: 36px; cursor: pointer; font-size: 13.5px; }
+    .seg button + button { border-left: 1px solid var(--line); }
+    .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+    .seg button:disabled { opacity: .35; cursor: not-allowed; }
+    select { min-height: 38px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font-size: 14px; }
+    .btn { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; min-height: 40px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+    .btn:hover { border-color: var(--accent); }
+    .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+    .btn[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+    .btn.primary[aria-pressed="true"] { background: var(--accent-ink); color: var(--accent); }
+
+    /* Side panels */
+    #topview { display: block; width: 100%; height: auto; }
+    #topview .eyeball { fill: #f2efe9; stroke: #9aa3b2; stroke-width: 1.5; }
+    #topview .iris { stroke: #6b4f2a; stroke-width: 6; stroke-linecap: round; }
+    #topview .muscle { stroke: #7a3b3b; stroke-width: 7; stroke-linecap: round; }
+    #topview .sight { stroke-width: 1.8; }
+    #topview .sight.od { stroke: var(--od); }
+    #topview .sight.os { stroke: var(--os); }
+    #topview .nerve { fill: none; stroke: rgba(255, 183, 3, .55); stroke-width: 2; }
+    #topview .motor { fill: none; stroke: rgba(76, 201, 240, .55); stroke-width: 2; stroke-dasharray: 5 4; }
+    #topview .node { fill: var(--panel-2); stroke: var(--line); }
+    #topview text { font: 600 10.5px var(--font); fill: var(--muted); }
+    .legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 5px; }
+    .meter { position: relative; height: 16px; border-radius: 8px; background: var(--panel-2); border: 1px solid var(--line); overflow: visible; margin: 22px 0 6px; }
+    .meter .fill { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: 8px; background: linear-gradient(90deg, #7ee0b5, var(--amber) 60%, var(--hot)); }
+    .meter .threshold { position: absolute; top: -20px; bottom: -4px; width: 0; border-left: 2px dashed #ffd0d8; }
+    .meter .threshold span { position: absolute; top: -2px; left: 4px; font-size: 11px; color: #ffd0d8; white-space: nowrap; transform: translateX(-100%); padding-right: 8px; }
+    .stats { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+    .stats strong { color: var(--text); }
+    .checks { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+    .checks label { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+    .checks input { width: 18px; height: 18px; accent-color: var(--accent); }
+    .over .meter .fill { box-shadow: 0 0 10px rgba(255, 77, 109, .7); }
+
+    .content { max-width: 860px; margin: 0 auto; padding: 18px 16px 20px; }
+    .content h2 { font-size: 22px; margin: 22px 0 10px; }
+    .content p, .content li { color: #d3d9e4; }
+    .disclaimer { border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; background: var(--panel); }
+    footer { border-top: 1px solid var(--line); padding: 18px 16px 28px; color: var(--muted); font-size: 13.5px; text-align: center; }
+    .embed-note { display: none; }
+    .visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+    /* Embedded on the clinic page: the host page does all the scrolling */
+    .embed, .embed body { overflow: hidden; }
+    .embed .topbar p, .embed #about, .embed footer { display: none; }
+    .embed .embed-note { display: block; text-align: center; color: var(--muted); font-size: 12.5px; padding: 0 16px 14px; margin: 0; }
+
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; }
+      .side { display: grid; grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 640px) {
+      .app { padding: 10px 10px 16px; gap: 10px; }
+      .side { grid-template-columns: 1fr; }
+      .stage { aspect-ratio: 1 / 1; }
+      .chip, .credit { font-size: 12px; padding: 4px 8px; }
+      .posture-chip { top: 8px; left: 8px; }
+      .caption { top: 56px; }
+      .credit { right: 8px; bottom: 8px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .paddle, .passage span { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <h1>Fixation disparity and the trigeminal nerve</h1>
+    <p>An interactive look at a proposed cause of eye strain, headaches and neck tension.</p>
+  </header>
+
+  <main class="app">
+    <section aria-label="Demonstration">
+      <div class="stage" id="stage">
+        <canvas id="view" role="img" aria-label="3D face. The eyes move as described in the caption."></canvas>
+        <svg class="overlay" id="nerves" aria-hidden="true"></svg>
+        <div class="passage" id="passage" aria-hidden="true" hidden></div>
+        <div class="target" id="target" aria-hidden="true"></div>
+        <div class="target dim" id="target-b" aria-hidden="true" hidden></div>
+        <div class="marker od" id="mark-R" aria-hidden="true" hidden></div>
+        <div class="marker os" id="mark-L" aria-hidden="true" hidden></div>
+        <div class="chip posture-chip" id="posture-chip" aria-hidden="true"></div>
+        <div class="chip caption" id="caption" hidden></div>
+        <div class="paddle" id="paddle" tabindex="0" role="button" aria-label="Cover paddle. Drag it over an eye, or use the cover buttons below.">
+          <svg viewBox="0 0 100 190" aria-hidden="true"><defs><linearGradient id="paddle-fill" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b4250"/><stop offset="1" stop-color="#14171d"/></linearGradient></defs><rect class="stick" x="40" y="70" width="20" height="118" rx="7"/><ellipse class="head" cx="50" cy="45" rx="48" ry="43"/><text class="grip" x="50" y="50" text-anchor="middle">drag me</text></svg>
+        </div>
+        <a class="credit" href="https://calgaryvisioncentre.com/" target="_top" rel="author">Created by Dr Robert Burke</a>
+        <div class="loader" id="loader">Loading the 3D model… <span id="load-pct"></span></div>
+      </div>
+
+      <div class="controls">
+        <div class="row" role="group" aria-labelledby="posture-title">
+          <h2 class="group-title" id="posture-title">Your Neurolens measurement (if you know it)</h2>
+          <div class="opt"><label class="label" for="post-D">Distance</label><select id="post-D"></select></div>
+          <div class="opt"><label class="label" for="post-N">Near</label><select id="post-N"></select></div>
+          <div class="opt"><span class="label" id="type-label">If you don't know, show</span>
+            <div class="seg" id="type-picker" role="group" aria-labelledby="type-label">
+              <button type="button" data-type="exo">Exo (eyes drift out)</button><button type="button" data-type="eso">Eso (eyes drift in)</button>
+            </div></div>
+        </div>
+
+        <div class="row" role="group" aria-labelledby="demo-title">
+          <h2 class="group-title" id="demo-title">Watch the eyes</h2>
+          <button class="btn primary" type="button" id="run-saccades" aria-pressed="false">Saccades</button>
+          <button class="btn primary" type="button" id="run-reading" aria-pressed="false">Reading</button>
+          <div class="opt"><span class="label" id="speed-label">Speed</span>
+            <div class="seg" id="speed-picker" role="group" aria-labelledby="speed-label">
+              <button type="button" data-speed="0.2">Slow motion</button><button type="button" data-speed="1">Faster</button>
+            </div></div>
+          <div class="opt"><span class="label" id="target-label">Target</span>
+            <div class="seg" id="target-picker" role="group" aria-labelledby="target-label">
+              <button type="button" data-target="D">Distance</button><button type="button" data-target="N">Near</button>
+            </div></div>
+        </div>
+
+        <div class="row" role="group" aria-labelledby="cover-title">
+          <h2 class="group-title" id="cover-title">Cover test</h2>
+          <button class="btn" type="button" data-cover="R">Cover right eye</button>
+          <button class="btn" type="button" data-cover="L">Cover left eye</button>
+          <button class="btn" type="button" data-cover="">Uncover</button>
+          <button class="btn" type="button" id="see-through" aria-pressed="false">See through the paddle</button>
+          <p class="hint" style="flex-basis:100%; margin:0">Or drag the paddle over an eye. Behind the cover the eye drifts to its resting position; when uncovered it moves back, and that correction is reported too.</p>
+        </div>
+
+        <div class="row">
+          <div class="opt"><span class="label" id="view-label">View</span>
+            <div class="seg" id="view-picker" role="group" aria-labelledby="view-label">
+              <button type="button" data-view="face">Face</button><button type="button" data-view="eyes">Eyes</button>
+            </div></div>
+          <div class="opt"><span class="label" id="mag-label">Eye movements</span>
+            <div class="seg" id="mag-picker" role="group" aria-labelledby="mag-label">
+              <button type="button" data-mag="1">True size</button><button type="button" data-mag="5">Magnified ×5</button><button type="button" data-mag="10">×10</button>
+            </div></div>
+          <p class="hint" style="flex-basis:100%; margin:0">The misalignments are a few prism dioptres, too small to see at true size, so they are magnified. The red ring marks where the right eye (OD) is pointing and the green ring the left eye (OS); when the eyes are aligned the rings sit together.</p>
+        </div>
+      </div>
+    </section>
+
+    <aside class="side">
+      <div class="panel">
+        <h2 class="section-title">Seen from above</h2>
+        <svg id="topview" viewBox="0 0 300 250" role="img" aria-label="Diagram from above: the two eyes, their lines of sight, the horizontal eye muscles, and the proposed route through the trigeminal nerve to the brainstem."></svg>
+        <div class="legend">
+          <span><i style="background:var(--amber)"></i>Proprioception, via trigeminal (proposed)</span>
+          <span><i style="background:var(--accent)"></i>Correction to the muscles</span>
+        </div>
+      </div>
+      <div class="panel" id="load-panel">
+        <h2 class="section-title">Trigeminal load <span style="text-transform:none; letter-spacing:0">(proposed)</span></h2>
+        <div class="meter" role="meter" id="meter" aria-valuemin="0" aria-valuemax="100" aria-label="Trigeminal load">
+          <div class="fill" id="meter-fill"></div>
+          <div class="threshold" id="meter-threshold"><span>Symptoms may appear</span></div>
+        </div>
+        <div class="stats"><span>Corrections: <strong id="count">0</strong></span><button class="btn" type="button" id="reset-load" style="min-height:30px; padding:2px 10px; font-size:13px">Rest the eyes</button></div>
+        <div class="checks" role="group" aria-label="Other stressors">
+          <span class="label" style="font-size:12px; color:var(--muted)">Other stressors can add to the load:</span>
+          <label><input type="checkbox" data-stressor="weather"> Weather change</label>
+          <label><input type="checkbox" data-stressor="stress"> Stress</label>
+          <label><input type="checkbox" data-stressor="sleep"> Poor sleep</label>
+        </div>
+      </div>
+    </aside>
+  </main>
+  <p class="embed-note">Illustration of a proposed mechanism with magnified eye movements. Not a diagnosis.</p>
+
+  <section class="content" id="about">
+    <h2>What you are seeing</h2>
+    <ol>
+      <li><strong>Saccade.</strong> The eyes jump together to the next target or word.</li>
+      <li><strong>Landing.</strong> If the eyes' resting position (their posture) is not perfectly aligned, they can land slightly out of line. This small error is called fixation disparity.</li>
+      <li><strong>Report.</strong> Stretch sensors (proprioceptors) in the eye muscles detect the error. It has been proposed that these signals travel through the trigeminal nerve, the nerve that also carries sensation from the face, forehead and jaw.</li>
+      <li><strong>Correction.</strong> The brain sends a small vergence movement to bring the eyes back into line, and the word is seen singly.</li>
+    </ol>
+    <p>Reading a page can mean thousands of these corrections. The proposal, sometimes called trigeminal dysphoria, is that the constant reports add up and, together with other stressors such as weather changes, stress and poor sleep, may contribute to eye strain, headaches and neck tension. If the eyes rest in line, there is little to correct.</p>
+    <h2>The cover test</h2>
+    <p>Covering one eye takes away the need to keep the eyes aligned. Behind the paddle the covered eye drifts to its resting position: outward with an exo posture, inward with an eso posture. When the paddle is removed, the eye moves back to rejoin the other. Turn on "See through the paddle" to watch it happen.</p>
+    <div class="disclaimer" role="note"><strong>Educational illustration.</strong> This animation shows a proposed mechanism. The role of the trigeminal nerve in these symptoms is still being researched, the eye movements are magnified, and the load meter is illustrative, not a measurement. Frequent headaches, eye strain or double vision deserve a full eye examination.</div>
+  </section>
+
+  <div class="visually-hidden" id="status" role="status" aria-live="polite"></div>
+
+  <footer>Created by Dr Robert Burke, Calgary Vision Centre · Educational illustration, not a diagnosis</footer>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./vendor/three/three.module.min.js",
+      "three/addons/": "./vendor/three/addons/"
+    }
+  }
+  </script>
+  <script type="module" src="./neurolens.js"></script>
+</body>
+</html>
