@@ -19,15 +19,14 @@ Created by **Dr Robert Burke**, optometrist, Calgary Vision Centre.
 - **Motility chart → suggested diagnosis:** record the nine cardinal positions by dragging each eye in a 3×3 grid of close-up views, press Enter, and get the conditions that best reproduce the chart, with fit percentages and usual causes (`diagnose.js`). Boxes you don't touch count only weakly as normal, and common conditions get a slight head start over rare ones. Charts are shareable links too.
 - **Shareable state:** the address bar always encodes the current case, gaze and pupil exam, e.g. `#case=cn6&side=R&gaze=4` or `#case=horner&side=R&room=0`. "Copy link" and "Save image" (a labelled 1200×630 PNG) are in the header.
 
-## Companion page: fixation disparity and the trigeminal nerve
+## Companion page: the Neurolens embed
 
-`neurolens.html` is a separate demo for the clinic's Neurolens page (embed code in `docs/neurolens-embed.md`). Visitors enter their Neurolens distance and near measurements, or see a typical exo or eso posture, and can:
+`neurolens.html` is a patient-facing page embedded on the clinic's Neurolens page (layout and embed code in `docs/neurolens-embed.md`). It shows that eyes drift to their resting position when they are not being held together:
 
-- **Watch saccades or reading** in slow motion: the eyes land slightly out of line (fixation disparity), the eye-muscle proprioceptors report the error by the proposed route through the trigeminal nerve, and a vergence correction realigns them. In the reading demo a mirrored passage sits just below the eyes, as seen from the patient's side, with the fixated word highlighted.
-- **Do a cover test** with a draggable paddle that can be made see-through: the covered eye drifts to its posture and moves back when uncovered.
-- **See it from above** (eyes, lines of sight, horizontal recti and the proposed loop), and a **trigeminal load** meter that rises with each correction and recovers at rest; weather change, stress and poor sleep raise it.
+- **Cover test:** a clear paddle covers each eye in turn; the covered eye drifts to its resting position and pulls back into line when uncovered. The paddle can also be dragged by hand.
+- **Reading:** the eyes read a clear card, seen from behind, word by word. After each jump they land slightly out of line (fixation disparity), shown by a ring for each eye, and are pulled back together.
 
-The misalignments are magnified (×5 or ×10, or true size) and the mechanism is presented as proposed. `fixation.js` holds the model and `tests/fixation.test.mjs` checks it; `head3d.js` loads the shared 3D head.
+Below the demonstration are the cause, effect and solution, a call to action and the clinic's Neurolens articles. Eye movements are exaggerated; `fixation.js` holds the model (tests in `tests/fixation.test.mjs`) and `head3d.js` loads the shared 3D head.
 
 ## The model, honestly
 
@@ -69,9 +68,10 @@ Then open the printed address. Run the model tests with `npm test` (Node 18 or l
 | `pupil.js` | The pupil model: light and near reflexes, kinetics and drops (pure functions, no 3D) |
 | `cases.js` | Case presets, teaching cards, usual causes and scripted pupil tests |
 | `diagnose.js` | Motility chart matcher: candidate conditions, scoring, plain-language findings |
-| `neurolens.html`, `neurolens.js` | Companion fixation disparity demo for the Neurolens page |
-| `fixation.js` | Fixation disparity and trigeminal load model for that demo (pure functions) |
-| `head3d.js` | The 3D head as a reusable module, used by the companion demo |
+| `neurolens.html`, `neurolens.js` | Patient-facing embed for the clinic's Neurolens page |
+| `fixation.js` | Resting position and fixation disparity model for that page (pure functions) |
+| `head3d.js` | The 3D head as a reusable module, used by the Neurolens page |
+| `vendor/fonts/` | Poppins and Urbanist for the Neurolens page, matching the clinic site (SIL Open Font Licence) |
 | `head_eyes_v2.glb` | Head and eye model (meshopt geometry, WebP textures, 320 KB) |
 | `vendor/three/` | three.js r160 and the add-ons used, served locally (MIT licence) |
 | `og-image.jpg`, `favicon.svg`, `apple-touch-icon.png` | Social preview and icons |

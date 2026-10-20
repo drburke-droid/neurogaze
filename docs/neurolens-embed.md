@@ -1,56 +1,73 @@
-# Fixation disparity demo for the Neurolens page
+# Neurolens page: one embed
 
-An interactive companion to the Gaze Simulator. It shows the eyes landing slightly out of line after each saccade and while reading, the eye-muscle proprioceptors reporting the error by the proposed trigeminal route, and the correction that realigns the eyes. A load meter shows the proposed cumulative effect, with other stressors (weather change, stress, poor sleep) added in.
+`neurolens.html` replaces most of the Neurolens page (`calgaryvisioncentre.com/neurolens-calgary`) with a single, patient-friendly embed:
 
-Visitors can enter their own Neurolens distance and near measurements. If they don't know them, it shows a typical exo posture (1Δ exo at distance, 4Δ exo at near), with a switch to a typical eso posture (2Δ eso at both).
+1. **See what your eyes are doing.** A 3D face with two short animations that play on their own when scrolled into view:
+   - **Cover test:** a clear paddle covers one eye, then the other. Behind it the eye drifts to its resting position; when the paddle comes away, it pulls back into line.
+   - **Reading:** the eyes read a clear card word by word, seen from behind. After each jump they slip toward their resting position and land slightly out of line (two rings show where each eye is aiming), then the brain pulls them back together: fixation disparity.
+   - Controls: the two tabs, Pause/Play, and one link to show eyes that drift inward instead of outward. Chairside, you can also drag the paddle over either eye yourself.
+2. **Why small misalignments can cause symptoms:** the cause, the effect (with a simple trigeminal nerve diagram) and the solution, in plain language.
+3. **Could Neurolens help you?** Certified provider, questionnaire button, booking button and phone number.
+4. **Learn more from Dr Burke:** the four blog articles as cards.
 
-Standalone address: `https://drburke-droid.github.io/neurogaze/neurolens.html`
+## What to keep on the page
+
+| Keep | Remove (now inside the embed) |
+|---|---|
+| The top video | "Neurolens utilizes patented technology…" heading |
+| A short intro text block (below), for search engines | The intro paragraphs, and the 82% and "Flip your symptoms" images |
+| The code block with the embed | The cause, the effect and the solution, with their images |
+| The neurologist video and its caption, below the embed | The certified-provider line and the questionnaire button |
+| | "Want to learn more", the logo, and the four article blocks |
+
+Suggested intro text block (keeps the page's main words in the page itself, which search engines weigh most):
+
+> # What is Neurolens®?
+>
+> Neurolens® glasses add a small, precisely measured amount of contoured prism to your prescription to help your eyes line up. They're designed for people whose eyes rest slightly out of line, which can contribute to headaches, neck pain, eye strain and a dry-eye feeling, especially after screen time.
 
 ## Embed code
 
-Paste this into a **Code block** on the Neurolens page. It sizes itself to its content, so the page does all the scrolling.
+Paste into a **Code block**. The embed sizes itself, so the page does all the scrolling. Clicks on its booking and phone links are passed to the page's Google Ads tag, the same conversion the page's own buttons send.
 
 ```html
-<div id="fd-demo" style="width:100%;"></div>
+<div id="neurolens-demo" style="width:100%;"></div>
 <script>
   (function () {
     var APP = "https://drburke-droid.github.io/neurogaze/neurolens.html";
     var ORIGIN = "https://drburke-droid.github.io";
-    var box = document.getElementById("fd-demo");
+    var box = document.getElementById("neurolens-demo");
 
     var iframe = document.createElement("iframe");
     iframe.src = APP + "?embed=1&parent=" + encodeURIComponent(location.origin + location.pathname);
-    iframe.title = "Fixation disparity and the trigeminal nerve: interactive demo by Dr Robert Burke";
+    iframe.title = "Neurolens: see what your eyes are doing";
     iframe.scrolling = "no";
-    iframe.style.cssText = "display:block;width:100%;height:1150px;border:0;border-radius:12px;overflow:hidden;";
-    iframe.setAttribute("allow", "fullscreen");
+    iframe.style.cssText = "display:block;width:100%;height:2400px;border:0;overflow:hidden;";
     box.appendChild(iframe);
 
     window.addEventListener("message", function (e) {
       if (e.origin !== ORIGIN || !e.data || e.source !== iframe.contentWindow) return;
-      // The demo reports its full height, so this page does all the scrolling
+      // The embed reports its full height, so this page does all the scrolling
       if (e.data.type === "gaze-height") iframe.style.height = e.data.height + "px";
+      // Booking and phone links inside the embed count as conversions, like the page's own buttons
+      if (e.data.type === "cvc-conversion" && typeof gtag === "function") {
+        gtag("event", "conversion", { send_to: "AW-1005862372/nO0zCPHnjrQaEOT70N8D" });
+      }
     });
   })();
 </script>
 ```
 
-When embedded, the demo hides its own explanation and footer and shows a one-line note instead, so the page's own text can do the explaining.
+## Wording changes from the current page
 
-## Suggested text around it
+The embed keeps the page's message in plainer language. A few claims were left out or softened; any of them can go back in if you want them:
 
-Above the demo:
-
-> ## See what your eyes are doing
->
-> Every time your eyes move to a new word, they have to land together on exactly the same spot. If their natural resting position is slightly out of line, they can land a little off target and need a small correction, thousands of times a day. Press **Reading** to watch it in slow motion, or use the cover paddle to see where your eyes drift when they are not working together.
-
-Below the demo:
-
-> *This animation illustrates a proposed mechanism. The role of the trigeminal nerve in eye strain, headaches and neck tension is still being researched, the eye movements are magnified so they can be seen, and the load meter is illustrative rather than a measurement. A full eye examination is the way to find the cause of frequent headaches or eye strain.*
+- "Only Neurolens and their patented contoured prism technology does" and "the only lenses…": now "Neurolens uses a contoured prism…", without the comparison.
+- The statistics "nearly 2/3 of adults", "82% of people", "relief in the 80–90% range" and "national return rate is less than 3%". Dr Burke's own figure (fewer than 5% of his patients return their Neurolens) stays, on the article card.
+- The trigeminal explanation is described as the idea behind Neurolens, with symptoms that "may" result.
 
 ## Notes
 
-- **Wording.** The demo describes the trigeminal route and the load as proposed, and says the symptoms "may" appear. Keep the page text in the same register: describe the idea and invite people to be assessed, without promising an outcome.
-- **Search.** The demo page is marked `noindex, indexifembedded`: search engines may index it as part of the Neurolens page that embeds it, but not as a separate result.
-- **What it does not show.** Vertical misalignment, the prism itself, and real-time speed (the steps are slowed and separated for clarity).
+- The article card images load from the site's Squarespace image library. If an image is replaced or deleted there, update its address in `neurolens.html`.
+- The embed page is marked `noindex, indexifembedded`: search engines may index it as part of the Neurolens page, but not as a separate result.
+- Fonts (Poppins and Urbanist, matching the site) are served with the page, not from Google.

@@ -13,12 +13,18 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 const DEG = Math.PI / 180;
 const LID_COLS = 36, LID_ROWS = 14;
 const LID_OPEN_DEG = 6; // lid margin (ends) at rest; matches the face model's own lids
+// Camera framings: the region of the face (world units) to fit in view
+const FRAMES = {
+  face: (m) => ({ w: 1.05, h: 1.0, y: m.y - 0.14 }),
+  mid: (m) => ({ w: 0.8, h: 0.68, y: m.y - 0.12 }),   // eyes to mouth
+  eyes: (m) => ({ w: 0.62, h: 0.55, y: m.y - 0.02 }),
+};
 
 /**
  * createHead(canvas, host) → head
  *   head.ready            Promise, resolves once the model is loaded
  *   head.aim(eye, h, v)   degrees; h + = abduction, v + = up
- *   head.setView(v)       'face' | 'eyes'
+ *   head.setView(v)       'face' | 'mid' | 'eyes'
  *   head.project(eye)     { x, y } in host pixels of the eye centre (also accepts a world Vector3)
  *   head.render()
  */
@@ -53,7 +59,7 @@ export function createHead(canvas, host, { url = './head_eyes_v2.glb', onProgres
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     if (eyes) {
-      const box = view === 'eyes' ? { w: 0.62, h: 0.55, y: eyeMid.y - 0.02 } : { w: 1.05, h: 1.0, y: eyeMid.y - 0.14 };
+      const box = FRAMES[view](eyeMid);
       const t = Math.tan((camera.fov * DEG) / 2);
       const dist = Math.max(box.h / 2 / t, box.w / 2 / (t * camera.aspect)) + 0.1;
       camera.position.set(0, box.y + 0.05, eyeMid.z + dist);
