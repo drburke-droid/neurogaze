@@ -39,6 +39,7 @@ let peekShown = 0;            // 0..1, how far the X-ray window has opened
 let sleepT = 0;               // seconds into the sleep step: lids close, then the X-ray view appears
 let pullT = 0, pull = 1;      // the target pulling back from the face toward the viewer (step 2): 0 near the face, 1 far
 const STICK_NEAR = 12;        // degrees each eye turns in for the target close to the face
+const STICK_DROP = 0.42;      // once pulled back toward us, the ball sits this far below the eyes (× geo.u), out of our line of sight
 const lids = { close: 0, xray: 0 };
 const posture = () => RESTING[st.drift];
 const way = () => (st.drift === 'exo' ? 'outward' : 'inward');
@@ -397,23 +398,25 @@ function draw() {
   const land = landingError();
   const turn = (e) => clamp(drift[e] * MAG + land * magJump, -MAX_TURN, MAX_TURN);
   const conv = reading ? NEAR_CONVERGENCE : s.stick ? STICK_NEAR * (1 - pull) : 0;
+  // As the ball comes toward us it drops a little below our sightline, and the eyes follow it slightly down
+  const V = s.stick ? g.V - Math.atan((STICK_DROP * geo.u * pull) / geo.D) / DEG : g.V;
   const aimR = g.H - conv + turn('R'), aimL = -g.H - conv + turn('L');
-  head.aim('R', aimR, g.V);
-  head.aim('L', aimL, g.V);
-  const key = `${aimR.toFixed(3)}|${aimL.toFixed(3)}|${g.V.toFixed(3)}|${lids.close.toFixed(3)}|${lids.xray.toFixed(3)}`;
+  head.aim('R', aimR, V);
+  head.aim('L', aimL, V);
+  const key = `${aimR.toFixed(3)}|${aimL.toFixed(3)}|${V.toFixed(3)}|${lids.close.toFixed(3)}|${lids.xray.toFixed(3)}`;
   if (key !== lastAim) { head.render(); lastAim = key; }
 
   // The target, and where each eye is aiming relative to it
-  const p = gazeToScreen(g.H, g.V);
+  const p = gazeToScreen(g.H, V);
   const tgt = $('target'), tgtB = $('target-b');
-  const discR = 0.3 * geo.u * (0.45 + 0.55 * pull); // smaller near the face, larger near us
+  const discR = geo.u * (0.13 + 0.07 * pull); // a little larger as it nears us
   $('fixstick').toggleAttribute('hidden', !s.stick); // an SVG element has no .hidden property
   if (s.stick) drawStick(p, discR);
   const tag = $('stick-tag');
   tag.hidden = !s.labels;
   if (s.labels) {
     tag.textContent = pull < 1 ? 'The target pulls back, away from the face and toward you' : 'Far from the face now, so the eyes look straight ahead';
-    Object.assign(tag.style, { left: `${p.x}px`, top: `${p.y - discR - 12}px`, transform: 'translate(-50%, -100%)' });
+    Object.assign(tag.style, { left: `${p.x}px`, top: `${geo.o.y - 0.13 * geo.u - 12}px`, transform: 'translate(-50%, -100%)' }); // stays above the eyes
   }
   tgt.hidden = !s.rings || reading || !!s.stick;
   Object.assign(tgt.style, { left: `${p.x}px`, top: `${p.y}px` });
