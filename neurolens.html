@@ -84,9 +84,9 @@
     .callout::after { content: ""; position: absolute; left: 50%; bottom: -6px; margin-left: -6px; border: 6px solid transparent; border-bottom: 0; border-top-color: #ffd25a; }
     .callout[hidden], .input-chip[hidden], .ring-label[hidden] { display: none; }
     @keyframes bob { 50% { margin-top: -4px; } }
-    .ring-label { position: absolute; z-index: 5; font: 700 12.5px var(--body); pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
-    .ring-label.od { color: var(--od); transform: translate(calc(-100% - 16px), -50%); }
-    .ring-label.os { color: var(--os); transform: translate(16px, -50%); }
+    .ring-label { position: absolute; z-index: 5; font: 700 12.5px var(--body); pointer-events: none; padding: 2px 8px; border-radius: 999px; background: rgba(12, 18, 28, .78); }
+    .ring-label.od { color: var(--od); transform: translate(calc(-100% - 8px), 0); }
+    .ring-label.os { color: var(--os); transform: translate(8px, 0); }
     .target.dim { opacity: .35; }
     .input-chip { position: absolute; left: 12px; bottom: 12px; z-index: 6; display: flex; align-items: center; gap: 8px; background: rgba(16, 20, 28, .82); color: #e9edf4; border-radius: 99px; padding: 5px 12px 5px 8px; font: 700 13px var(--body); }
     .input-chip i { width: 12px; height: 12px; border-radius: 50%; background: #2bd47a; box-shadow: 0 0 8px #2bd47a; }
@@ -108,7 +108,7 @@
     .nav { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
     .nav:empty { display: none; }
 
-    /* A fixation stick held out toward us: wider toward the bottom of the frame, nearer the viewer */
+    /* A white ball on a vertical stick: the fixation target, which pulls back toward the viewer */
     .fixstick { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; overflow: visible; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .45)); }
     .fixstick[hidden], .xray[hidden], .stick-tag[hidden] { display: none; }
     .stick-tag { z-index: 6; }
@@ -182,11 +182,12 @@
           <canvas id="view" aria-hidden="true"></canvas>
           <svg class="fixstick" id="fixstick" aria-hidden="true" hidden>
             <defs>
-              <linearGradient id="stick-fill" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8f6a3e"/><stop offset=".45" stop-color="#d9b07a"/><stop offset="1" stop-color="#7a5732"/></linearGradient>
+              <radialGradient id="ball-shade" cx="36%" cy="32%" r="72%"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#eef1f5"/><stop offset="1" stop-color="#a3abb8"/></radialGradient>
+              <linearGradient id="rod-shade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6f7784"/><stop offset=".4" stop-color="#e3e7ee"/><stop offset="1" stop-color="#5f6774"/></linearGradient>
             </defs>
-            <polygon id="stick-handle" fill="url(#stick-fill)" stroke="rgba(0,0,0,.35)" stroke-width="1"/>
-            <circle id="stick-disc" fill="#fff" stroke="#1b2230" stroke-width="2.5"/>
-            <circle id="stick-dot" fill="#1b2230"/>
+            <ellipse id="stick-shadow" fill="rgba(0, 0, 0, .55)" style="filter: blur(6px)"/>
+            <rect id="stick-rod" fill="url(#rod-shade)"/>
+            <circle id="stick-ball" fill="url(#ball-shade)"/>
           </svg>
           <div class="xray" id="xray" hidden><span>X-ray: looking through the closed eyelids</span></div>
           <div class="target" id="target" hidden></div>
@@ -199,7 +200,7 @@
           <div class="ring os" id="ring-L" hidden></div>
           <span class="ring-label od" id="label-R" hidden>right eye</span>
           <span class="ring-label os" id="label-L" hidden>left eye</span>
-          <span class="tag stick-tag" id="stick-tag" hidden>A target held out in front, near you</span>
+          <span class="tag stick-tag" id="stick-tag" hidden></span>
           <div class="paddle" id="paddle" tabindex="0" role="button" aria-label="Cover paddle. Drag it over an eye; click it to peek behind it." hidden>
             <svg viewBox="0 0 100 200" aria-hidden="true">
               <defs>

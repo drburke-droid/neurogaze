@@ -37,6 +37,8 @@ const st = {
 const drift = { R: 0, L: 0 }; // each eye's drift toward rest, degrees outward (true size)
 let peekShown = 0;            // 0..1, how far the X-ray window has opened
 let sleepT = 0;               // seconds into the sleep step: lids close, then the X-ray view appears
+let pullT = 0, pull = 1;      // the target pulling back from the face toward the viewer (step 2): 0 near the face, 1 far
+const STICK_NEAR = 12;        // degrees each eye turns in for the target close to the face
 const lids = { close: 0, xray: 0 };
 const posture = () => RESTING[st.drift];
 const way = () => (st.drift === 'exo' ? 'outward' : 'inward');
@@ -93,6 +95,7 @@ function goStep(n) {
   st.step = clamp(n, 0, STEPS.length - 1);
   const s = step();
   clearTimeout(showTimer);
+  if (st.step === 1) pullT = 0; // the target starts close to the face and pulls back toward the viewer
   // Put the paddle where this part of the story needs it
   if (st.step < 4 || (st.step === 4 && back)) { st.peek = false; st.firstEye = null; parkPaddle(); }
   if (s.need === 'peek' && !(st.cover && st.peek)) { st.peek = true; paddleOver(st.cover || st.firstEye || 'R'); }
@@ -352,6 +355,12 @@ function tick(now) {
     if (covered && step().task === 'peek' && !st.firstEye) st.firstEye = covered;
     refresh();
   }
+  // Step 2: the target starts close to the face (eyes converged), then pulls back toward the viewer
+  // and grows as it nears us, while the eyes relax to straight ahead
+  pullT = st.step === 1 ? pullT + dt : 0;
+  pull = st.step === 1 ? ease(clamp((pullT - 0.9) / 2.4, 0, 1)) : 1;
+  if (st.step === 1 && pullT < 3.4) active = true;
+
   // Asleep: the lids close, then turn see-through (X-ray) to show both eyes turned to rest
   const sleeping = step().scene === 'sleep';
   sleepT = sleeping ? sleepT + dt : 0;
@@ -387,7 +396,7 @@ function draw() {
   const magJump = s.mag ?? (st.slow ? MAG : 1);
   const land = landingError();
   const turn = (e) => clamp(drift[e] * MAG + land * magJump, -MAX_TURN, MAX_TURN);
-  const conv = reading ? NEAR_CONVERGENCE : 0;
+  const conv = reading ? NEAR_CONVERGENCE : s.stick ? STICK_NEAR * (1 - pull) : 0;
   const aimR = g.H - conv + turn('R'), aimL = -g.H - conv + turn('L');
   head.aim('R', aimR, g.V);
   head.aim('L', aimL, g.V);
@@ -397,11 +406,15 @@ function draw() {
   // The target, and where each eye is aiming relative to it
   const p = gazeToScreen(g.H, g.V);
   const tgt = $('target'), tgtB = $('target-b');
-  const discR = 0.2 * geo.u;
+  const discR = 0.3 * geo.u * (0.45 + 0.55 * pull); // smaller near the face, larger near us
   $('fixstick').toggleAttribute('hidden', !s.stick); // an SVG element has no .hidden property
   if (s.stick) drawStick(p, discR);
-  $('stick-tag').hidden = !s.labels;
-  if (s.labels) Object.assign($('stick-tag').style, { left: `${p.x}px`, top: `${p.y - discR - 12}px`, transform: 'translate(-50%, -100%)' });
+  const tag = $('stick-tag');
+  tag.hidden = !s.labels;
+  if (s.labels) {
+    tag.textContent = pull < 1 ? 'The target pulls back, away from the face and toward you' : 'Far from the face now, so the eyes look straight ahead';
+    Object.assign(tag.style, { left: `${p.x}px`, top: `${p.y - discR - 12}px`, transform: 'translate(-50%, -100%)' });
+  }
   tgt.hidden = !s.rings || reading || !!s.stick;
   Object.assign(tgt.style, { left: `${p.x}px`, top: `${p.y}px` });
   tgtB.hidden = !st.seq || reading || !s.rings;
@@ -413,7 +426,7 @@ function draw() {
     const dx = Math.tan(turn(e) * DEG) * geo.D * (e === 'R' ? -1 : 1); // outward = toward that eye's own side
     Object.assign(ring.style, { left: `${p.x + dx}px`, top: `${p.y}px`, opacity: off ? 0.25 : 1 });
     label.hidden = !s.labels;
-    Object.assign(label.style, { left: `${p.x + (e === 'R' ? -1 : 1) * discR}px`, top: `${p.y}px` });
+    Object.assign(label.style, { left: `${p.x}px`, top: `${p.y + discR + 6}px` }); // either side of the stick, below the ball
   }
   const xr = $('xray');
   xr.hidden = lids.xray < 0.02;
@@ -436,19 +449,17 @@ function draw() {
   }
 }
 
-// A fixation stick held out toward the viewer: the handle widens toward the bottom of the frame,
-// so the target reads as near us rather than on the nose
+// The fixation target: a white ball on a vertical stick, held up from below the frame
 function drawStick(p, r) {
-  const u = geo.u, H = stage.clientHeight;
-  const bx = p.x + 0.9 * u, by = H + 0.2 * u;           // held from below and to one side, close to us
-  const top = 0.035 * u, bottom = 0.2 * u;              // half-widths: narrow far away, wide near us
-  const ang = Math.atan2(by - p.y, bx - p.x), nx = -Math.sin(ang), ny = Math.cos(ang);
-  const pts = [[p.x + nx * top, p.y + ny * top], [bx + nx * bottom, by + ny * bottom], [bx - nx * bottom, by - ny * bottom], [p.x - nx * top, p.y - ny * top]];
-  $('stick-handle').setAttribute('points', pts.map((q) => q.map((v) => v.toFixed(1)).join(',')).join(' '));
-  for (const [id, rr] of [['stick-disc', r], ['stick-dot', 0.18 * r]]) {
-    const c = $(id);
-    c.setAttribute('cx', p.x); c.setAttribute('cy', p.y); c.setAttribute('r', rr);
-  }
+  const w = 0.24 * r;
+  const rod = $('stick-rod'), ball = $('stick-ball'), shadow = $('stick-shadow');
+  // Close to the face the ball casts a soft shadow on it; the shadow fades as the ball pulls away
+  shadow.setAttribute('cx', p.x + 0.12 * geo.u); shadow.setAttribute('cy', p.y + 0.3 * geo.u);
+  shadow.setAttribute('rx', 1.3 * r); shadow.setAttribute('ry', 0.8 * r);
+  shadow.setAttribute('opacity', (1 - pull).toFixed(3));
+  rod.setAttribute('x', p.x - w / 2); rod.setAttribute('y', p.y);
+  rod.setAttribute('width', w); rod.setAttribute('height', Math.max(0, stage.clientHeight + 20 - p.y));
+  ball.setAttribute('cx', p.x); ball.setAttribute('cy', p.y); ball.setAttribute('r', r);
 }
 
 // Booking and phone links: let the host page record the conversion
