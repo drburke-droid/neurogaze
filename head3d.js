@@ -13,6 +13,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 const DEG = Math.PI / 180;
 const LID_COLS = 36, LID_ROWS = 14;
 const LID_OPEN_DEG = 6; // lid margin (ends) at rest; matches the face model's own lids
+const LID_SHUT_DEG = -52; // lid margin with the eyes closed
 // Camera framings: the region of the face (world units) to fit in view
 const FRAMES = {
   face: (m) => ({ w: 1.05, h: 1.0, y: m.y - 0.14 }),
@@ -25,6 +26,7 @@ const FRAMES = {
  * createHead(canvas, host) → head
  *   head.ready            Promise, resolves once the model is loaded
  *   head.aim(eye, h, v)   degrees; h + = abduction, v + = up
+ *   head.setLids({ close, xray })  0..1: close both upper lids; make them see-through (X-ray)
  *   head.setView(v)       'face' | 'mid' | 'story' | 'eyes'
  *   head.project(eye)     { x, y } in host pixels of the eye centre (also accepts a world Vector3)
  *   head.render()
@@ -50,6 +52,7 @@ export function createHead(canvas, host, { url = './head_eyes_v2.glb', onProgres
   scene.add(glint);
 
   let eyes = null, view = 'face';
+  const lidState = { close: 0, xray: 0 };
   const eyeMid = new THREE.Vector3();
   const lids = {};
   const shown = { R: { h: 0, v: 0 }, L: { h: 0, v: 0 } };
@@ -127,7 +130,8 @@ export function createHead(canvas, host, { url = './head_eyes_v2.glb', onProgres
         idx.push(a, c, b, b, c, d);
       }
       geo.setIndex(idx);
-      const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75, metalness: 0, envMapIntensity: 0.35 }));
+      // Transparent so the closed lids can turn see-through for an X-ray view
+      const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75, metalness: 0, envMapIntensity: 0.35, transparent: true }));
       mesh.visible = false;
       eyes[eye].getWorldPosition(mesh.position);
       scene.add(mesh);
@@ -190,9 +194,19 @@ export function createHead(canvas, host, { url = './head_eyes_v2.glb', onProgres
       if (!eyes) return;
       eyes[eye].rotation.y = (eye === 'R' ? -1 : 1) * h * DEG; // rotation.y is + toward the patient's left
       eyes[eye].rotation.x = -v * DEG;
-      const margin = LID_OPEN_DEG + (v < 0 ? 0.75 * v : 0);
+      const open = LID_OPEN_DEG + (v < 0 ? 0.75 * v : 0); // lids follow the eyes down
+      const margin = open + (LID_SHUT_DEG - open) * lidState.close;
       if (margin > LID_OPEN_DEG - 2) lids[eye].mesh.visible = false;
       else { shapeLid(eye, margin); lids[eye].mesh.visible = true; }
+    },
+    setLids({ close = lidState.close, xray = lidState.xray } = {}) {
+      lidState.close = close; lidState.xray = xray;
+      for (const L of Object.values(lids)) {
+        L.mesh.material.opacity = 1 - 0.82 * xray;
+        L.mesh.material.emissive.setRGB(0.15 * xray, 0.55 * xray, 0.75 * xray);
+        L.mesh.material.depthWrite = xray < 0.5;
+      }
+      for (const e of ['R', 'L']) api.aim(e, shown[e].h, shown[e].v);
     },
     setView(v) { view = v; frame(); },
     resize: frame,

@@ -94,13 +94,27 @@
     .input-chip.off { color: #aab3c2; }
 
     /* The story, written across the forehead */
-    .story { position: absolute; z-index: 6; top: 0; left: 0; right: 0; padding: 18px 24px 46px; text-align: center; color: #fff; font: 600 clamp(17px, 2.1vw, 25px)/1.38 var(--head); text-shadow: 0 2px 8px rgba(0, 0, 0, .7); background: linear-gradient(rgba(8, 11, 16, .86), rgba(8, 11, 16, .62) 62%, rgba(8, 11, 16, 0)); cursor: pointer; }
+    .story { position: absolute; z-index: 8; top: 0; left: 0; right: 0; padding: 16px 24px 40px; text-align: center; color: #fff; font: 600 clamp(17px, 2.1vw, 25px)/1.38 var(--head); text-shadow: 0 2px 8px rgba(0, 0, 0, .7); background: linear-gradient(rgba(8, 11, 16, .88), rgba(8, 11, 16, .66) 66%, rgba(8, 11, 16, 0)); }
     .story p { max-width: 880px; margin: 0 auto; }
+    .story-nav { display: flex; justify-content: center; align-items: center; gap: 14px; margin-top: 10px; text-shadow: none; font-family: var(--body); }
+    .story-nav button { border-radius: 99px; cursor: pointer; font: 700 16px/1 var(--body); padding: 10px 18px; }
+    .story-nav .next { background: #fff; color: var(--ink); border: 2px solid #fff; padding: 10px 22px; }
+    .story-nav .next:hover { background: #ffd25a; border-color: #ffd25a; }
+    .story-nav .back { background: transparent; color: #fff; border: 2px solid rgba(255, 255, 255, .45); }
+    .story-nav .back:disabled { opacity: .3; cursor: default; }
+    .story-nav .progress { color: rgba(255, 255, 255, .7); font-weight: 700; font-size: 14px; min-width: 3.5em; }
+    .story-nav .next.ready { animation: ready 1.4s ease-in-out infinite; }
+    @keyframes ready { 50% { box-shadow: 0 0 0 7px rgba(255, 255, 255, .28); } }
     .nav { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
-    .progress { color: var(--muted); font-weight: 700; font-size: 16px; min-width: 4.5em; text-align: center; }
-    .btn:disabled { opacity: .35; cursor: default; }
-    .btn.primary.ready { animation: ready 1.4s ease-in-out infinite; }
-    @keyframes ready { 50% { box-shadow: 0 0 0 6px rgba(31, 111, 209, .25); } }
+    .nav:empty { display: none; }
+
+    /* A fixation stick held out toward us: wider toward the bottom of the frame, nearer the viewer */
+    .fixstick { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; overflow: visible; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .45)); }
+    .fixstick[hidden], .xray[hidden], .stick-tag[hidden] { display: none; }
+    .stick-tag { z-index: 6; }
+    /* Sleeping: an X-ray band across the closed eyelids */
+    .xray { position: absolute; z-index: 4; left: 0; right: 0; border-top: 2px solid rgba(90, 216, 255, .8); border-bottom: 2px solid rgba(90, 216, 255, .8); background: repeating-linear-gradient(rgba(130, 225, 255, .14) 0 1px, transparent 1px 4px); pointer-events: none; transition: opacity .5s; }
+    .xray span { position: absolute; left: 50%; bottom: -2px; transform: translate(-50%, 100%); background: #5ad8ff; color: #062330; font: 800 12px var(--body); letter-spacing: .06em; padding: 4px 10px; border-radius: 0 0 8px 8px; white-space: nowrap; }
     .speed { display: inline-flex; border: 2px solid var(--line); border-radius: 99px; overflow: hidden; }
     .speed[hidden] { display: none; }
     .speed button { border: 0; background: #fff; padding: 9px 16px; font-weight: 700; font-size: 16px; cursor: pointer; color: var(--muted); }
@@ -145,14 +159,16 @@
       body { font-size: 17px; }
       .wrap { padding: 0 14px; }
       section { padding: 20px 0; }
-      .stage { aspect-ratio: 1 / 1; }
-      .story { font-size: 14.5px; padding: 10px 12px 30px; }
+      .stage { aspect-ratio: 4 / 5; max-height: none; }
+      .story { font-size: 14.5px; padding: 10px 12px 26px; }
+      .story-nav { margin-top: 8px; gap: 10px; }
+      .story-nav button { font-size: 14.5px; padding: 8px 14px; }
       .callout { font-size: 13px; }
       .linkish { margin-left: 0; }
       .posts { grid-template-columns: 1fr; }
       .credit { font-size: 12px; }
     }
-    @media (prefers-reduced-motion: reduce) { .paddle, .post, .card-text span { transition: none; } .callout, .btn.primary.ready { animation: none; } }
+    @media (prefers-reduced-motion: reduce) { .paddle, .post, .card-text span, .xray { transition: none; } .callout, .story-nav .next.ready { animation: none; } }
   </style>
 </head>
 <body>
@@ -164,6 +180,15 @@
       <div class="demo">
         <div class="stage" id="stage" role="group" aria-label="3D face illustrating the story above it">
           <canvas id="view" aria-hidden="true"></canvas>
+          <svg class="fixstick" id="fixstick" aria-hidden="true" hidden>
+            <defs>
+              <linearGradient id="stick-fill" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8f6a3e"/><stop offset=".45" stop-color="#d9b07a"/><stop offset="1" stop-color="#7a5732"/></linearGradient>
+            </defs>
+            <polygon id="stick-handle" fill="url(#stick-fill)" stroke="rgba(0,0,0,.35)" stroke-width="1"/>
+            <circle id="stick-disc" fill="#fff" stroke="#1b2230" stroke-width="2.5"/>
+            <circle id="stick-dot" fill="#1b2230"/>
+          </svg>
+          <div class="xray" id="xray" hidden><span>X-ray: looking through the closed eyelids</span></div>
           <div class="target" id="target" hidden></div>
           <div class="target dim" id="target-b" hidden></div>
           <div class="card" id="card" hidden>
@@ -174,6 +199,7 @@
           <div class="ring os" id="ring-L" hidden></div>
           <span class="ring-label od" id="label-R" hidden>right eye</span>
           <span class="ring-label os" id="label-L" hidden>left eye</span>
+          <span class="tag stick-tag" id="stick-tag" hidden>A target held out in front, near you</span>
           <div class="paddle" id="paddle" tabindex="0" role="button" aria-label="Cover paddle. Drag it over an eye; click it to peek behind it." hidden>
             <svg viewBox="0 0 100 200" aria-hidden="true">
               <defs>
@@ -190,15 +216,19 @@
           </div>
           <div class="callout" id="callout" hidden></div>
           <div class="input-chip" id="input-chip" hidden><i></i><span></span></div>
-          <div class="story" id="story" aria-live="polite"><p id="story-text"></p></div>
+          <div class="story" id="story">
+            <p id="story-text" aria-live="polite"></p>
+            <div class="story-nav">
+              <button type="button" class="back" id="back">‹ Back</button>
+              <span class="progress" id="progress"></span>
+              <button type="button" class="next" id="next">Next ›</button>
+            </div>
+          </div>
           <a class="credit" href="https://calgaryvisioncentre.com/" target="_top" rel="author">Created by Dr Robert Burke</a>
           <div class="loader" id="loader">Loading… <span id="load-pct"></span></div>
         </div>
 
         <div class="nav">
-          <button class="btn" type="button" id="back">‹ Back</button>
-          <span class="progress" id="progress"></span>
-          <button class="btn primary" type="button" id="next">Next ›</button>
           <div class="speed" id="speed" role="group" aria-label="Reading speed" hidden>
             <button type="button" data-slow="0" aria-pressed="true" title="About 150 words a minute, eye movements at true size">Full speed</button><button type="button" data-slow="1" aria-pressed="false" title="Slowed down and magnified">Slow motion</button>
           </div>

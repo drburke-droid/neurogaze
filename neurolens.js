@@ -36,24 +36,27 @@ const st = {
 };
 const drift = { R: 0, L: 0 }; // each eye's drift toward rest, degrees outward (true size)
 let peekShown = 0;            // 0..1, how far the X-ray window has opened
+let sleepT = 0;               // seconds into the sleep step: lids close, then the X-ray view appears
+const lids = { close: 0, xray: 0 };
 const posture = () => RESTING[st.drift];
 const way = () => (st.drift === 'exo' ? 'outward' : 'inward');
 
 // ═══════════════════════════════════════════════════════════════
 // The story
 // ═══════════════════════════════════════════════════════════════
-// scene: what the eyes do. still = looking straight ahead; sleep = both at rest;
-// saccades, mirror, reading = repeated jumps. task: what the visitor is asked to do.
+// scene: what the eyes do. still = looking straight ahead (at a fixation stick held out toward us);
+// sleep = lids close, then an X-ray view shows both eyes at rest; saccades, mirror, reading = repeated jumps.
+// task: what the visitor is asked to do.
 const STEPS = [
   { say: () => 'This is what your eyes might look like in the mirror. Looking straight, right?', scene: 'still' },
-  { say: () => 'When both eyes are in use, your brain keeps them straight. It is constantly working to keep the two streams of information, one from each eye, lined up on top of each other.', scene: 'still', rings: true, labels: true },
-  { say: () => "But when an eye isn't being used, for example when it's covered, the information from that eye stops. The brain gives that eye a break and lets it drift to its resting position.", scene: 'still', rings: true, paddle: true },
-  { say: () => 'Where that resting position is, and how well your brain and eye muscles cope with it, is the essence of binocular vision dysfunction (BVD).', scene: 'still', rings: true, paddle: true },
-  { say: () => 'Go ahead: grab the paddle in the corner and cover one of the eyes. Once it is covered, click the paddle to peek behind it and see where the eye went.', scene: 'still', rings: true, paddle: true, task: 'peek' },
-  { say: () => `See how it drifted ${way()}? This person is ${st.drift === 'exo' ? 'exophoric' : 'esophoric'}: their eyes rest slightly ${way()}.`, scene: 'still', rings: true, paddle: true, need: 'peek' },
-  { say: () => "Let's keep the paddle in X-ray mode to see what happens when we cover the other eye. Go ahead, move the paddle over the other eye.", scene: 'still', rings: true, paddle: true, need: 'peek', task: 'other' },
-  { say: () => `Now the eye that isn't being used has drifted ${way()}, and the other eye, which the brain is calling on again, has straightened out.`, scene: 'still', rings: true, paddle: true, need: 'other' },
-  { say: () => "So when an eye isn't being used, it moves to its resting position. When you sleep and neither eye is being used, both go to their resting position.", scene: 'sleep', rings: true },
+  { say: () => 'When both eyes are in use, your brain keeps them straight. It is constantly working to keep the two streams of information, one from each eye, lined up on top of each other.', scene: 'still', rings: true, stick: true, labels: true },
+  { say: () => "But when an eye isn't being used, for example when it's covered, the information from that eye stops. The brain gives that eye a break and lets it drift to its resting position.", scene: 'still', rings: true, stick: true, paddle: true },
+  { say: () => 'Where that resting position is, and how well your brain and eye muscles cope with it, is the essence of binocular vision dysfunction (BVD).', scene: 'still', rings: true, stick: true, paddle: true },
+  { say: () => 'Go ahead: grab the paddle in the corner and cover one of the eyes. Once it is covered, click the paddle to peek behind it and see where the eye went.', scene: 'still', rings: true, stick: true, paddle: true, task: 'peek' },
+  { say: () => `See how it drifted ${way()}? This person is ${st.drift === 'exo' ? 'exophoric' : 'esophoric'}: their eyes rest slightly ${way()}.`, scene: 'still', rings: true, stick: true, paddle: true, need: 'peek' },
+  { say: () => "Let's keep the paddle in X-ray mode to see what happens when we cover the other eye. Go ahead, move the paddle over the other eye.", scene: 'still', rings: true, stick: true, paddle: true, need: 'peek', task: 'other' },
+  { say: () => `Now the eye that isn't being used has drifted ${way()}, and the other eye, which the brain is calling on again, has straightened out.`, scene: 'still', rings: true, stick: true, paddle: true, need: 'other' },
+  { say: () => "So when an eye isn't being used, it moves to its resting position. When you sleep and neither eye is being used, both go to their resting position.", scene: 'sleep' },
   { say: () => "Here's what most people don't realize: when you make a fast eye movement, called a saccade, your brain briefly switches off the input from your eyes to avoid a smeared, jittery view, then switches it back on once you reach your target.", scene: 'saccades', slow: true, mag: 1, input: true, rings: true },
   { say: () => "Try it yourself: look at something across the room, then quickly look at something on the other side. Notice you don't see a streak of blur, like you would if you swung a video camera too fast?", scene: 'saccades', input: true, rings: true },
   { say: () => "To really drive this home, look at yourself in a mirror and glance from one of your eyes to the other, and back. Notice you can't see your eyes move?", scene: 'mirror', input: true },
@@ -115,7 +118,6 @@ function restart() {
 }
 $('next').addEventListener('click', next);
 $('back').addEventListener('click', () => goStep(st.step - 1));
-$('story').addEventListener('click', next);
 document.addEventListener('keydown', (e) => {
   if (e.altKey || e.ctrlKey || e.metaKey) return;
   if (e.key === 'ArrowRight') { e.preventDefault(); next(); }
@@ -350,9 +352,15 @@ function tick(now) {
     if (covered && step().task === 'peek' && !st.firstEye) st.firstEye = covered;
     refresh();
   }
+  // Asleep: the lids close, then turn see-through (X-ray) to show both eyes turned to rest
   const sleeping = step().scene === 'sleep';
+  sleepT = sleeping ? sleepT + dt : 0;
+  const close = sleeping ? ease(clamp((sleepT - 0.3) / 0.8, 0, 1)) : 0;
+  const xray = sleeping ? ease(clamp((sleepT - 1.6) / 0.6, 0, 1)) : 0;
+  if (close !== lids.close || xray !== lids.xray) { lids.close = close; lids.xray = xray; head.setLids(lids); lastAim = ''; }
+  if (sleeping && sleepT < 2.4) active = true;
   for (const e of EYES) {
-    const goal = st.cover === e ? coveredOffset(posture()) : sleeping ? coveredOffset(posture()) / 2 : 0;
+    const goal = st.cover === e || (sleeping && sleepT > 0.5) ? coveredOffset(posture()) : 0;
     drift[e] += (goal - drift[e]) * (1 - Math.exp(-dt / (goal ? 0.6 : 0.3)));
     if (Math.abs(goal - drift[e]) > 1e-3) active = true;
   }
@@ -383,13 +391,18 @@ function draw() {
   const aimR = g.H - conv + turn('R'), aimL = -g.H - conv + turn('L');
   head.aim('R', aimR, g.V);
   head.aim('L', aimL, g.V);
-  const key = `${aimR.toFixed(3)}|${aimL.toFixed(3)}|${g.V.toFixed(3)}`;
+  const key = `${aimR.toFixed(3)}|${aimL.toFixed(3)}|${g.V.toFixed(3)}|${lids.close.toFixed(3)}|${lids.xray.toFixed(3)}`;
   if (key !== lastAim) { head.render(); lastAim = key; }
 
   // The target, and where each eye is aiming relative to it
   const p = gazeToScreen(g.H, g.V);
   const tgt = $('target'), tgtB = $('target-b');
-  tgt.hidden = !s.rings || reading;
+  const discR = 0.2 * geo.u;
+  $('fixstick').toggleAttribute('hidden', !s.stick); // an SVG element has no .hidden property
+  if (s.stick) drawStick(p, discR);
+  $('stick-tag').hidden = !s.labels;
+  if (s.labels) Object.assign($('stick-tag').style, { left: `${p.x}px`, top: `${p.y - discR - 12}px`, transform: 'translate(-50%, -100%)' });
+  tgt.hidden = !s.rings || reading || !!s.stick;
   Object.assign(tgt.style, { left: `${p.x}px`, top: `${p.y}px` });
   tgtB.hidden = !st.seq || reading || !s.rings;
   if (!tgtB.hidden) { const b = gazeToScreen(targetOf(st.seq, st.seq.i + 1).H, 0); Object.assign(tgtB.style, { left: `${b.x}px`, top: `${b.y}px` }); }
@@ -400,8 +413,11 @@ function draw() {
     const dx = Math.tan(turn(e) * DEG) * geo.D * (e === 'R' ? -1 : 1); // outward = toward that eye's own side
     Object.assign(ring.style, { left: `${p.x + dx}px`, top: `${p.y}px`, opacity: off ? 0.25 : 1 });
     label.hidden = !s.labels;
-    Object.assign(label.style, { left: `${p.x}px`, top: `${p.y}px` });
+    Object.assign(label.style, { left: `${p.x + (e === 'R' ? -1 : 1) * discR}px`, top: `${p.y}px` });
   }
+  const xr = $('xray');
+  xr.hidden = lids.xray < 0.02;
+  Object.assign(xr.style, { top: `${geo.o.y - 0.42 * geo.u}px`, height: `${0.84 * geo.u}px`, opacity: lids.xray });
   const chip = $('input-chip');
   chip.classList.toggle('off', off);
   chip.lastChild.textContent = off ? 'Input switched off during the jump' : 'Both eyes switched on';
@@ -417,6 +433,21 @@ function draw() {
     call.textContent = text;
     const h = paddleHead();
     Object.assign(call.style, { left: `${clamp(h.x, 110, stage.clientWidth - 110)}px`, top: `${h.y - 0.5 * h.w}px` });
+  }
+}
+
+// A fixation stick held out toward the viewer: the handle widens toward the bottom of the frame,
+// so the target reads as near us rather than on the nose
+function drawStick(p, r) {
+  const u = geo.u, H = stage.clientHeight;
+  const bx = p.x + 0.9 * u, by = H + 0.2 * u;           // held from below and to one side, close to us
+  const top = 0.035 * u, bottom = 0.2 * u;              // half-widths: narrow far away, wide near us
+  const ang = Math.atan2(by - p.y, bx - p.x), nx = -Math.sin(ang), ny = Math.cos(ang);
+  const pts = [[p.x + nx * top, p.y + ny * top], [bx + nx * bottom, by + ny * bottom], [bx - nx * bottom, by - ny * bottom], [p.x - nx * top, p.y - ny * top]];
+  $('stick-handle').setAttribute('points', pts.map((q) => q.map((v) => v.toFixed(1)).join(',')).join(' '));
+  for (const [id, rr] of [['stick-disc', r], ['stick-dot', 0.18 * r]]) {
+    const c = $(id);
+    c.setAttribute('cx', p.x); c.setAttribute('cy', p.y); c.setAttribute('r', rr);
   }
 }
 
