@@ -3,7 +3,7 @@
 `neurolens.html` replaces most of the Neurolens page (`calgaryvisioncentre.com/neurolens-calgary`) with a single, patient-friendly embed:
 
 1. **See what your eyes are doing.** A 3D face with two short animations that play on their own when scrolled into view:
-   - **Cover test:** a clear paddle covers one eye, then the other. Behind it the eye drifts to its resting position; when the paddle comes away, it pulls back into line.
+   - **Cover test:** a paddle covers one eye, then the other. It is drawn see-through, and labelled as such, so viewers can watch the eye behind it. Behind it the eye drifts to its resting position; when the paddle comes away, it pulls back into line.
    - **Reading:** the eyes read a clear card word by word, seen from behind. After each jump they slip toward their resting position and land slightly out of line (two rings show where each eye is aiming), then the brain pulls them back together: fixation disparity.
    - Controls: the two tabs, Pause/Play, and one link to show eyes that drift inward instead of outward. Chairside, you can also drag the paddle over either eye yourself.
 2. **Why small misalignments can cause symptoms:** the cause, the effect (with a simple trigeminal nerve diagram) and the solution, in plain language.
@@ -65,6 +65,7 @@ The embed keeps the page's message in plainer language. A few claims were left o
 - "Only Neurolens and their patented contoured prism technology does" and "the only lenses…": now "Neurolens uses a contoured prism…", without the comparison.
 - The statistics "nearly 2/3 of adults", "82% of people", "relief in the 80–90% range" and "national return rate is less than 3%". Dr Burke's own figure (fewer than 5% of his patients return their Neurolens) stays, on the article card.
 - The trigeminal explanation is described as the idea behind Neurolens, with symptoms that "may" result.
+- "Lifetime satisfaction guarantee": now "backed by a 100% satisfaction guarantee", Neurolens's own wording. Return windows differ between providers, so no time period is given.
 
 ## Notes
 

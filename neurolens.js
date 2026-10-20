@@ -40,12 +40,12 @@ const way = () => (st.drift === 'exo' ? 'outward' : 'inward');
 // The cover test, as a looping script (seconds)
 const COVER = [
   { at: 0, cover: null, say: () => 'Both eyes are aiming at the dot together.' },
-  { at: 2.2, cover: 'R', say: () => 'A clear paddle covers the right eye. We can still see the eye, but it can no longer see the dot.' },
-  { at: 4.6, say: () => `With nothing to line up with, it drifts ${way()} to where it naturally rests.` },
-  { at: 7.8, cover: null, say: () => 'When the paddle comes away, the eye has to pull back into line.' },
-  { at: 10.6, cover: 'L', say: () => `The same happens with the left eye: covered, it drifts ${way()}.` },
-  { at: 14, cover: null, say: () => 'Back in line. Your brain makes corrections like this all day, without you noticing.' },
-  { at: 18, loop: true },
+  { at: 2.2, cover: 'R', say: () => 'A paddle covers the right eye. In an eye exam the paddle is solid; ours is see-through so you can watch what the covered eye does.' },
+  { at: 5.2, say: () => `The covered eye can't see the dot, so with nothing to line up with, it drifts ${way()} to where it naturally rests.` },
+  { at: 8.6, cover: null, say: () => 'When the paddle comes away, the eye has to pull back into line.' },
+  { at: 11.4, cover: 'L', say: () => `The same happens with the left eye: behind the paddle, it drifts ${way()}.` },
+  { at: 14.8, cover: null, say: () => 'Back in line. Your brain makes corrections like this all day, without you noticing.' },
+  { at: 18.8, loop: true },
 ];
 
 // Reading: one fixation per word, in seconds of slowed-down time
@@ -53,7 +53,7 @@ const READ_SPEED = 0.4;
 const PHASES = [['saccade', 0.05], ['land', 0.12], ['correct', 0.15], ['fixate', 0.2]];
 const PASSAGE = 'Every time your eyes jump to the next word, they need to land together. If they land slightly out of line, the brain pulls them back. This happens with every word you read.';
 const READ_SAY = [
-  [0, () => 'Watch the eyes jump from word to word across the clear card.'],
+  [0, () => 'Watch the eyes jump from word to word. The card is see-through so we can see the eyes from behind it.'],
   [4, () => `During each jump the eyes aren't held together, so they slip ${way()} toward their resting position and land slightly out of line. Watch the rings come apart.`],
   [13, () => 'The brain notices and pulls them back together. That small miss and correction is called fixation disparity.'],
   [22, () => 'It happens with every word you read, thousands of times a day.'],
@@ -292,7 +292,7 @@ function tick(now) {
   const covered = coveredEye();
   if (covered !== st.cover) {
     st.cover = covered;
-    if (dragging || !st.playing) caption(covered ? `Covered, the ${covered === 'R' ? 'right' : 'left'} eye drifts ${way()} to where it naturally rests.` : 'Uncovered, the eye pulls back into line. Drag the clear paddle over either eye.');
+    if (dragging || !st.playing) caption(covered ? `Behind the paddle the ${covered === 'R' ? 'right' : 'left'} eye can't see the dot, so it drifts ${way()} to where it naturally rests. The paddle is see-through so you can watch.` : 'Uncovered, the eye pulls back into line. Drag the see-through paddle over either eye.');
   }
   for (const e of EYES) {
     const goal = st.cover === e ? coveredOffset(posture()) : 0;

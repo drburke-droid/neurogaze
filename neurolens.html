@@ -67,7 +67,9 @@
     .card-text { transform: scaleX(-1); font-family: Georgia, "Times New Roman", serif; color: rgba(18, 22, 30, .92); text-shadow: 0 0 3px rgba(255, 255, 255, .6); line-height: 1.5; }
     .card-text span { border-radius: 4px; padding: 0 1px; transition: background-color .15s; }
     .card-text span.cur { background: rgba(255, 210, 90, .95); text-shadow: none; }
-    .tag { position: absolute; left: 50%; transform: translate(-50%, -100%); top: -6px; white-space: nowrap; background: rgba(255,255,255,.92); color: var(--ink); font: 600 12.5px/1.2 var(--body); padding: 4px 10px; border-radius: 99px; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+    .tag { position: absolute; left: 50%; transform: translate(-50%, -100%); top: -6px; white-space: nowrap; text-align: center; background: rgba(255,255,255,.92); color: var(--ink); font: 600 12.5px/1.2 var(--body); padding: 4px 10px; border-radius: 99px; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+
+    .tag.wrap { white-space: normal; width: max-content; max-width: 210px; }
 
     /* A clear occluder paddle */
     .paddle { position: absolute; z-index: 5; cursor: grab; touch-action: none; transition: left .7s cubic-bezier(.4, 0, .2, 1), top .7s cubic-bezier(.4, 0, .2, 1); }
@@ -142,7 +144,7 @@
           <canvas id="view"></canvas>
           <div class="target" id="target"></div>
           <div class="card" id="card" hidden>
-            <span class="tag">Clear reading card · we see it from behind</span>
+            <span class="tag">See-through card, so we can watch the eyes from behind it</span>
             <div class="card-text" id="card-text"></div>
           </div>
           <div class="ring od" id="ring-R" hidden></div>
@@ -153,7 +155,7 @@
               <ellipse class="acrylic" cx="50" cy="44" rx="47" ry="42"/>
               <path class="glare" d="M18 30 Q30 10 56 8 Q34 18 24 40 Z"/>
             </svg>
-            <span class="tag" style="top:2px">Clear paddle</span>
+            <span class="tag wrap" style="top:2px">See-through paddle, so you can watch the eye behind it</span>
           </div>
           <a class="credit" href="https://calgaryvisioncentre.com/" target="_top" rel="author">Created by Dr Robert Burke</a>
           <div class="loader" id="loader">Loading… <span id="load-pct"></span></div>
@@ -169,7 +171,7 @@
           <button class="btn" type="button" id="play">Play</button>
           <button class="linkish" type="button" id="drift">Show eyes that drift inward</button>
         </div>
-        <p class="legend">Rings show where each eye is aiming: <i style="border-color:var(--od)"></i>right eye <i style="border-color:var(--os)"></i>left eye. Eye movements are exaggerated so they're easy to see.</p>
+        <p class="legend">The paddle and the card are see-through so you can watch the eyes behind them. Rings show where each eye is aiming: <i style="border-color:var(--od)"></i>right eye <i style="border-color:var(--os)"></i>left eye. Eye movements are exaggerated so they're easy to see.</p>
       </div>
     </div>
   </section>
@@ -204,7 +206,7 @@
         <article class="step">
           <div class="num" aria-hidden="true">3</div>
           <h3>The solution</h3>
-          <p>Prism in a glasses lens shifts what you see very slightly, so your eyes don't have to work as hard to line up. Eyes are usually further out of line up close than far away, so Neurolens uses a contoured prism: more toward the bottom of the lens, where you read, and less at the top. Neurolens comes with a lifetime satisfaction guarantee.</p>
+          <p>Prism in a glasses lens shifts what you see very slightly, so your eyes don't have to work as hard to line up. Eyes are usually further out of line up close than far away, so Neurolens uses a contoured prism: more toward the bottom of the lens, where you read, and less at the top. Neurolens is backed by a 100% satisfaction guarantee.</p>
         </article>
       </div>
       <p class="aside"><strong>What about blue-light filters or the 20-20-20 rule?</strong> They can make screen time more comfortable, and newer lens designs can make screens sharper, but none of them change how well your eyes line up.</p>
