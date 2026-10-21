@@ -123,7 +123,7 @@ section { padding: 28px 0; }
 .xray span { position: absolute; left: 50%; bottom: -2px; transform: translate(-50%, 100%); background: var(--xray); color: #06240f; font: 800 12px var(--body); letter-spacing: .06em; padding: 4px 10px; border-radius: 0 0 8px 8px; white-space: nowrap; }
 /* Inside the head, in profile: the trigeminal nerve */
 .veil { position: absolute; inset: 0; z-index: 2; background: radial-gradient(ellipse at 50% 60%, rgba(8, 11, 16, .42), rgba(8, 11, 16, .62)); pointer-events: none; }
-.veil.deep { background: rgba(8, 11, 16, .9); }
+.veil.deep { background: rgba(6, 8, 12, .97); } /* the visitor's own test: the face all but gone */
 .veil[hidden], .nerves[hidden], .nv-labels[hidden], .nv-clock[hidden] { display: none; }
 .nerves { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; overflow: visible; will-change: transform; } /* own layers: the still nerves aren't redrawn as the signals move */
 .nv-labels { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
@@ -150,6 +150,22 @@ section { padding: 28px 0; }
 .selfdot[hidden] { display: none; }
 .selfdot i { width: 22px; height: 22px; border-radius: 50%; background: #ff3b3b; box-shadow: 0 0 0 3px #fff, 0 0 18px 4px rgba(255, 59, 59, .55); }
 .selfdot span { color: rgba(255, 255, 255, .8); font: 600 14px var(--body); white-space: nowrap; }
+.selfdot b { background: #ffd25a; color: #1b2230; font: 700 13px var(--body); letter-spacing: .06em; text-transform: uppercase; padding: 5px 12px; border-radius: 99px; }
+/* A hand moving from eye to eye, to show what to do */
+.cover-demo { width: 120px; height: 52px; overflow: visible; margin-top: 4px; }
+.cover-demo .eye { fill: none; stroke: rgba(255, 255, 255, .7); stroke-width: 2; }
+.cover-demo .iris { fill: rgba(255, 255, 255, .7); }
+.cover-demo .hand { fill: #e9edf4; animation: cover 2.4s ease-in-out infinite; }
+@keyframes cover { 0%, 38% { transform: translate(30px, 28px); } 50%, 88% { transform: translate(90px, 28px); } 100% { transform: translate(30px, 28px); } }
+/* The sleep card: X-ray on or off, eyelids closed or open */
+.sleep-ctl { position: absolute; left: 50%; bottom: 14px; z-index: 7; transform: translateX(-50%); display: flex; gap: 10px; }
+.sleep-ctl[hidden] { display: none; }
+.sleep-ctl .seg { display: inline-flex; align-items: center; background: rgba(16, 20, 28, .86); border-radius: 99px; padding: 3px; box-shadow: 0 4px 12px rgba(0, 0, 0, .35); }
+.sleep-ctl .seg span { color: #aab3c2; font: 700 12px var(--body); text-transform: uppercase; letter-spacing: .05em; padding: 0 8px 0 10px; white-space: nowrap; }
+.sleep-ctl button { border: 0; background: none; color: #e9edf4; font: 700 14px var(--body); padding: 6px 12px; border-radius: 99px; cursor: pointer; }
+.sleep-ctl button[aria-pressed="true"] { background: #ffd25a; color: #1b2230; }
+.sleep-ctl button:disabled { opacity: .4; cursor: default; }
+.stage.no-credit .credit { display: none; } /* room for the sleep card's buttons, and the visitor's own test on phones */
 .speed { display: inline-flex; border: 2px solid var(--line); border-radius: 99px; overflow: hidden; }
 .speed[hidden] { display: none; }
 .speed button { border: 0; background: #fff; padding: 9px 16px; font-weight: 700; font-size: 16px; cursor: pointer; color: var(--muted); }
@@ -238,6 +254,10 @@ section { padding: 28px 0; }
   .signs, .options { grid-template-columns: 1fr; }
   .credit { font-size: 12px; }
   .intro { font-size: 18px; }
+  .sleep-ctl { gap: 6px; bottom: 10px; }
+  .sleep-ctl .seg span { padding: 0 5px 0 8px; font-size: 11px; }
+  .sleep-ctl button { font-size: 12.5px; padding: 5px 8px; }
+  .selfdot { gap: 10px; }
   .video-icon { width: 60px; height: 60px; margin: -30px 0 0 -30px; }
   .video-icon::after { left: 24px; top: 18px; border-left-width: 19px; border-top-width: 12px; border-bottom-width: 12px; }
   .video-title, .video-time { font-size: 13px; bottom: 10px; }
@@ -247,4 +267,4 @@ section { padding: 28px 0; }
   .nv-clock { font-size: 12px; left: 8px; bottom: 42px; padding: 5px 10px; }
   .nv-meter { left: 8px; bottom: 8px; width: 160px; font-size: 12px; padding: 6px 10px 8px; }
 }
-@media (prefers-reduced-motion: reduce) { .paddle, .post, .card-text span, .xray { transition: none; } .callout, .stick-hint, .story-nav .next.ready { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .paddle, .post, .card-text span, .xray { transition: none; } .callout, .stick-hint, .cover-demo .hand, .story-nav .next.ready { animation: none; } }

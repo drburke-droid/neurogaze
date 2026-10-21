@@ -15,7 +15,17 @@ export const STAGE_HTML = `
   </svg>
   <div class="xray" id="xray" hidden><span>X-ray: looking through the closed eyelids</span></div>
   <div class="veil" id="veil" hidden></div>
-  <div class="selfdot" id="selfdot" hidden><i></i><span>Keep looking at the red dot</span></div>
+  <div class="selfdot" id="selfdot" hidden>
+    <b>Your turn</b>
+    <i></i>
+    <span>Look at this dot</span>
+    <svg class="cover-demo" viewBox="0 0 120 52" aria-hidden="true">
+      <path class="eye" d="M10 26 Q30 12 50 26 Q30 40 10 26 Z"/><circle class="iris" cx="30" cy="26" r="5.5"/>
+      <path class="eye" d="M70 26 Q90 12 110 26 Q90 40 70 26 Z"/><circle class="iris" cx="90" cy="26" r="5.5"/>
+      <g class="hand"><rect x="-17" y="-14" width="34" height="38" rx="12"/><rect x="-15" y="-26" width="7" height="18" rx="3.5"/><rect x="-6.5" y="-29" width="7" height="20" rx="3.5"/><rect x="2" y="-27" width="7" height="19" rx="3.5"/><rect x="10" y="-22" width="6.5" height="15" rx="3.2"/></g>
+    </svg>
+    <span>Cover one eye, then the other</span>
+  </div>
   <svg class="nerves" id="nerves" aria-hidden="true" hidden></svg>
   <div class="target" id="target" hidden></div>
   <div class="target dim" id="target-b" hidden></div>
@@ -47,6 +57,10 @@ export const STAGE_HTML = `
   </div>
   <div class="callout" id="callout" hidden></div>
   <div class="input-chip" id="input-chip" hidden><i></i><span></span></div>
+  <div class="sleep-ctl" id="sleep-ctl" hidden>
+    <div class="seg" role="group" aria-label="X-ray view through the eyelids"><span>X-ray</span><button type="button" data-xray="1">On</button><button type="button" data-xray="0">Off</button></div>
+    <div class="seg" role="group" aria-label="Eyelids"><span>Eyelids</span><button type="button" data-open="0">Closed</button><button type="button" data-open="1">Open</button></div>
+  </div>
   <div class="story" id="story">
     <p id="story-text" aria-live="polite"></p>
     <div class="story-nav">

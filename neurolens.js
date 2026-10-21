@@ -44,6 +44,8 @@ let peekShown = 0, peekT = 0; // 0..1, how far the X-ray window has opened (ease
 const PEEK_OPEN = 1.0, PEEK_CLOSE = 0.35; // seconds
 let sleepT = 0;               // seconds into the sleep step: lids close, then the X-ray view appears
 let wakeT = 0, fromSleep = false; // seconds into the waking step: the lids open, then the eyes straighten
+let wakeFrom = { close: 1, xray: 0 }; // how the lids were when the waking step began
+let sleepOpenK = 0, sleepXrayK = 1;   // the sleep card's buttons, eased: eyelids opened (0..1), X-ray on (0..1)
 let turnK = 0;                // 0..1: the head turning from facing us to its profile, for the steps inside the head
 let sideBox = null;           // how the camera frames the profile (eases between steps)
 let nerveMode = null;         // draw the nerve this way instead of as the step says (for the still diagram and the video)
@@ -83,9 +85,9 @@ const STEPS = [
   { id: 'exo', say: () => `See how it drifted ${way()}? This person is ${st.drift === 'exo' ? 'exophoric' : 'esophoric'}: their eyes rest slightly ${way()}.`, scene: 'still', rings: true, stick: true, paddle: true, need: 'peek' },
   { id: 'other', say: () => "Let's keep the paddle in X-ray mode to see what happens when we cover the other eye. Go ahead, move the paddle over the other eye.", scene: 'still', rings: true, stick: true, paddle: true, need: 'peek', task: 'other' },
   { id: 'swap', say: () => `Now the eye that isn't being used has drifted ${way()}, and the other eye, which the brain is calling on again, has straightened out.`, scene: 'still', rings: true, stick: true, paddle: true, need: 'other' },
-  { id: 'self', say: () => 'Now try it on yourself. Look at the red dot and keep looking at it. Cover one eye with your hand, then quickly move your hand across to cover the other eye. Go back and forth a few times.', scene: 'self' },
+  { id: 'self', say: () => "Now it's your turn. Look at the red dot below. Cover one of your eyes with your hand, then quickly move your hand across to cover the other eye. Switch back and forth a few times, watching the dot.", scene: 'self' },
   { id: 'selfJump', say: () => "Did the dot jump a little as you switched? If it did, you've just discovered that your eye's resting position, while it was behind your hand, wasn't exactly straight. When you uncovered it, your brain had to pull it back onto the dot. A small jump is common.", scene: 'self' },
-  { id: 'sleep', say: () => "So when an eye isn't being used, it moves to its resting position. When you sleep and neither eye is being used, both go to their resting position.", scene: 'sleep' },
+  { id: 'sleep', say: () => "So when an eye isn't being used, it moves to its resting position. When you sleep and neither eye is being used, both go to their resting position. Try turning the X-ray off, or opening the eyelids, to see how far out they've turned.", scene: 'sleep' },
   { id: 'wake', say: () => "But when both eyes are open and your brain is paying attention to both of them, they're straight again, lined up on the same target.", scene: 'wake', rings: true, stick: true },
   { id: 'saccade', say: () => "Here's what most people don't realize: when you make a fast eye movement, called a saccade, your brain briefly switches off the input from your eyes to avoid a smeared, jittery view, then switches it back on once you reach your target.", scene: 'saccades', slow: true, mag: 1, input: true, rings: true },
   { id: 'room', say: () => "Try it yourself: look at something across the room, then quickly look at something on the other side. Notice you don't see a streak of blur, like you would if you swung a video camera too fast?", scene: 'saccades', input: true, rings: true },
@@ -140,9 +142,11 @@ function goStep(n) {
   const s = step();
   clearTimeout(showTimer);
   if (st.step === 1) { pullT = 0; pullHand = null; } // the target starts close to the face and pulls back toward the viewer
+  if (s.scene === 'sleep') { st.sleepXray = true; st.sleepOpen = false; sleepOpenK = 0; sleepXrayK = 1; } // lids closed, X-ray on
   nerveT = 0;
   if (s.scene === 'wake') { // waking up: start with the lids shut and both eyes at rest
-    fromSleep = STEPS[st.step - 1]?.scene === 'sleep' && back === false && lids.xray > 0.5;
+    fromSleep = STEPS[st.step - 1]?.scene === 'sleep' && back === false;
+    wakeFrom = fromSleep ? { close: lids.close, xray: lids.xray } : { close: 1, xray: 0 }; // carry on from however the sleep card left them
     wakeT = 0;
     drift.R = drift.L = coveredOffset(posture());
   }
@@ -182,6 +186,13 @@ $('drift').addEventListener('click', () => {
   refresh();
   request();
 });
+$('sleep-ctl').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b || b.disabled) return;
+  if (b.dataset.xray) st.sleepXray = b.dataset.xray === '1';
+  if (b.dataset.open) st.sleepOpen = b.dataset.open === '1';
+  refresh();
+  request();
+});
 $('speed').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-slow]'); if (!b) return;
   st.speedChosen = true;
@@ -206,6 +217,13 @@ function refresh() {
   paddle.hidden = !s.paddle;
   card.hidden = s.scene !== 'reading';
   $('input-chip').hidden = !s.input;
+  const sleepUi = s.scene === 'sleep';
+  $('sleep-ctl').hidden = !sleepUi;
+  stage.classList.toggle('no-credit', sleepUi || (s.scene === 'self' && stage.clientWidth < 560));
+  for (const b of $('sleep-ctl').querySelectorAll('button')) {
+    b.setAttribute('aria-pressed', String(b.dataset.xray ? (b.dataset.xray === '1') === !!st.sleepXray : (b.dataset.open === '1') === !!st.sleepOpen));
+    if (b.dataset.xray) b.disabled = !!st.sleepOpen; // with the eyelids open there's nothing to see through
+  }
   storyLayout();
 }
 
@@ -444,8 +462,17 @@ function tick(now) {
   sleepT = sleeping ? sleepT + dt : 0;
   wakeT = waking ? wakeT + dt : 0;
   let close = 0, xray = 0;
-  if (sleeping) { close = ease(clamp((sleepT - 0.3) / 1.0, 0, 1)); xray = ease(clamp((sleepT - 2.6) / 0.8, 0, 1)); } // close, pause, then X-ray
-  if (waking) { close = 1 - ease(clamp((wakeT - 0.5) / 0.6, 0, 1)); xray = fromSleep ? 1 - ease(clamp(wakeT / 0.5, 0, 1)) : 0; }
+  if (sleeping) {
+    // The buttons: open the eyelids (the eyes stay turned to rest), or turn the X-ray view off
+    const toward = (k, goal, secs) => (k === goal ? k : goal > k ? Math.min(goal, k + dt / secs) : Math.max(goal, k - dt / secs));
+    sleepOpenK = toward(sleepOpenK, st.sleepOpen ? 1 : 0, 0.6);
+    sleepXrayK = toward(sleepXrayK, st.sleepXray ? 1 : 0, 0.4);
+    if (sleepOpenK !== (st.sleepOpen ? 1 : 0) || sleepXrayK !== (st.sleepXray ? 1 : 0)) active = true;
+    const open = ease(sleepOpenK);
+    close = ease(clamp((sleepT - 0.3) / 1.0, 0, 1)) * (1 - open); // close, pause, then X-ray
+    xray = ease(clamp((sleepT - 2.6) / 0.8, 0, 1)) * ease(sleepXrayK) * (1 - open);
+  }
+  if (waking) { close = wakeFrom.close * (1 - ease(clamp((wakeT - 0.5) / 0.6, 0, 1))); xray = wakeFrom.xray * (1 - ease(clamp(wakeT / 0.5, 0, 1))); }
   if (close !== lids.close || xray !== lids.xray) { lids.close = close; lids.xray = xray; head.setLids(lids); lastAim = ''; }
   if ((sleeping && sleepT < 3.6) || (waking && wakeT < 2.6)) active = true;
 
@@ -562,7 +589,7 @@ function draw() {
   xr.hidden = lids.xray < 0.02;
   Object.assign(xr.style, { top: `${geo.o.y - 0.42 * geo.u}px`, height: `${0.84 * geo.u}px`, opacity: lids.xray });
   // Inside the head: the trigeminal nerve over the profile, with the head dimmed behind it
-  const veil = $('veil'), veiled = Math.max(nerveShow, 0.85 * selfShow);
+  const veil = $('veil'), veiled = Math.max(nerveShow, selfShow);
   veil.hidden = veiled < 0.01;
   veil.style.opacity = veiled.toFixed(3);
   veil.classList.toggle('deep', selfShow > nerveShow); // for the red dot, dim the face right down
