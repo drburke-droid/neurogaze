@@ -182,7 +182,7 @@ section { padding: 28px 0; }
 .options p { color: #34405a; font-size: 16.5px; }
 
 /* A neurologist's view: click to play */
-.video { position: relative; margin-top: 18px; max-width: 760px; aspect-ratio: 16 / 9; border-radius: var(--radius); overflow: hidden; background: radial-gradient(ellipse at 50% 40%, #222a38 0%, var(--stage) 75%); }
+.video { position: relative; margin: 18px auto 0; max-width: 760px; aspect-ratio: 16 / 9; border-radius: var(--radius); overflow: hidden; background: radial-gradient(ellipse at 50% 40%, #222a38 0%, var(--stage) 75%); }
 .video-start { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; background: none; color: #fff; cursor: pointer; }
 .video-start img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .video-icon { position: absolute; left: 50%; top: 50%; width: 76px; height: 76px; margin: -38px 0 0 -38px; border-radius: 50%; background: rgba(255, 255, 255, .94); box-shadow: 0 6px 20px rgba(0, 0, 0, .35); transition: background-color .15s, transform .15s; }
