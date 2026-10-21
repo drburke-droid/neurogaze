@@ -34,6 +34,10 @@ Below the demonstration are the cause, effect and solution, a neurologist's view
 
 `bvd.html` tells the same story for a binocular vision dysfunction (BVD) page (setup in `docs/bvd-page.md`), with BVD first and Neurolens as one way to treat it: what BVD can feel like, why small misalignments can cause symptoms, how the clinic checks for it, ways to treat it, a call to action and the articles. Both pages mount the same stage (`story-stage.js`) and styles (`story.css`) and run the same story engine (`neurolens.js`); `<body data-page="bvd">` changes only the closing card.
 
+### The BVD video
+
+`video.html` plays the story from a shot list (`video-script.js`: voiceover, on-screen caption, timing and actions for each shot) for a 5½-minute YouTube video, opening with symptoms and the drifting eye. Open it and press Play to preview it in real time; `tools/record-video.mjs` records it frame by frame to a 1080p MP4 with a caption file and YouTube chapters, and `tools/thumbnails.mjs` renders thumbnail options. See `docs/bvd-video.md`.
+
 ## The model, honestly
 
 This is a qualitative teaching model, not a biomechanical simulation (`engine.js`).
@@ -77,6 +81,8 @@ Then open the printed address. Run the model tests with `npm test` (Node 18 or l
 | `neurolens.html` | Patient-facing embed for the clinic's Neurolens page (layout and embed code in `docs/neurolens-embed.md`) |
 | `bvd.html` | Patient-facing embed for a binocular vision dysfunction (BVD) page: the same story, BVD first (setup in `docs/bvd-page.md`) |
 | `neurolens.js`, `story-stage.js`, `story.css` | The story engine, its stage markup and the styles, shared by both pages |
+| `video.html`, `video.js`, `video-script.js` | The BVD YouTube video: the shot list (voiceover, captions, timing) played over the story for recording (guide in `docs/bvd-video.md`) |
+| `tools/record-video.mjs`, `tools/thumbnails.mjs` | Record the video to MP4 with captions and chapters, and render its thumbnail options |
 | `fixation.js` | Resting position and fixation disparity model for that page (pure functions) |
 | `head3d.js` | The 3D head as a reusable module, used by the Neurolens page |
 | `nerves.js` | The trigeminal nerve drawn over the head in profile, for that page |

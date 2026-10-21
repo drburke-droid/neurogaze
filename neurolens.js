@@ -66,42 +66,42 @@ const way = () => (st.drift === 'exo' ? 'outward' : 'inward');
 // sleep = lids close, then an X-ray view shows both eyes at rest; wake = lids open and the eyes straighten;
 // saccades, mirror, reading = repeated jumps; nerve = the head in profile, with the trigeminal nerve drawn in
 // (nerve: what it shows, see nerves.js).
-// task: what the visitor is asked to do.
+// task: what the visitor is asked to do. id: a short name, for the video script (video-script.js).
 const STEPS = [
-  { say: () => 'This is what your eyes might look like in the mirror. They look straight, right?', scene: 'still' },
-  { say: () => 'When both eyes are in use, your brain keeps them straight. It is constantly working to keep the two streams of information, one from each eye, lined up on top of each other.', scene: 'still', rings: true, stick: true, labels: true },
-  { say: () => "But when an eye isn't being used, for example when it's covered, the information from that eye stops. The brain gives that eye a break and lets it drift to its resting position.", scene: 'still', rings: true, stick: true, paddle: true },
-  { say: () => 'Where that resting position is, and how well your brain and eye muscles cope with it, is the essence of binocular vision dysfunction (BVD).', scene: 'still', rings: true, stick: true, paddle: true },
-  { say: () => 'Go ahead: grab the paddle in the corner and cover one of the eyes. Once it is covered, click the paddle to peek behind it and see where the eye went.', scene: 'still', rings: true, stick: true, paddle: true, task: 'peek' },
-  { say: () => `See how it drifted ${way()}? This person is ${st.drift === 'exo' ? 'exophoric' : 'esophoric'}: their eyes rest slightly ${way()}.`, scene: 'still', rings: true, stick: true, paddle: true, need: 'peek' },
-  { say: () => "Let's keep the paddle in X-ray mode to see what happens when we cover the other eye. Go ahead, move the paddle over the other eye.", scene: 'still', rings: true, stick: true, paddle: true, need: 'peek', task: 'other' },
-  { say: () => `Now the eye that isn't being used has drifted ${way()}, and the other eye, which the brain is calling on again, has straightened out.`, scene: 'still', rings: true, stick: true, paddle: true, need: 'other' },
-  { say: () => 'Now try it on yourself. Look at the red dot and keep looking at it. Cover one eye with your hand, then quickly move your hand across to cover the other eye. Go back and forth a few times.', scene: 'self' },
-  { say: () => "Did the dot jump a little as you switched? If it did, you've just discovered that your eye's resting position, while it was behind your hand, wasn't exactly straight. When you uncovered it, your brain had to pull it back onto the dot. A small jump is common.", scene: 'self' },
-  { say: () => "So when an eye isn't being used, it moves to its resting position. When you sleep and neither eye is being used, both go to their resting position.", scene: 'sleep' },
-  { say: () => "But when both eyes are open and your brain is paying attention to both of them, they're straight again, lined up on the same target.", scene: 'wake', rings: true, stick: true },
-  { say: () => "Here's what most people don't realize: when you make a fast eye movement, called a saccade, your brain briefly switches off the input from your eyes to avoid a smeared, jittery view, then switches it back on once you reach your target.", scene: 'saccades', slow: true, mag: 1, input: true, rings: true },
-  { say: () => "Try it yourself: look at something across the room, then quickly look at something on the other side. Notice you don't see a streak of blur, like you would if you swung a video camera too fast?", scene: 'saccades', input: true, rings: true },
-  { say: () => "To really drive this home, look at yourself in a mirror and glance from one of your eyes to the other, and back. Notice you can't see your eyes move?", scene: 'mirror', input: true },
-  { say: () => "Now try it while filming yourself with your phone's front camera. You'll definitely see your eyes move. In the mirror you don't, because your brain switches off your eyes' input during saccades.", scene: 'mirror', input: true },
-  { say: () => `And remember: an eye whose input is switched off heads for its resting position. So during every saccade both eyes start to drift ${way()}, and they land slightly out of line until the brain switches them back on and pulls them together.`, scene: 'saccades', slow: true, input: true, rings: true },
-  { say: () => 'Reading is a long chain of saccades: word, to word, to word, with both eyes turned in to meet on the page. Here is someone reading at full speed, about 150 words a minute. Looks normal.', scene: 'reading', input: true, rings: true },
-  { say: () => `Now the same reading, slowed down and magnified. After each jump the eyes land slightly out of line, and the brain pulls them back together. That small miss is called fixation disparity${st.drift === 'exo' ? ". For eyes that rest outward it's usually bigger up close, where they must turn in the most" : ". For eyes that rest inward it can be the reverse: distance is sometimes harder, as the eyes must keep straightening out"}.`, scene: 'reading', slow: true, input: true, rings: true },
-  { say: () => "It happens with every word, thousands of times a day. And the eye muscles don't just move the eyes: they also report back to the brain. Let's look inside.", scene: 'reading', alternate: true, input: true, rings: true },
-  { say: () => 'Your brain keeps track of where each eye is pointing, and tiny sensors in the eye muscles, called proprioceptors, help it: many times a second, they report how stretched each muscle is and how hard it is working.', scene: 'nerve', nerve: 'sense' },
-  { say: () => 'Those answers travel to the brain along the trigeminal nerve, the main sensory nerve of the face.', scene: 'nerve', nerve: 'route' },
-  { say: () => 'The same nerve carries feeling from the forehead, the cheeks and the jaw, controls the chewing muscles, and supplies the covering of the brain. In the brainstem, it also meets the nerves from the back of the head and neck.', scene: 'nerve', nerve: 'map' },
-  { say: () => "Now picture reading. Every jump from word to word sends signals along that nerve; that's true for everyone. But when the eyes land out of line, each correction is extra muscle work, and it adds an extra burst on top. Over a long stretch of reading, the extra bursts pile up, and the nerve almost pulses with them.", scene: 'nerve', nerve: 'reading' },
-  { say: () => "Here's something surprising. Each eye weighs only about 7.5 grams, about the same as one and a half plastic credit cards, and the muscles that move it are far stronger than they need to be to move something that light.", scene: 'nerve', nerve: 'weight' },
-  { say: () => "They're also built differently from other muscles: their own special kind of myosin (the protein that makes muscle contract), packed with energy-producing mitochondria, and a rich blood supply. That makes them very hard to tire. So when your eyes feel tired, it probably isn't the muscles giving out.", scene: 'nerve', nerve: 'built' },
-  { say: () => "So what does get overloaded? The information. Everyone's eye muscle sensors report with every eye movement; that's normal traffic. But eyes that rest out of line have to be held in line all day and pulled back into line after every jump. That extra work means extra reports, on top of the normal traffic, all funnelled into one nerve.", scene: 'nerve', nerve: 'stream' },
-  { say: () => "And that nerve isn't a private line. The trigeminal nerve also carries feeling from the forehead, face and jaw and from the covering of the brain, and it meets the neck nerves in the brainstem. They all share the same bandwidth.", scene: 'nerve', nerve: 'shared' },
-  { say: () => 'Think of your home internet. Video calls work fine, until someone starts a download that never stops; then everything on the connection starts to struggle. When the eyes rest out of line, the extra reports from holding and correcting them can be that download.', scene: 'nerve', nerve: 'analogy' },
-  { say: () => 'When the trigeminal nerve has had too much, the brain is thought to start registering the overload as discomfort or pain, felt in the places this nerve looks after.', scene: 'nerve', nerve: 'overload' },
-  { say: () => 'That can mean headaches, often across the forehead or temples, and eye strain: eyes that feel tired, sore or dry by the end of the day.', scene: 'nerve', nerve: 'symHead' },
-  { say: () => 'It can mean jaw tension or clenching, through the chewing muscles this nerve controls.', scene: 'nerve', nerve: 'symJaw' },
-  { say: () => 'And it can mean neck and shoulder pain, because the trigeminal nerve meets the neck nerves at the top of the spinal cord.', scene: 'nerve', nerve: 'symNeck' },
-  { say: () => (PAGE === 'bvd'
+  { id: 'mirror', say: () => 'This is what your eyes might look like in the mirror. They look straight, right?', scene: 'still' },
+  { id: 'pull', say: () => 'When both eyes are in use, your brain keeps them straight. It is constantly working to keep the two streams of information, one from each eye, lined up on top of each other.', scene: 'still', rings: true, stick: true, labels: true },
+  { id: 'rest', say: () => "But when an eye isn't being used, for example when it's covered, the information from that eye stops. The brain gives that eye a break and lets it drift to its resting position.", scene: 'still', rings: true, stick: true, paddle: true },
+  { id: 'bvd', say: () => 'Where that resting position is, and how well your brain and eye muscles cope with it, is the essence of binocular vision dysfunction (BVD).', scene: 'still', rings: true, stick: true, paddle: true },
+  { id: 'peek', say: () => 'Go ahead: grab the paddle in the corner and cover one of the eyes. Once it is covered, click the paddle to peek behind it and see where the eye went.', scene: 'still', rings: true, stick: true, paddle: true, task: 'peek' },
+  { id: 'exo', say: () => `See how it drifted ${way()}? This person is ${st.drift === 'exo' ? 'exophoric' : 'esophoric'}: their eyes rest slightly ${way()}.`, scene: 'still', rings: true, stick: true, paddle: true, need: 'peek' },
+  { id: 'other', say: () => "Let's keep the paddle in X-ray mode to see what happens when we cover the other eye. Go ahead, move the paddle over the other eye.", scene: 'still', rings: true, stick: true, paddle: true, need: 'peek', task: 'other' },
+  { id: 'swap', say: () => `Now the eye that isn't being used has drifted ${way()}, and the other eye, which the brain is calling on again, has straightened out.`, scene: 'still', rings: true, stick: true, paddle: true, need: 'other' },
+  { id: 'self', say: () => 'Now try it on yourself. Look at the red dot and keep looking at it. Cover one eye with your hand, then quickly move your hand across to cover the other eye. Go back and forth a few times.', scene: 'self' },
+  { id: 'selfJump', say: () => "Did the dot jump a little as you switched? If it did, you've just discovered that your eye's resting position, while it was behind your hand, wasn't exactly straight. When you uncovered it, your brain had to pull it back onto the dot. A small jump is common.", scene: 'self' },
+  { id: 'sleep', say: () => "So when an eye isn't being used, it moves to its resting position. When you sleep and neither eye is being used, both go to their resting position.", scene: 'sleep' },
+  { id: 'wake', say: () => "But when both eyes are open and your brain is paying attention to both of them, they're straight again, lined up on the same target.", scene: 'wake', rings: true, stick: true },
+  { id: 'saccade', say: () => "Here's what most people don't realize: when you make a fast eye movement, called a saccade, your brain briefly switches off the input from your eyes to avoid a smeared, jittery view, then switches it back on once you reach your target.", scene: 'saccades', slow: true, mag: 1, input: true, rings: true },
+  { id: 'room', say: () => "Try it yourself: look at something across the room, then quickly look at something on the other side. Notice you don't see a streak of blur, like you would if you swung a video camera too fast?", scene: 'saccades', input: true, rings: true },
+  { id: 'mirrorEyes', say: () => "To really drive this home, look at yourself in a mirror and glance from one of your eyes to the other, and back. Notice you can't see your eyes move?", scene: 'mirror', input: true },
+  { id: 'camera', say: () => "Now try it while filming yourself with your phone's front camera. You'll definitely see your eyes move. In the mirror you don't, because your brain switches off your eyes' input during saccades.", scene: 'mirror', input: true },
+  { id: 'landing', say: () => `And remember: an eye whose input is switched off heads for its resting position. So during every saccade both eyes start to drift ${way()}, and they land slightly out of line until the brain switches them back on and pulls them together.`, scene: 'saccades', slow: true, input: true, rings: true },
+  { id: 'read', say: () => 'Reading is a long chain of saccades: word, to word, to word, with both eyes turned in to meet on the page. Here is someone reading at full speed, about 150 words a minute. Looks normal.', scene: 'reading', input: true, rings: true },
+  { id: 'readSlow', say: () => `Now the same reading, slowed down and magnified. After each jump the eyes land slightly out of line, and the brain pulls them back together. That small miss is called fixation disparity${st.drift === 'exo' ? ". For eyes that rest outward it's usually bigger up close, where they must turn in the most" : ". For eyes that rest inward it can be the reverse: distance is sometimes harder, as the eyes must keep straightening out"}.`, scene: 'reading', slow: true, input: true, rings: true },
+  { id: 'report', say: () => "It happens with every word, thousands of times a day. And the eye muscles don't just move the eyes: they also report back to the brain. Let's look inside.", scene: 'reading', alternate: true, input: true, rings: true },
+  { id: 'sense', say: () => 'Your brain keeps track of where each eye is pointing, and tiny sensors in the eye muscles, called proprioceptors, help it: many times a second, they report how stretched each muscle is and how hard it is working.', scene: 'nerve', nerve: 'sense' },
+  { id: 'route', say: () => 'Those answers travel to the brain along the trigeminal nerve, the main sensory nerve of the face.', scene: 'nerve', nerve: 'route' },
+  { id: 'map', say: () => 'The same nerve carries feeling from the forehead, the cheeks and the jaw, controls the chewing muscles, and supplies the covering of the brain. In the brainstem, it also meets the nerves from the back of the head and neck.', scene: 'nerve', nerve: 'map' },
+  { id: 'pulse', say: () => "Now picture reading. Every jump from word to word sends signals along that nerve; that's true for everyone. But when the eyes land out of line, each correction is extra muscle work, and it adds an extra burst on top. Over a long stretch of reading, the extra bursts pile up, and the nerve almost pulses with them.", scene: 'nerve', nerve: 'reading' },
+  { id: 'weight', say: () => "Here's something surprising. Each eye weighs only about 7.5 grams, about the same as one and a half plastic credit cards, and the muscles that move it are far stronger than they need to be to move something that light.", scene: 'nerve', nerve: 'weight' },
+  { id: 'built', say: () => "They're also built differently from other muscles: their own special kind of myosin (the protein that makes muscle contract), packed with energy-producing mitochondria, and a rich blood supply. That makes them very hard to tire. So when your eyes feel tired, it probably isn't the muscles giving out.", scene: 'nerve', nerve: 'built' },
+  { id: 'stream', say: () => "So what does get overloaded? The information. Everyone's eye muscle sensors report with every eye movement; that's normal traffic. But eyes that rest out of line have to be held in line all day and pulled back into line after every jump. That extra work means extra reports, on top of the normal traffic, all funnelled into one nerve.", scene: 'nerve', nerve: 'stream' },
+  { id: 'shared', say: () => "And that nerve isn't a private line. The trigeminal nerve also carries feeling from the forehead, face and jaw and from the covering of the brain, and it meets the neck nerves in the brainstem. They all share the same bandwidth.", scene: 'nerve', nerve: 'shared' },
+  { id: 'analogy', say: () => 'Think of your home internet. Video calls work fine, until someone starts a download that never stops; then everything on the connection starts to struggle. When the eyes rest out of line, the extra reports from holding and correcting them can be that download.', scene: 'nerve', nerve: 'analogy' },
+  { id: 'overload', say: () => 'When the trigeminal nerve has had too much, the brain is thought to start registering the overload as discomfort or pain, felt in the places this nerve looks after.', scene: 'nerve', nerve: 'overload' },
+  { id: 'symHead', say: () => 'That can mean headaches, often across the forehead or temples, and eye strain: eyes that feel tired, sore or dry by the end of the day.', scene: 'nerve', nerve: 'symHead' },
+  { id: 'symJaw', say: () => 'It can mean jaw tension or clenching, through the chewing muscles this nerve controls.', scene: 'nerve', nerve: 'symJaw' },
+  { id: 'symNeck', say: () => 'And it can mean neck and shoulder pain, because the trigeminal nerve meets the neck nerves at the top of the spinal cord.', scene: 'nerve', nerve: 'symNeck' },
+  { id: 'calm', say: () => (PAGE === 'bvd'
     ? "That's why treating BVD aims to help the eyes line up with less holding and correcting, for example with prism glasses, so there's less extra traffic on the trigeminal nerve and less to set off these symptoms. The normal traffic carries on as it should. Read on to see how we check for it."
     : "That's the idea behind Neurolens: if the eyes need less holding and correcting, there's less extra traffic on the trigeminal nerve, and less to set off these symptoms. The normal traffic carries on as it should. Read on to see how it works."), scene: 'nerve', nerve: 'calm' },
 ];
@@ -183,9 +183,10 @@ $('speed').addEventListener('click', (e) => {
 });
 
 // Text and controls for the current step
+let captionOverride = null; // the video shows its own short captions in place of the story text
 function refresh() {
   const s = step();
-  const say = s.say();
+  const say = captionOverride ?? s.say();
   $('story-text').textContent = say;
   $('story').classList.toggle('long', say.length > 220); // phones: a little smaller, to stay clear of the eyes
   $('progress').textContent = `${st.step + 1} / ${STEPS.length}`;
@@ -206,12 +207,12 @@ function refresh() {
 // ═══════════════════════════════════════════════════════════════
 const stage = $('stage');
 const nerves = createNerves($('nerves'), stage);
-let head = null, geo = null;
+let head = null, geo = null, viewName = 'story'; // viewName: how the face is framed (head3d.js FRAMES)
 try {
   head = createHead($('view'), stage, {
     onProgress: (e) => { if (e.lengthComputable) $('load-pct').textContent = `${Math.round((100 * e.loaded) / e.total)}%`; },
   });
-  head.setView('story');
+  head.setView(viewName);
   head.ready.then(() => { $('loader').hidden = true; layout(); parkPaddle(false); goStep(0); })
     .catch(() => { $('loader').textContent = 'The 3D model could not be loaded. Please reload the page.'; });
 } catch {
@@ -221,7 +222,7 @@ try {
 // Eye centres on screen, their midpoint o, and u = half the distance between the eyes (pixels)
 function layout() {
   if (!head?.loaded) return;
-  head.setView('story');
+  head.setView(viewName);
   storyLayout();
   head.setTurn(0); // the stage geometry comes from the face-on view
   const R = head.project('R'), L = head.project('L');
@@ -250,7 +251,7 @@ function sideFrame(mode) {
   return { w: W / s, h: H / s, z: (r.z[0] + r.z[1]) / 2 + left / 2 / s, y: (r.y[0] + r.y[1]) / 2 + top / 2 / s };
 }
 // Wide stages put the story in a column beside the head while inside it
-function storyLayout() { stage.classList.toggle('inside-wide', step().scene === 'nerve' && stage.clientWidth >= 560); }
+function storyLayout() { stage.classList.toggle('inside-wide', step().scene === 'nerve' && stage.clientWidth >= 560 && stage.clientWidth > stage.clientHeight); }
 
 // Gaze (degrees, + = patient's right / up) ↔ stage pixels, in a stylised geometry that makes movements easy to see
 const gazeToScreen = (H, V) => ({ x: geo.o.x - Math.tan(H * DEG) * geo.D, y: geo.o.y - Math.tan(V * DEG) * geo.D });
@@ -631,4 +632,13 @@ if (EMBED) {
 refresh();
 
 // Small hook for automated checks
-window.__nl = { st, drift, goStep, next, paddleOver, get geo() { return geo; }, get peek() { return peekShown; }, set nerveMode(m) { nerveMode = m; request(); }, goNerve: (m) => goStep(STEPS.findIndex((s) => s.nerve === m)) };
+window.__nl = {
+  st, drift, goStep, next, paddleOver, get geo() { return geo; }, get peek() { return peekShown; },
+  set nerveMode(m) { nerveMode = m; request(); }, goNerve: (m) => goStep(STEPS.findIndex((s) => s.nerve === m)),
+  // For the video (video.js)
+  go(id) { const i = STEPS.findIndex((s) => s.id === id); if (i < 0) throw new Error(`No story step ${id}`); goStep(i); },
+  set caption(text) { captionOverride = text; refresh(); },
+  setPeek(on) { st.peek = on; refresh(); request(); },
+  setSlow(on) { st.slow = on; st.speedChosen = true; refresh(); request(); },
+  set view(v) { viewName = v; if (head?.loaded) { head.resize(); layout(); request(); } },
+};
