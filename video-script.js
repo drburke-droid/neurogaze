@@ -82,7 +82,7 @@ export const SHOTS = [
 
   // ── The switch-off you never notice ──────────────────────────────────────
   { ch: 'The switch-off you never notice', step: 'saccade', min: 6,
-    vo: "Here's something most people don't know. Every time your eyes jump, called a saccade, your brain switches off their input for a split second, so you don't see a blur.",
+    vo: "What most people don't realize is that every time your eyes jump, called a saccade, your brain switches off their input for a split second, so you don't see a blur.",
     cap: 'During every jump, the brain switches off the input.' },
   { step: 'mirrorEyes', min: 4.5,
     vo: "Try it in a mirror: glance from one of your eyes to the other. You can't see them move.",

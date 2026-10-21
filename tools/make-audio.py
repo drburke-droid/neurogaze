@@ -4,9 +4,10 @@
     python tools/make-audio.py --timeline build/bvd-text.timeline.json --video build/bvd-text.mp4 --out build/bvd-text-final.mp4
 
 --timeline is written by tools/record-video.mjs next to the video; --voice is tools/voiceover.py's folder (leave it
-out for the version without a voice). The music is generated here from scratch (soft pads, a plucked arpeggio,
-bass and reverb), so there is nothing to license. Each part of the story has its own mood:
-hook (mysterious), explain (warm), tense (darker, for the symptoms) and resolve (brighter, for what helps).
+out for the version without a voice). The music is generated here from scratch (pads, a plucked arpeggio, bass, light
+percussion and reverb), so there is nothing to license. Each part of the story has its own mood, all at an easy
+walking pace: hook (curious), explain (warm and moving along), tense (darker, for the symptoms) and resolve
+(brighter, for what helps).
 The music dips under the voice, and the mix is evened out to YouTube's loudness (-14 LUFS).
 Needs Python 3.10+ with numpy, scipy and soundfile, and ffmpeg. --wav saves the mix as a WAV as well.
 """
@@ -21,7 +22,7 @@ import soundfile as sf
 from scipy.signal import butter, oaconvolve, resample_poly, sosfilt
 
 RATE = 48000
-BEAT = 60 / 64          # 64 beats a minute
+BEAT = 60 / 92          # 92 beats a minute: moving along, not sleepy
 BAR = 4 * BEAT
 rng = np.random.default_rng(7)  # the same music every time
 
@@ -33,18 +34,19 @@ CH = {
     'Gmaj9': [G3 - 12, B3, D4, Fs4, A4], 'A6sus': [A3 - 12, D4, E4, Fs4], 'Gm6': [G3 - 12, Bb3, D4, E4],
     'Asus': [A3 - 12, D4, E4, A4], 'D/Fs': [Fs3 - 12, A3, D4, Fs4], 'Em7': [E3 - 12, B3, D4, G4],
 }
+# kick: a soft kick on beats 1 and 3; shaker: eighth notes, the off-beats a little louder; snap: beats 2 and 4
 MOODS = {
-    'hook':    dict(chords=['Bm9', 'Gmaj7', 'Em9', 'Fs7sus'], cutoff=1300, arp=0.0, bell=0.6, bass=0.8, pad=1.0, pulse=0.6),
-    'explain': dict(chords=['Dmaj9', 'Bm7', 'Gmaj9', 'A6sus'], cutoff=2200, arp=0.6, bell=0.2, bass=1.0, pad=0.85, pulse=0.0),
-    'tense':   dict(chords=['Bm9', 'Gm6', 'Em9', 'Fs7sus'], cutoff=1100, arp=0.5, bell=0.0, bass=1.1, pad=0.95, pulse=0.7, low=True),
-    'resolve': dict(chords=['D/Fs', 'Gmaj9', 'Em7', 'Asus', 'Dmaj9'], cutoff=3000, arp=0.65, bell=0.4, bass=0.9, pad=0.9, pulse=0.0, high=True),
+    'hook':    dict(chords=['Bm9', 'Gmaj7', 'Em9', 'Fs7sus'], cutoff=1500, arp=0.35, bell=0.5, bass=0.8, pad=0.9, kick=0.6, shaker=0.25, snap=0.0, attack=0.8),
+    'explain': dict(chords=['Dmaj9', 'A6sus', 'Bm7', 'Gmaj9'], cutoff=2600, arp=0.75, bell=0.2, bass=1.0, pad=0.7, kick=0.75, shaker=0.5, snap=0.3, attack=0.4),
+    'tense':   dict(chords=['Bm9', 'Gm6', 'Em9', 'Fs7sus'], cutoff=1300, arp=0.55, bell=0.0, bass=1.1, pad=0.85, kick=0.85, shaker=0.35, snap=0.2, attack=0.5, low=True),
+    'resolve': dict(chords=['D/Fs', 'Gmaj9', 'Em7', 'Asus', 'Dmaj9'], cutoff=3200, arp=0.8, bell=0.4, bass=0.9, pad=0.8, kick=0.6, shaker=0.45, snap=0.3, attack=0.4, high=True),
 }
 
 hz = lambda m: 440 * 2 ** ((m - 69) / 12)
 
 
-def pad_note(m, secs, cutoff):
-    """A soft, slightly detuned saw-like pad note with a slow swell."""
+def pad_note(m, secs, cutoff, att=1.4):
+    """A soft, slightly detuned saw-like pad note that swells in over `att` seconds."""
     n = int(secs * RATE)
     t = np.arange(n) / RATE
     out = np.zeros(n)
@@ -54,7 +56,7 @@ def pad_note(m, secs, cutoff):
             if f * h > cutoff * 2.5:
                 break
             out += np.sin(2 * np.pi * f * h * t + rng.uniform(0, 2 * np.pi)) / h ** 1.15
-    att, rel = 1.4, 1.8
+    rel = 1.2
     env = np.minimum(1, t / att) * np.clip((secs - t) / rel, 0, 1)
     return out * env / 3
 
@@ -66,11 +68,21 @@ def bass_note(m, secs):
     return (np.sin(2 * np.pi * f * t) + 0.25 * np.sin(4 * np.pi * f * t)) * np.minimum(1, t / 0.6) * np.clip((secs - t) / 1.2, 0, 1)
 
 
-def thump(secs=0.6):
-    """A soft, low heartbeat-like pulse."""
+def thump(secs=0.5):
+    """A soft, round kick."""
     t = np.arange(int(secs * RATE)) / RATE
-    f = 55 * np.exp(-t / 0.08) + 42  # a quick drop in pitch
-    return np.sin(2 * np.pi * np.cumsum(f) / RATE) * np.minimum(1, t / 0.004) * np.exp(-t / 0.16)
+    f = 70 * np.exp(-t / 0.05) + 46  # a quick drop in pitch
+    return np.sin(2 * np.pi * np.cumsum(f) / RATE) * np.minimum(1, t / 0.003) * np.exp(-t / 0.13)
+
+
+def noise_hit(lo, hi, decay, secs):
+    t = np.arange(int(secs * RATE)) / RATE
+    n = sosfilt(butter(2, [lo, hi], 'band', fs=RATE, output='sos'), rng.standard_normal(len(t)))
+    return n / np.abs(n).max() * np.minimum(1, t / 0.004) * np.exp(-t / decay)
+
+
+SHAKERS = [noise_hit(5000, 12000, 0.028, 0.12) for _ in range(4)]  # a few, so it doesn't sound mechanical
+SNAPS = [noise_hit(1200, 4500, 0.045, 0.2) for _ in range(3)]
 
 
 def pluck(m, secs=1.6, bright=1.0):
@@ -112,7 +124,7 @@ def reverb(x, secs=3.0, wet=0.32):
 def score(timeline):
     """The music, section by section: a new section starts where the mood changes."""
     length = timeline['length'] + 0.5
-    buf = {k: np.zeros((int(length * RATE) + 1, 2)) for k in ('pad', 'arp', 'bass', 'bell')}
+    buf = {k: np.zeros((int(length * RATE) + 1, 2)) for k in ('pad', 'arp', 'bass', 'bell', 'drums')}
     starts = []  # (start, mood) where the mood changes
     for s in timeline['shots']:
         if not starts or s['mood'] != starts[-1][1]:
@@ -127,15 +139,20 @@ def score(timeline):
             final = mood == 'resolve' and at + BAR >= end
             name = p['chords'][-1] if final else p['chords'][b % len(p['chords'])]
             notes = CH[name]
-            hold = (end - at + 0.5) if final else BAR + 1.6  # the last chord rings out to the end
+            hold = (end - at + 0.5) if final else BAR + 1.0  # the last chord rings out to the end
             cutoff = p['cutoff'] * (1 + 0.2 * np.sin(2 * np.pi * at / 45))
-            pad = sum(pad_note(m, hold, cutoff) for m in notes[1:])
+            pad = sum(pad_note(m, hold, cutoff, 1.4 if final else p['attack']) for m in notes[1:])
             pad = sosfilt(butter(2, cutoff, 'low', fs=RATE, output='sos'), pad)
             add(buf['pad'], at, pad, 0.11 * p['pad'], pan=0.0)
             add(buf['bass'], at, bass_note(notes[0], hold), 0.06 * p['bass'])
-            if p['pulse'] and not final:  # a slow heartbeat: two soft beats a bar
+            if not final:  # the beat
                 for k in (0, 2):
-                    add(buf['bass'], at + k * BEAT, thump(), 0.12 * p['pulse'] * (1 if k == 0 else 0.7))
+                    add(buf['drums'], at + k * BEAT, thump(), 0.16 * p['kick'] * (1 if k == 0 else 0.8))
+                for k in (1, 3):
+                    if p['snap']:
+                        add(buf['drums'], at + k * BEAT, SNAPS[rng.integers(len(SNAPS))], 0.08 * p['snap'], pan=0.1)
+                for k in range(8):
+                    add(buf['drums'], at + k * BEAT / 2, SHAKERS[rng.integers(len(SHAKERS))], 0.16 * p['shaker'] * (1 if k % 2 else 0.55) * rng.uniform(0.85, 1.1), pan=0.3)
             # Arpeggio: eighth notes up and down the chord, with a few rests so it breathes
             if p['arp'] and not final:
                 tones = sorted(n + (12 if not p.get('low') else 0) for n in notes[1:])
@@ -143,7 +160,7 @@ def score(timeline):
                     tones += [tones[1] + 12]
                 order = tones + tones[-2:0:-1]
                 for k in range(8):
-                    if rng.random() < 0.18 and k % 2:
+                    if rng.random() < 0.1 and k % 2:
                         continue
                     m = order[(b * 8 + k) % len(order)]
                     vel = (0.75 if k % 2 == 0 else 0.55) * rng.uniform(0.85, 1.05)
@@ -159,7 +176,7 @@ def score(timeline):
         d = int(k * 0.75 * BEAT * RATE)
         arp[d:] += (dry[:-d, ::-1] if k % 2 else dry[:-d]) * g
     music = buf['pad'] + arp + buf['bell'] + buf['bass']
-    music = reverb(music)
+    music = reverb(music) + buf['drums'] + 0.15 * reverb(buf['drums'], secs=1.2, wet=1.0)  # the beat stays crisp, in a small room
     music = sosfilt(butter(1, 40, 'high', fs=RATE, output='sos'), music, axis=0)  # no rumble
     # Fade in, and out at the very end
     t = np.arange(len(music)) / RATE
