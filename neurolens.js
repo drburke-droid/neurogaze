@@ -45,6 +45,9 @@ let nerveMode = null;         // draw the nerve this way instead of as the step 
 let nerveT = 0, nerveShow = 0, nerveOn = false, frameDt = 0; // seconds into a step inside the head; the nerve drawing fading in
 let selfShow = 0;             // 0..1: the face dimmed behind the red dot, for the visitor's own cover test
 let pullT = 0, pull = 1;      // the target pulling back from the face toward the viewer (step 2): 0 near the face, 1 far
+let convShown = 0;            // degrees each eye is shown turned in for a near target (eases between steps)
+const NEAR_SHOWN = 2 * NEAR_CONVERGENCE; // turned in for the reading card: doubled, so it can be seen
+const NEAR_EXO = 1.4;         // eyes that rest outward miss by more up close, where they turn in the furthest
 const STICK_NEAR = 12;        // degrees each eye turns in for the target close to the face
 const STICK_DROP = 0.42;      // once pulled back toward us, the ball sits this far below the eyes (× geo.u), out of our line of sight
 const lids = { close: 0, xray: 0 };
@@ -78,8 +81,8 @@ const STEPS = [
   { say: () => "To really drive this home, look at yourself in a mirror and glance from one of your eyes to the other, and back. Notice you can't see your eyes move?", scene: 'mirror', input: true },
   { say: () => "Now try it while filming yourself with your phone's front camera. You'll definitely see your eyes move. In the mirror you don't, because your brain switches off your eyes' input during saccades.", scene: 'mirror', input: true },
   { say: () => `And remember: an eye whose input is switched off heads for its resting position. So during every saccade both eyes start to drift ${way()}, and they land slightly out of line until the brain switches them back on and pulls them together.`, scene: 'saccades', slow: true, input: true, rings: true },
-  { say: () => 'Reading is a long chain of saccades: word, to word, to word. Here is someone reading at full speed, about 150 words a minute. Looks normal.', scene: 'reading', input: true, rings: true },
-  { say: () => 'Now the same reading, slowed down and magnified. After each jump the eyes land slightly out of line, and the brain has to pull them back together. That small miss is called fixation disparity.', scene: 'reading', slow: true, input: true, rings: true },
+  { say: () => 'Reading is a long chain of saccades: word, to word, to word, with both eyes turned in to meet on the page. Here is someone reading at full speed, about 150 words a minute. Looks normal.', scene: 'reading', input: true, rings: true },
+  { say: () => `Now the same reading, slowed down and magnified. After each jump the eyes land slightly out of line, and the brain has to pull them back together. That small miss is called fixation disparity${st.drift === 'exo' ? ". For eyes that rest outward it's usually bigger up close, where they have to turn in the furthest from where they'd rest" : ". For eyes that rest inward, focusing up close can pull them in further still"}.`, scene: 'reading', slow: true, input: true, rings: true },
   { say: () => "It happens with every word, thousands of times a day. And the eye muscles don't just move the eyes: they also report back to the brain. Let's look inside.", scene: 'reading', alternate: true, input: true, rings: true },
   { say: () => 'Your brain keeps track of where each eye is pointing, and tiny sensors in the eye muscles, called proprioceptors, help it: many times a second, they report how stretched each muscle is and how hard it is working.', scene: 'nerve', nerve: 'sense' },
   { say: () => 'Those answers travel to the brain along the trigeminal nerve, the main sensory nerve of the face.', scene: 'nerve', nerve: 'route' },
@@ -284,7 +287,7 @@ function targetOf(q, i) { return q.kind === 'reading' ? wordGaze(i % words.lengt
 function aimNext(q) {
   q.ph = 0; q.t = 0;
   q.to = targetOf(q, q.i);
-  q.err = landingOffset(posture(), 0.5 * (0.85 + 0.3 * Math.random())); // each eye, degrees outward
+  q.err = landingOffset(posture(), 0.5 * (0.85 + 0.3 * Math.random())) * (q.kind === 'reading' && st.drift === 'exo' ? NEAR_EXO : 1); // each eye, degrees outward
   for (const w of words) w.classList.remove('cur');
 }
 const phaseDur = (q) => (PHASES[q.ph] === 'fixate' ? FIXATE[q.kind] : DUR[PHASES[q.ph]]);
@@ -415,6 +418,10 @@ function tick(now) {
   pull = st.step === 1 ? ease(clamp((pullT - 0.9) / 2.4, 0, 1)) : 1;
   if (st.step === 1 && pullT < 3.4) active = true;
 
+  // Near targets: the eyes turn in (the stick close to the face, the reading card), easing between steps
+  const s = step(), convGoal = s.scene === 'reading' ? NEAR_SHOWN : s.stick ? STICK_NEAR * (1 - pull) : 0;
+  if (Math.abs(convGoal - convShown) > 0.01) { convShown += (convGoal - convShown) * (1 - Math.exp(-dt / 0.15)); active = true; } else convShown = convGoal;
+
   // Asleep: the lids close, then turn see-through (X-ray) to show both eyes turned to rest.
   // Waking: the X-ray view fades, the lids open, then the brain pulls both eyes straight.
   const sleeping = step().scene === 'sleep', waking = step().scene === 'wake';
@@ -473,7 +480,7 @@ function draw() {
   const magJump = s.mag ?? (st.slow ? MAG : 1);
   const land = landingError();
   const turn = (e) => clamp(drift[e] * MAG + land * magJump, -MAX_TURN, MAX_TURN);
-  const conv = reading ? NEAR_CONVERGENCE : s.stick ? STICK_NEAR * (1 - pull) : 0;
+  const conv = convShown;
   // As the ball comes toward us it drops a little below our sightline, and the eyes follow it slightly down
   const V = s.stick ? g.V - Math.atan((STICK_DROP * geo.u * pull) / geo.D) / DEG : g.V;
   const aimR = g.H - conv + turn('R'), aimL = -g.H - conv + turn('L');
