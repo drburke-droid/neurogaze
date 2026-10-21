@@ -22,22 +22,23 @@
     .nav, .legend, .story-nav, .callout, .credit, .input-chip { display: none !important; }
     .story { font-size: 31px; line-height: 1.32; padding: 28px 70px 70px; }
     .story.empty { display: none; }
+    .text-mode .story { font-size: 29px; line-height: 1.34; }
+    .text-mode .stage.inside-wide .story { font-size: 30px; }
+    .paddle { transition-duration: .9s; } /* a calmer glide from eye to eye */
+    .nv-label { font-size: 19px; padding: 5px 14px; } /* labels in the nerve drawing, readable on a phone */
     .stage.inside-wide .story { font-size: 32px; padding: 40px 56px 40px 48px; }
     .vertical .story { font-size: 36px; padding: 48px 44px 90px; }
 
-    /* Overlays drawn over the story for the hook and the end card */
+    /* Overlays drawn over the story: the eye chart, the title and the end card */
     .ov { position: absolute; z-index: 9; pointer-events: none; opacity: 0; }
     .chart { left: 64px; top: 50%; width: 230px; padding: 22px 18px 18px; background: #fbfbf7; border-radius: 14px; box-shadow: 0 18px 40px rgba(0, 0, 0, .5); text-align: center; color: #111; font-family: Georgia, "Times New Roman", serif; }
     .chart div { letter-spacing: .18em; line-height: 1.15; }
     .chart .ok { margin-top: 14px; font: 800 26px var(--head); color: #0f8a4a; letter-spacing: 0; }
     .chart .ok + .ok { margin-top: 4px; font-size: 20px; }
-    .glow { inset: 0; }
-    .glow i { position: absolute; transform: translate(-50%, -50%); border-radius: 50%; background: radial-gradient(circle, rgba(255, 70, 50, .6) 0%, rgba(255, 90, 50, .24) 45%, rgba(255, 90, 50, 0) 70%); }
-    .sym { font: 700 24px var(--body); background: #ff6a4d; color: #fff; padding: 7px 16px; border-radius: 99px; white-space: nowrap; box-shadow: 0 6px 16px rgba(0, 0, 0, .35); }
     .title { inset: 0; display: grid; place-content: center; text-align: center; color: #fff; background: radial-gradient(ellipse at 50% 55%, rgba(8, 11, 16, .55), rgba(8, 11, 16, .88)); }
     .title h1 { margin: 0; font: 700 62px/1.1 var(--head); letter-spacing: -.01em; text-shadow: 0 4px 18px rgba(0, 0, 0, .6); }
     .title h1 span { color: #ffcf5a; }
-    .title p { margin: 18px 0 0; font: 600 28px var(--body); color: rgba(255, 255, 255, .88); }
+    .title p { margin: 18px auto 0; max-width: 900px; font: 600 28px/1.35 var(--body); color: rgba(255, 255, 255, .88); }
     .end { inset: 0; display: grid; align-content: center; justify-items: start; padding: 0 0 0 90px; color: #fff; background: linear-gradient(90deg, rgba(8, 11, 16, .97) 0%, rgba(8, 11, 16, .9) 55%, rgba(8, 11, 16, .6) 100%); }
     .end h2 { font: 700 46px/1.15 var(--head); max-width: 640px; }
     .end p { margin: 16px 0 0; font: 600 26px var(--body); color: rgba(255, 255, 255, .85); max-width: 640px; }

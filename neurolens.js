@@ -49,6 +49,9 @@ let sideBox = null;           // how the camera frames the profile (eases betwee
 let nerveMode = null;         // draw the nerve this way instead of as the step says (for the still diagram and the video)
 let nerveReveal = null;       // for the video: when each pain spot appears in the 'pain' drawing (seconds into it)
 let nerveT = 0, nerveShow = 0, nerveOn = false, frameDt = 0; // seconds into a step inside the head; the nerve drawing fading in
+let nerveLast = null;         // what the nerve drawing last showed ({ mode, t }), so it can fade out as the head turns back
+const REFIX_DELAY = 0.2;      // seconds an uncovered eye takes to react before the brain pulls it back into line
+const hold = { R: 0, L: 0 };  // each eye's reaction time left
 let selfShow = 0;             // 0..1: the face dimmed behind the red dot, for the visitor's own cover test
 let pullT = 0, pull = 1;      // the target pulling back from the face toward the viewer (step 2): 0 near the face, 1 far
 let convShown = 0;            // degrees each eye is shown turned in for a near target (eases between steps)
@@ -458,15 +461,20 @@ function tick(now) {
   if (turnK !== (side ? 1 : 0)) { turnK = side ? Math.min(1, turnK + dt / 1.3) : Math.max(0, turnK - dt / 1); moved = true; }
   if (moved) { head.setTurn(ease(turnK), sideBox); lastAim = ''; active = true; }
   nerveT = side ? nerveT + dt : 0;
-  nerveShow = side && turnK === 1 ? Math.min(1, nerveShow + dt / 0.45) : 0;
+  // Fades in once the head has turned; leaving, it fades out with the last drawing as the head starts to turn back
+  nerveShow = side ? (turnK === 1 ? Math.min(1, nerveShow + dt / 0.45) : 0) : Math.max(0, nerveShow - dt / 0.3);
+  if (side) nerveLast = { mode: nerveMode || step().nerve, t: nerveT };
+  else if (nerveShow > 0) { nerveLast.t += dt; active = true; }
   if (side) active = true; // the signals keep moving
   const selfGoal = step().scene === 'self' ? 1 : 0;
   if (selfShow !== selfGoal) { selfShow = Math.abs(selfGoal - selfShow) < 0.01 ? selfGoal : selfShow + (selfGoal - selfShow) * (1 - Math.exp(-dt / 0.25)); active = true; }
   frameDt = dt;
   for (const e of EYES) {
-    const goal = st.cover === e || (sleeping && sleepT > 0.5) || (waking && wakeT < 1.5) ? coveredOffset(posture()) : 0;
+    const covered = st.cover === e || (sleeping && sleepT > 0.5) || (waking && wakeT < 1.5);
+    hold[e] = covered ? REFIX_DELAY : Math.max(0, hold[e] - dt);
+    const goal = covered ? coveredOffset(posture()) : hold[e] > 0 ? drift[e] : 0; // just uncovered: a moment to react, then back into line
     drift[e] += (goal - drift[e]) * (1 - Math.exp(-dt / (goal ? 0.6 : 0.3)));
-    if (Math.abs(goal - drift[e]) > 1e-3) active = true;
+    if (Math.abs(goal - drift[e]) > 1e-3 || (hold[e] > 0 && !covered)) active = true;
   }
   const peekGoal = st.peek && !paddle.hidden ? 1 : 0;
   if (peekT !== peekGoal) {
@@ -545,7 +553,7 @@ function draw() {
     const XP = 0.17; // the drawing lies in the plane of the near eye
     const project = ([z, y]) => head.projectXYZ(XP, y, z);
     const a = project([0, 0]), b = project([0, 0.1]);
-    nerves.draw({ project, k: Math.hypot(b.x - a.x, b.y - a.y) / 0.1, mode: nerveMode || s.nerve, t: nerveT, dt: frameDt, show: nerveShow, reveal: nerveReveal });
+    nerves.draw({ project, k: Math.hypot(b.x - a.x, b.y - a.y) / 0.1, mode: nerveLast.mode, t: nerveLast.t, dt: frameDt, show: nerveShow, reveal: nerveReveal });
     nerveOn = true;
   } else if (nerveOn) { nerves.hide(); nerveOn = false; }
   frameDt = 0;

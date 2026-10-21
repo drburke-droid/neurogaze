@@ -36,7 +36,7 @@ Below the demonstration are the cause, effect and solution, a neurologist's view
 
 ### The BVD video
 
-`video.html` plays the story from a shot list (`video-script.js`: voiceover, on-screen caption, timing and actions for each shot) for a 5½-minute YouTube video, opening with symptoms and the drifting eye. Open it and press Play to preview it in real time; `tools/record-video.mjs` records it frame by frame to a 1080p MP4 with a caption file and YouTube chapters, and `tools/thumbnails.mjs` renders thumbnail options. See `docs/bvd-video.md`.
+`video.html` plays the story from a shot list (`video-script.js`: narration, on-screen caption, timing and actions for each shot) for a 5-minute YouTube video, opening with symptoms and the drifting eye, in two versions: with an AI voice, or with the narration on screen. Open it and press Play to preview it in real time (`?mode=text` for the version without a voice). `tools/voiceover.py` makes the narration with Kokoro, an open-source voice model; `tools/record-video.mjs` records the picture one exact frame at a time to a 1080p MP4, timed to the voice, with a caption file and YouTube chapters; `tools/make-audio.py` generates the music and mixes it with the voice; and `tools/thumbnails.mjs` renders thumbnail options. See `docs/bvd-video.md`.
 
 ## The model, honestly
 
@@ -81,8 +81,9 @@ Then open the printed address. Run the model tests with `npm test` (Node 18 or l
 | `neurolens.html` | Patient-facing embed for the clinic's Neurolens page (layout and embed code in `docs/neurolens-embed.md`) |
 | `bvd.html` | Patient-facing embed for a binocular vision dysfunction (BVD) page: the same story, BVD first (setup in `docs/bvd-page.md`) |
 | `neurolens.js`, `story-stage.js`, `story.css` | The story engine, its stage markup and the styles, shared by both pages |
-| `video.html`, `video.js`, `video-script.js` | The BVD YouTube video: the shot list (voiceover, captions, timing) played over the story for recording (guide in `docs/bvd-video.md`) |
-| `tools/record-video.mjs`, `tools/thumbnails.mjs` | Record the video to MP4 with captions and chapters, and render its thumbnail options |
+| `video.html`, `video.js`, `video-script.js` | The BVD YouTube video: the shot list (narration, captions, timing) played over the story for recording (guide in `docs/bvd-video.md`) |
+| `tools/video-plan.mjs`, `tools/voiceover.py` | The narration, sentence by sentence, and the AI voice made from it (Kokoro) |
+| `tools/record-video.mjs`, `tools/make-audio.py`, `tools/thumbnails.mjs` | Record the video frame by frame with captions and chapters, generate and mix its music and voice, and render its thumbnail options |
 | `fixation.js` | Resting position and fixation disparity model for that page (pure functions) |
 | `head3d.js` | The 3D head as a reusable module, used by the Neurolens page |
 | `nerves.js` | The trigeminal nerve drawn over the head in profile, for that page |

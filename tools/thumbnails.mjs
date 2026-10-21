@@ -18,7 +18,7 @@ mkdirSync(OUT, { recursive: true });
 const OPTIONS = [
   { name: 'a-xray', view: 'eyes', step: 'peek', cover: 'R', peek: true, shift: -230, wait: 9000,
     words: '<b class="big">20/20</b><span>But your eyes<br>still hurt?</span>' },
-  { name: 'b-symptoms', view: 'story', step: 'mirror', glow: true, shift: -250, wait: 4000,
+  { name: 'b-symptoms', view: 'story', step: 'route', nerve: 'pain', shift: 0, left: true, wait: 6000,
     words: '<span>Eyes sore by</span><b class="big">3 PM?</b><small>Could it be BVD?</small>' },
   { name: 'c-nerve', view: 'story', step: 'overload', shift: 210, left: true, wait: 16000, big: 104,
     words: '<span>A hidden cause of</span><b class="big">sore eyes?</b><small>Binocular vision dysfunction</small>' },
@@ -41,11 +41,13 @@ for (const o of OPTIONS) {
     const nl = window.__nl;
     nl.view = o.view;
     nl.go(o.step);
+    nl.nerveReveal = o.nerve === 'pain' ? { gEye: 0, gHead: 0, gJaw: 0, gNeck: 0 } : null; // every pain spot at once
+    nl.nerveMode = o.nerve || null;
     if (o.cover) nl.paddleOver(o.cover, false);
     if (o.peek) nl.setPeek(true);
     nl.caption = '';
     document.getElementById('story').classList.add('empty');
-  }, { view: o.view, step: o.step, cover: o.cover, peek: o.peek });
+  }, { view: o.view, step: o.step, cover: o.cover, peek: o.peek, nerve: o.nerve });
   await page.waitForTimeout(o.wait);
   const still = (await page.screenshot({ type: 'png' })).toString('base64');
   await compose.setContent(`<!doctype html><html><head><base href="${BASE}"><style>
@@ -53,19 +55,11 @@ for (const o of OPTIONS) {
     body { margin: 0; width: 1280px; height: 720px; overflow: hidden; background: #0b0d12; position: relative; }
     img { position: absolute; top: 0; left: ${o.shift}px; width: 1280px; height: 720px; }
     .shade { position: absolute; inset: 0; background: linear-gradient(${o.left ? '270deg' : '90deg'}, rgba(8,11,16,0) 30%, rgba(8,11,16,.9) 62%); }
-    .glow i { position: absolute; transform: translate(-50%, -50%); border-radius: 50%; background: radial-gradient(circle, rgba(255,70,50,.7), rgba(255,90,50,.25) 45%, rgba(255,90,50,0) 70%); }
     .words { position: absolute; top: 50%; transform: translateY(-50%); ${o.left ? 'left: 56px' : 'right: 56px'}; width: 520px; text-align: ${o.left ? 'left' : 'right'}; color: #fff; text-shadow: 0 6px 24px rgba(0,0,0,.7); }
     .words span { display: block; font: 700 64px/1.05 P; text-transform: uppercase; }
     .words .big { display: block; font: 700 ${o.big || 150}px/1 P; color: #ffcf5a; letter-spacing: -.02em; text-transform: uppercase; }
     .words small { display: block; margin-top: 18px; font: 700 34px U; color: #fff; background: #ff6a4d; padding: 6px 18px; border-radius: 12px; display: inline-block; text-transform: none; }
-  </style></head><body><img src="data:image/png;base64,${still}">${o.glow ? '<div class="glow" id="glow"></div>' : ''}<div class="shade"></div><div class="words">${o.words}</div></body></html>`);
-  if (o.glow) {
-    const g = await page.evaluate(() => { const g = window.__nl.geo; return { R: g.R, L: g.L, o: g.o, u: g.u }; });
-    await compose.evaluate(({ g, shift }) => {
-      const spots = [[g.R.x, g.R.y, g.u], [g.L.x, g.L.y, g.u], [g.o.x, g.o.y - 1.25 * g.u, 1.7 * g.u], [g.R.x - 0.9 * g.u, g.o.y - 0.55 * g.u, 1.1 * g.u], [g.L.x + 0.9 * g.u, g.o.y - 0.55 * g.u, 1.1 * g.u]];
-      document.getElementById('glow').innerHTML = spots.map(([x, y, d]) => `<i style="left:${x + shift}px;top:${y}px;width:${2 * d}px;height:${2 * d}px"></i>`).join('');
-    }, { g, shift: o.shift });
-  }
+  </style></head><body><img src="data:image/png;base64,${still}"><div class="shade"></div><div class="words">${o.words}</div></body></html>`);
   await compose.evaluate(async () => { await Promise.all([...document.fonts].map((f) => f.load())); await document.fonts.ready; });
   await compose.screenshot({ path: join(OUT, `thumb-${o.name}.jpg`), type: 'jpeg', quality: 90 });
   console.log(`Saved thumb-${o.name}.jpg`);
