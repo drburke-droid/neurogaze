@@ -10,6 +10,7 @@ const NS = 'http://www.w3.org/2000/svg';
 const TRIG = '#ffcf5a'; // the trigeminal nerve
 const NECK = '#7cc4ff'; // the upper neck nerves
 const DURA = '#ffe39a'; // the trigeminal nerve's branches over the covering of the brain
+const EXTRA = '#ffa630'; // extra signals, from holding misaligned eyes in line and correcting them
 const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 const f = (v) => v.toFixed(1);
 
@@ -132,7 +133,8 @@ const MODES = {
   // The eye muscles, close up: light eyes, strong muscles that are built not to tire
   weight: { eye: 1, route: 0.3, v1: 0.2, v2: 0.2, v3: 0.2, mening: 0.2, neck: 0.2, brain: 0.3 },
   built: { eye: 1, route: 0.3, v1: 0.2, v2: 0.2, v3: 0.2, mening: 0.2, neck: 0.2, brain: 0.3, built: 1 },
-  // Bandwidth: a constant stream into one nerve that everything else shares (meter: how busy it is)
+  // Bandwidth: normal traffic plus extra from holding and correcting misaligned eyes, into one nerve that
+  // everything else shares (meter: how busy it is; up to NORMAL is normal traffic)
   stream: { ...BUSY, v1: 0.3, v2: 0.3, v3: 0.3, mening: 0.3, neck: 0.3, meter: 0.62 },
   shared: { ...BUSY, meter: 0.82 },
   analogy: { ...BUSY, meter: 0.97 },
@@ -142,10 +144,13 @@ const MODES = {
   symJaw: { ...BUSY, v3: 1, jaw: 0.9, meter: 1, gHead: 0.15, gEye: 0.15, gJaw: 1, gNeck: 0.15 },
   symNeck: { ...BUSY, neck: 1, meter: 1, gHead: 0.15, gEye: 0.15, gJaw: 0.15, gNeck: 1 },
   // Less correcting, less traffic
-  calm: { eye: 0.7, route: 0.6, v1: 0.35, v2: 0.35, v3: 0.35, mening: 0.35, neck: 0.35, jaw: 0.15, meter: 0.22 },
+  calm: { eye: 0.7, route: 0.7, v1: 0.35, v2: 0.35, v3: 0.35, mening: 0.35, neck: 0.35, jaw: 0.15, meter: 0.38 },
 };
-// Signals a second along the eye muscle routes, and along the face's own branches
-const RATES = { sense: 7, route: 6, map: 6, figure: 6, weight: 2, built: 2, stream: 30, shared: 30, analogy: 42, overload: 42, symHead: 34, symJaw: 34, symNeck: 34, calm: 4 };
+const NORMAL = 0.38;
+// Signals a second along the eye muscle routes: normal traffic (with every eye movement, for everyone), and the
+// extra from holding misaligned eyes in line and correcting them; and along the face's own branches
+const RATES = { sense: 7, route: 6, map: 6, figure: 6, weight: 2, built: 2, stream: 10, shared: 10, analogy: 10, overload: 10, symHead: 10, symJaw: 10, symNeck: 10, calm: 10 };
+const EXTRA_RATES = { stream: 22, shared: 22, analogy: 32, overload: 32, symHead: 24, symJaw: 24, symNeck: 24 };
 const BRANCH_RATES = { shared: 10, analogy: 10, overload: 10, symHead: 8, symJaw: 8, symNeck: 8 };
 const LABELS = {
   sense: [{ text: 'Eye muscles', at: [0.05, 0.075], side: 't' }, { text: 'Position sensors (proprioceptors)', at: [0.11, -0.06], side: 'b', hot: true }],
@@ -163,7 +168,7 @@ const LABELS = {
     { text: 'Packed with mitochondria', at: [0.05, -0.075], side: 'b', g: 'built' },
     { text: 'Rich blood supply', at: [-0.045, 0.0], side: 'r', g: 'built' },
   ],
-  stream: [{ text: 'Position updates, many times a second', at: [-0.13, -0.03], side: 't', hot: true }],
+  stream: [{ text: 'Normal: every eye movement', at: [-0.13, -0.03], side: 't' }, { text: 'Extra: holding and correcting', at: [-0.08, -0.06], side: 'b', extra: true }],
   shared: [
     { text: 'One shared nerve', at: [-0.2, -0.06], side: 't', hot: true },
     { text: 'Forehead and eyes', at: [0.255, 0.3], side: 'l' },
@@ -176,7 +181,7 @@ const LABELS = {
   symHead: [{ text: 'Headaches', at: [0.12, 0.33], side: 'l', sym: true }, { text: 'Eye strain', at: [0.22, 0.0], side: 'l', sym: true }],
   symJaw: [{ text: 'Jaw tension', at: [0.0, -0.36], side: 'l', sym: true }],
   symNeck: [{ text: 'Neck and shoulder pain', at: [-0.56, -0.5], side: 'r', sym: true }],
-  calm: [{ text: 'Less to correct, less traffic', at: [-0.13, -0.03], side: 't', hot: true }],
+  calm: [{ text: 'Less extra traffic', at: [-0.13, -0.03], side: 't', hot: true }],
   // Numbered for the still diagram, with a key beside it on the page
   figure: [[0.1, -0.075, 'b'], [-0.14, -0.035, 't'], [0.255, 0.3, 'l'], [0.33, -0.21, 'l'], [0.24, -0.53, 'l'], [-0.5, 0.37, 'r'], [-0.6, -0.45, 'r']]
     .map(([z, y, side], i) => ({ text: String(i + 1), at: [z, y], side, num: true })),
@@ -273,11 +278,11 @@ export function createNerves(svg, host) {
   const meter = document.createElement('div');
   meter.className = 'nv-meter';
   meter.hidden = true;
-  meter.innerHTML = '<span>Trigeminal traffic</span><i><b></b></i>';
+  meter.innerHTML = '<span>Trigeminal traffic</span><i><b class="n"></b><b class="x"></b></i><small><em class="n"></em>normal <em class="x"></em>extra</small>';
   host.appendChild(meter);
 
   const level = { ...BASE };
-  let key = '', spawnDebt = 0, branchDebt = 0, bloodDebt = 0, burstAt = 0, buzz = 0, readT = 0, lastMode = '', flexed = 0;
+  let key = '', spawnDebt = 0, extraDebt = 0, branchDebt = 0, bloodDebt = 0, burstAt = 0, buzz = 0, readT = 0, lastMode = '', flexed = 0;
   let proj = null, k = 1, W = 0, H = 0;
 
   function reshape() {
@@ -345,7 +350,7 @@ export function createNerves(svg, host) {
     for (const l of list) {
       if (labels.has(l.text)) continue;
       const e = document.createElement('span');
-      e.className = `nv-label${l.hot ? ' hot' : ''}${l.sym ? ' sym' : ''}${l.num ? ' num' : ''}`;
+      e.className = `nv-label${l.hot ? ' hot' : ''}${l.sym ? ' sym' : ''}${l.num ? ' num' : ''}${l.extra ? ' extra' : ''}`;
       e.textContent = l.text;
       const dot = document.createElement('i');
       dot.className = `nv-dot${l.sym ? ' sym' : ''}`;
@@ -356,11 +361,11 @@ export function createNerves(svg, host) {
     }
   }
 
-  function spawn(route, v = 1) {
+  function spawn(route, v = 1, fill = ROUTE_KINDS[route.kind].fill) {
     const d = dots.find((p) => !p.on);
     if (!d) return;
     Object.assign(d, { on: true, s: 0, r: route, v });
-    d.e.setAttribute('fill', ROUTE_KINDS[route.kind].fill);
+    d.e.setAttribute('fill', fill);
   }
   const pickOf = (list) => list[Math.floor(Math.random() * list.length)];
 
@@ -380,9 +385,9 @@ export function createNerves(svg, host) {
       const goal = { ...BASE, ...(typeof MODES[mode] === 'function' ? MODES[mode](t) : MODES[mode]) };
       for (const g of Object.keys(level)) level[g] += (goal[g] - level[g]) * (1 - Math.exp(-dt / 0.25));
 
-      // Signals: a steady stream, bursts with every word while reading, or a flood
-      let rate = RATES[mode] || 0;
-      const busy = rate >= 30;
+      // Signals: a steady stream, bursts with every word while reading, or normal traffic plus extra
+      let rate = RATES[mode] || 0, extra = EXTRA_RATES[mode] || 0;
+      const busy = extra >= 20;
       let clockText = '';
       if (mode === 'reading') {
         // Real time for the first few words, then a time-lapse to an hour of reading (150 words a minute)
@@ -393,15 +398,17 @@ export function createNerves(svg, host) {
         if (secs < 3600) {
           burstAt -= dt;
           while (burstAt <= 0) {
-            burstAt += Math.max(0.4 / lapse, 1 / 30); // one burst of signals per word
+            burstAt += Math.max(0.4 / lapse, 1 / 30); // every word: the normal report of the jump, plus extra for the correction
             buzz = Math.min(1.6, buzz + 0.6);
-            for (const r of byKind('eye')) if (Math.random() < 0.8) spawn(r, 1);
+            spawn(pickOf(byKind('eye')), 1);
+            for (let i = 0; i < 2; i++) spawn(pickOf(byKind('eye')), 1, EXTRA);
           }
         } else {
           // After a long stretch of reading the signals arrive in waves: the nerve almost pulses
           const throb = (0.5 + 0.5 * Math.sin(readT * 2 * Math.PI * 1.3)) ** 2;
           buzz = Math.max(buzz, 1.4 * throb);
-          rate = 50 * throb;
+          rate = 16 * throb;
+          extra = 34 * throb;
         }
         const m = Math.floor(secs / 60), s = Math.floor(secs % 60);
         clockText = `<b>${secs >= 3600 ? '1 hour' : `${m}:${String(s).padStart(2, '0')}`}</b> of reading · about ${Math.round(secs * 2.5).toLocaleString('en-CA')} corrections`;
@@ -409,6 +416,8 @@ export function createNerves(svg, host) {
       buzz *= Math.exp(-dt / 0.18);
       spawnDebt += rate * dt;
       for (; spawnDebt >= 1; spawnDebt -= 1) spawn(pickOf(byKind(mode === 'sense' ? 'short' : 'eye')), busy ? 1.3 : 1);
+      extraDebt += extra * dt;
+      for (; extraDebt >= 1; extraDebt -= 1) spawn(pickOf(byKind('eye')), busy ? 1.3 : 1, EXTRA);
       branchDebt += (BRANCH_RATES[mode] || 0) * dt;
       for (; branchDebt >= 1; branchDebt -= 1) spawn(pickOf(byKind('branch')), 1);
       bloodDebt += (mode === 'built' ? 14 : 0) * dt;
@@ -420,9 +429,10 @@ export function createNerves(svg, host) {
       meter.hidden = !(goal.meter > 0 || level.meter > 0.02);
       if (!meter.hidden) {
         const v = clamp(level.meter * (busy ? 0.97 + 0.03 * Math.sin(t * 23) : 1), 0, 1);
-        const bar = meter.querySelector('b');
-        bar.style.width = `${(100 * v).toFixed(1)}%`;
-        bar.style.background = v > 0.85 ? '#ff6a4d' : v > 0.55 ? '#ffcf5a' : '#2bd47a';
+        meter.querySelector('b.n').style.width = `${(100 * Math.min(v, NORMAL)).toFixed(1)}%`;
+        const x = meter.querySelector('b.x');
+        x.style.width = `${(100 * Math.max(0, v - NORMAL)).toFixed(1)}%`;
+        x.style.background = v > 0.85 ? '#ff6a4d' : EXTRA;
       }
 
       // The eye muscles flex easily: they are far stronger than they need to be
