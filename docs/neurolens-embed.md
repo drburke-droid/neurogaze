@@ -15,7 +15,7 @@
    - The last step takes away the extra traffic and leaves the normal ("That's the idea behind Neurolens…"), and points to the explanations below.
    - Also: Full speed / Slow motion while reading, and a link to show eyes that drift inward. Arrow keys step back and forth.
 2. **Why small misalignments can cause symptoms:** the cause, the effect and the solution, in plain language, then a numbered diagram of the trigeminal nerve with a key.
-3. **A neurologist's view:** Dr. Carol Nelson's video, click to play, streamed from the site's Squarespace video library.
+3. **A neurologist's view:** Dr. Carol Nelson's video, click to play. The video file is kept with the embed (`media/carol-nelson.mp4`, 720p, about 5 MB), so it doesn't depend on Squarespace.
 4. **Could Neurolens help you?** Certified provider, questionnaire button, booking button and phone number.
 5. **Learn more from Dr Burke:** the four blog articles as cards.
 
@@ -26,11 +26,11 @@
 | The top video | "Neurolens utilizes patented technology…" heading |
 | A short intro text block (below), for search engines | The intro paragraphs, and the 82% and "Flip your symptoms" images |
 | The code block with the embed | The cause, the effect and the solution, with their images |
-| The neurologist video block, anywhere on the site (see below) | The certified-provider line and the questionnaire button |
+| | The certified-provider line and the questionnaire button |
 | | "Want to learn more", the logo, and the four article blocks |
 | | The neurologist video and its caption on this page (it plays inside the embed) |
 
-**Keep the neurologist video in a block somewhere on the site.** The embed streams it from the site's Squarespace video library, and Squarespace stops serving a video that isn't used in any block. If you take it off the Neurolens page, put it on a page that isn't linked from the menu (in Pages, under "Not linked"). If you ever replace or delete that video in Squarespace, the address in `neurolens.js` (`NEURO_VIDEO`) needs updating.
+**The neurologist video doesn't need to be on Squarespace.** The embed plays its own copy, so you can delete the Video block. (It used to stream from Squarespace's video library, which doesn't let other websites, like the embed's, play its videos.)
 
 Suggested intro text block (keeps the page's main words in the page itself, which search engines weigh most):
 

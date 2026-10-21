@@ -593,41 +593,17 @@ function drawStick(p, r) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// A neurologist's view: click to play, streamed from the clinic's Squarespace video library
+// A neurologist's view: click to play (the video is kept beside this page, in media/)
 // ═══════════════════════════════════════════════════════════════
-const NEURO_VIDEO = 'https://video.squarespace-cdn.com/content/v1/588ea900e6f2e152d3ecbe0b/a30e13a5-e5e4-42e6-bf7c-8af3440bda39/';
 if ($('neuro-video')) {
-  const box = $('neuro-video'), poster = $('neuro-poster');
-  poster.addEventListener('error', () => poster.remove()); // the button reads well without a picture
-  poster.src = `${NEURO_VIDEO}thumbnail`;
-  $('neuro-play').addEventListener('click', async () => {
+  const box = $('neuro-video');
+  $('neuro-play').addEventListener('click', () => {
     const video = document.createElement('video');
-    Object.assign(video, { controls: true, playsInline: true, preload: 'auto' });
+    Object.assign(video, { controls: true, playsInline: true, preload: 'auto', poster: 'media/carol-nelson.jpg', src: 'media/carol-nelson.mp4' });
     video.setAttribute('aria-label', 'Dr. Carol Nelson, neurologist, on Neurolens');
-    if (poster.isConnected && poster.naturalWidth) video.poster = poster.src;
-    const fail = () => { box.innerHTML = '<p class="video-msg">Sorry, the video can\'t be played here right now.</p>'; };
-    video.addEventListener('error', fail);
+    video.addEventListener('error', () => { box.innerHTML = '<p class="video-msg">Sorry, the video can\'t be played here right now.</p>'; });
     box.replaceChildren(video);
-    const src = `${NEURO_VIDEO}playlist.m3u8`;
-    // Safari (and some others) play the stream themselves; elsewhere hls.js does, loaded only now
-    if (video.canPlayType('application/vnd.apple.mpegurl')) { video.src = src; video.play().catch(() => {}); return; }
-    try {
-      const Hls = await loadScript('./vendor/hls/hls.light.min.js', 'Hls');
-      if (!Hls.isSupported()) throw new Error('This browser cannot play the stream');
-      const hls = new Hls();
-      hls.on(Hls.Events.ERROR, (_, d) => { if (d.fatal) { hls.destroy(); fail(); } });
-      hls.loadSource(src);
-      hls.attachMedia(video);
-      video.play().catch(() => {});
-    } catch { fail(); }
-  });
-}
-function loadScript(url, global) {
-  if (window[global]) return Promise.resolve(window[global]);
-  return new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    Object.assign(s, { src: url, onload: () => resolve(window[global]), onerror: reject });
-    document.head.append(s);
+    video.play().catch(() => {}); // if the browser won't start it, its own play button is there
   });
 }
 
