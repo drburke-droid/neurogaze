@@ -114,13 +114,13 @@ const FIBRES = {
 const NECK_MUSCLES = [[-0.44, -0.27], [-0.52, -0.2], [-0.58, -0.28], [-0.57, -0.45], [-0.555, -0.62], [-0.545, -0.8], [-0.54, -1.0], [-0.49, -1.05],
   [-0.455, -1.0], [-0.45, -0.8], [-0.445, -0.62], [-0.435, -0.45]];
 
-// Where symptoms are felt (glows), by area
+// Where symptoms are felt, by area: a small bright spot with a soft halo and a slowly pulsing ring
 const GLOWS = [
-  { g: 'gHead', at: [0.12, 0.27], r: 0.14 },  // forehead and temple
-  { g: 'gHead', at: [-0.4, 0.3], r: 0.14 },   // side of the head
-  { g: 'gEye', at: [0.17, 0.0], r: 0.09 },    // around the eye
-  { g: 'gJaw', at: [-0.08, -0.33], r: 0.12 }, // jaw muscles
-  { g: 'gNeck', at: [-0.52, -0.42], r: 0.13 }, // back of the neck
+  { g: 'gHead', at: [0.2, 0.25] },    // forehead
+  { g: 'gHead', at: [-0.03, 0.17] },  // temple
+  { g: 'gEye', at: [0.2, 0.02] },     // the eye
+  { g: 'gJaw', at: [-0.09, -0.3] },   // jaw muscles
+  { g: 'gNeck', at: [-0.55, -0.43] }, // back of the neck
 ];
 
 // ── What each step shows ────────────────────────────────────────
@@ -149,13 +149,18 @@ const MODES = {
   symNeck: { ...BUSY, neck: 1, meter: 1, gHead: 0.15, gEye: 0.15, gJaw: 0.15, gNeck: 1 },
   // Less correcting, less traffic
   calm: { eye: 0.7, route: 0.7, v1: 0.35, v2: 0.35, v3: 0.35, mening: 0.35, neck: 0.35, jaw: 0.15, meter: 0.38 },
+  // For the video's opening: only the places it hurts, each appearing as it's mentioned (reveal: seconds)
+  pain: (t, reveal = {}) => {
+    const at = { gEye: 0.4, gHead: 1.2, gJaw: 2.0, gNeck: 2.8, ...reveal };
+    return { brain: 0, ...Object.fromEntries(Object.entries(at).map(([g, s]) => [g, t > s ? 1 : 0])) };
+  },
 };
 const NORMAL = 0.38;
 // Signals a second along the eye muscle routes: normal traffic (with every eye movement, for everyone), and the
 // extra from holding misaligned eyes in line and correcting them; and along the face's own branches
 const RATES = { sense: 7, route: 6, map: 6, figure: 6, weight: 2, built: 2, stream: 10, shared: 10, analogy: 10, overload: 10, symHead: 10, symJaw: 10, symNeck: 10, calm: 10 };
 const EXTRA_RATES = { stream: 22, shared: 22, analogy: 32, overload: 32, symHead: 24, symJaw: 24, symNeck: 24 };
-const BRANCH_RATES = { shared: 10, analogy: 10, overload: 10, symHead: 8, symJaw: 8, symNeck: 8 };
+const BRANCH_RATES = { shared: 10, analogy: 10, overload: 10, symHead: 8, symJaw: 8, symNeck: 8, calm: 4 }; // calm: the face still reports in, all day
 const LABELS = {
   sense: [{ text: 'Eye muscles', at: [0.05, 0.075], side: 't' }, { text: 'Position sensors (proprioceptors)', at: [0.11, -0.06], side: 'b', hot: true }],
   route: [{ text: 'Trigeminal nerve', at: [-0.15, -0.04], side: 't', hot: true }, { text: 'Brainstem', at: [-0.355, -0.24], side: 'r' }],
@@ -186,6 +191,12 @@ const LABELS = {
   symJaw: [{ text: 'Jaw tension', at: [0.0, -0.36], side: 'l', sym: true }],
   symNeck: [{ text: 'Neck and shoulder pain', at: [-0.56, -0.5], side: 'r', sym: true }],
   calm: [{ text: 'Less extra traffic', at: [-0.13, -0.03], side: 't', hot: true }],
+  pain: [
+    { text: 'Sore, strained eyes', at: [0.22, 0.0], side: 'l', sym: true, g: 'gEye' },
+    { text: 'Headaches', at: [0.23, 0.31], side: 'l', sym: true, g: 'gHead' },
+    { text: 'Tight jaw', at: [-0.09, -0.36], side: 'b', sym: true, g: 'gJaw' },
+    { text: 'Stiff neck', at: [-0.58, -0.43], side: 'r', sym: true, g: 'gNeck' },
+  ],
   // Numbered for the still diagram, with a key beside it on the page
   figure: [[0.1, -0.075, 'b'], [-0.14, -0.035, 't'], [0.255, 0.3, 'l'], [0.33, -0.21, 'l'], [0.24, -0.53, 'l'], [-0.5, 0.37, 'r'], [-0.6, -0.45, 'r']]
     .map(([z, y, side], i) => ({ text: String(i + 1), at: [z, y], side, num: true })),
@@ -230,7 +241,7 @@ export function createNerves(svg, host) {
     ${Object.entries(DOT_GLOWS).map(([color, id]) => `<radialGradient id="nv-dot-${id}"><stop offset=".36" stop-color="${color}"/><stop offset=".55" stop-color="${color}" stop-opacity=".45"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></radialGradient>`).join('')}
     <filter id="nv-soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5"/></filter>
     <radialGradient id="nv-brain" cx="45%" cy="40%" r="65%"><stop offset="0" stop-color="#f3c9cf" stop-opacity=".2"/><stop offset="1" stop-color="#c98c99" stop-opacity=".1"/></radialGradient>
-    <radialGradient id="nv-hot" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ff5a3c" stop-opacity=".75"/><stop offset=".55" stop-color="#ff7a3c" stop-opacity=".28"/><stop offset="1" stop-color="#ff7a3c" stop-opacity="0"/></radialGradient>
+    <radialGradient id="nv-hot" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ff4a32" stop-opacity=".7"/><stop offset=".45" stop-color="#ff6a3c" stop-opacity=".25"/><stop offset="1" stop-color="#ff6a3c" stop-opacity="0"/></radialGradient>
     <pattern id="nv-scan" width="6" height="3" patternUnits="userSpaceOnUse"><rect width="6" height="1" fill="rgba(92, 255, 138, .32)"/></pattern>`;
   // Two layers: a still one (brain, muscles, the blurred nerves), redrawn only as parts fade in and out,
   // and a live one on top for everything that moves, so the blurred nerves aren't redrawn every frame
@@ -249,7 +260,10 @@ export function createNerves(svg, host) {
     fibres: el('path', { fill: 'none', stroke: 'rgba(255, 150, 155, .32)', 'stroke-width': 1, 'stroke-linecap': 'round' }, layer),
   });
   const muscles = [muscle(TEMPORALIS, FIBRES.temporalis, L.jaw), muscle(MASSETER, FIBRES.masseter, L.jaw), muscle(NECK_MUSCLES, FIBRES.neck, L.neckm)];
-  const glows = GLOWS.map((g) => ({ ...g, e: el('ellipse', { fill: 'url(#nv-hot)' }, L.glow) }));
+  const glows = GLOWS.map((g, i) => {
+    const e = el('g', {}, L.glow);
+    return { ...g, i, e, halo: el('circle', { fill: 'url(#nv-hot)' }, e), ring: el('circle', { fill: 'none', stroke: '#ff7a5c', 'stroke-width': 2 }, e), core: el('circle', { fill: '#ff5a3c' }, e) };
+  });
   const stem = { tube: el('path', { fill: 'none', stroke: 'rgba(190, 205, 225, .26)', 'stroke-linecap': 'round' }, L.stem), pons: el('ellipse', { fill: 'rgba(190, 205, 225, .3)' }, L.stem) };
   const groups = {};
   for (const g of ['mening', 'neck', 'v3', 'v2', 'v1', 'route']) groups[g] = el('g', { class: `nv-${g}`, filter: 'url(#nv-glow)' }, L.nerves);
@@ -313,7 +327,11 @@ export function createNerves(svg, host) {
       for (let t = 0.08; t < 0.95; t += 0.12) { const a = proj(along(m.fib[0], t)), b = proj(along(m.fib[1], t)); d += `M${f(a.x)},${f(a.y)}L${f(b.x)},${f(b.y)}`; }
       m.fibres.setAttribute('d', d);
     }
-    for (const g of glows) { const c = proj(g.at); g.e.setAttribute('cx', f(c.x)); g.e.setAttribute('cy', f(c.y)); g.e.setAttribute('rx', f(g.r * k)); g.e.setAttribute('ry', f(g.r * k * 0.85)); }
+    for (const g of glows) {
+      const c = proj(g.at);
+      for (const e of [g.halo, g.ring, g.core]) { e.setAttribute('cx', f(c.x)); e.setAttribute('cy', f(c.y)); }
+      g.halo.setAttribute('r', f(0.075 * k));
+    }
     stem.tube.setAttribute('d', smooth(P(STEM)));
     stem.tube.setAttribute('stroke-width', f(0.032 * k));
     const pc = proj([-0.31, -0.06]);
@@ -383,9 +401,10 @@ export function createNerves(svg, host) {
     d.e.setAttribute('fill', `url(#nv-dot-${DOT_GLOWS[fill]})`);
   }
   const pickOf = (list) => list[Math.floor(Math.random() * list.length)];
+  const roundish = (n) => (n < 1000 ? Math.round(n) : Math.round(n / 100) * 100); // a count that reads well as it climbs
 
   return {
-    draw({ project, k: scale, mode, t, dt, show }) {
+    draw({ project, k: scale, mode, t, dt, show, reveal }) {
       proj = project; k = scale;
       svg.toggleAttribute('hidden', false); // an SVG element has no .hidden property
       live.toggleAttribute('hidden', false);
@@ -399,7 +418,7 @@ export function createNerves(svg, host) {
       if (mode !== lastMode) { lastMode = mode; readT = 0; setLabels(LABELS[mode] || []); }
 
       // Fade each part toward what this step shows
-      const goal = { ...BASE, ...(typeof MODES[mode] === 'function' ? MODES[mode](t) : MODES[mode]) };
+      const goal = { ...BASE, ...(typeof MODES[mode] === 'function' ? MODES[mode](t, reveal || undefined) : MODES[mode]) };
       for (const g of Object.keys(level)) level[g] += (goal[g] - level[g]) * (1 - Math.exp(-dt / 0.25));
 
       // Signals: a steady stream, bursts with every word while reading, or normal traffic plus extra
@@ -407,7 +426,7 @@ export function createNerves(svg, host) {
       const busy = extra >= 20;
       let clockText = '';
       if (mode === 'reading') {
-        // Real time for the first few words, then a time-lapse to an hour of reading (150 words a minute)
+        // Real time for the first few words, then a time-lapse to an hour of reading (250 words a minute)
         readT += dt;
         const lapse = readT < 2.6 ? 1 : Math.min(2 ** ((readT - 2.6) * 4.2), 4000);
         const sim = (rt) => (rt < 2.6 ? rt : 2.6 + (2 ** ((rt - 2.6) * 4.2) - 1) / (4.2 * Math.LN2));
@@ -415,7 +434,7 @@ export function createNerves(svg, host) {
         if (secs < 3600) {
           burstAt -= dt;
           while (burstAt <= 0) {
-            burstAt += Math.max(0.4 / lapse, 1 / 30); // every word: the normal report of the jump, plus extra for the correction
+            burstAt += Math.max(0.24 / lapse, 1 / 30); // every word: the normal report of the jump, plus extra for the correction
             buzz = Math.min(1.6, buzz + 0.6);
             spawn(pickOf(byKind('eye')), 1);
             for (let i = 0; i < 2; i++) spawn(pickOf(byKind('eye')), 1, EXTRA);
@@ -428,7 +447,7 @@ export function createNerves(svg, host) {
           extra = 34 * throb;
         }
         const m = Math.floor(secs / 60), s = Math.floor(secs % 60);
-        clockText = `<b>${secs >= 3600 ? '1 hour' : `${m}:${String(s).padStart(2, '0')}`}</b> of reading · about ${Math.round(secs * 2.5).toLocaleString('en-CA')} corrections`;
+        clockText = `<b>${secs >= 3600 ? '1 hour' : `${m}:${String(s).padStart(2, '0')}`}</b> of reading · about ${roundish((secs * 250) / 60).toLocaleString('en-CA')} corrections`;
       }
       buzz *= Math.exp(-dt / 0.18);
       spawnDebt += rate * dt;
@@ -463,10 +482,17 @@ export function createNerves(svg, host) {
       vis(L.brain, level.brain + 0.25 * level.mening);
       attr(brain.dura, 'stroke', level.mening > 0.05 ? TRIG : 'rgba(255, 235, 240, .45)');
       attr(brain.dura, 'stroke-width', f(1 + 1.6 * level.mening));
-      vis(duraHot, level.gHead);
+      vis(duraHot, level.gHead * clamp(level.mening / 0.5, 0, 1)); // only once the covering of the brain is shown
       if (level.gHead > 0.01) duraHot.setAttribute('stroke-width', f(1 + 1.6 * level.mening + 1.5 * level.gHead * pulse));
       vis(L.jaw, level.jaw); vis(L.neckm, Math.max(level.neck, level.jaw) * 0.6);
-      for (const g of glows) vis(g.e, level[g.g] * (0.55 + 0.45 * pulse));
+      for (const g of glows) {
+        vis(g.e, level[g.g]);
+        if (level[g.g] < 0.01) continue;
+        const ph = (t * 0.7 + g.i * 0.23) % 1; // each ring pulses outward and fades, a little out of step with the others
+        g.ring.setAttribute('r', f((0.02 + 0.07 * ph) * k));
+        g.ring.setAttribute('opacity', (0.9 * (1 - ph)).toFixed(3));
+        g.core.setAttribute('r', f(clamp((0.011 + 0.003 * pulse) * k, 2.5, 9)));
+      }
       vis(eye.mito, level.built);
       vis(L.stem, Math.max(level.route, level.neck, 0.15 * level.brain));
       for (const g of Object.keys(groups)) vis(groups[g], level[g]);

@@ -39,6 +39,7 @@ export const STAGE_HTML = `
       <ellipse class="head" cx="50" cy="44" rx="47" ry="42" mask="url(#peek-mask)"/>
       <circle id="peek-glass" cx="50" cy="44" r="0" fill="url(#scan)"/>
       <circle id="peek-rim" cx="50" cy="44" r="0" fill="none" stroke="#5cff8a" stroke-width="2.5"/>
+      <line id="peek-sweep" x1="50" y1="11" x2="50" y2="11" stroke="#b6ffc9" stroke-width="2" stroke-linecap="round" opacity="0" style="filter: drop-shadow(0 0 3px #5cff8a)"/>
       <text id="peek-label" x="50.6" y="8.6" text-anchor="middle">X-RAY</text>
     </svg>
   </div>
@@ -58,7 +59,7 @@ export const STAGE_HTML = `
 
 <div class="nav">
   <div class="speed" id="speed" role="group" aria-label="Reading speed" hidden>
-    <button type="button" data-slow="0" aria-pressed="true" title="About 150 words a minute, eye movements at true size">Full speed</button><button type="button" data-slow="1" aria-pressed="false" title="Slowed down and magnified">Slow motion</button>
+    <button type="button" data-slow="0" aria-pressed="true" title="About 250 words a minute, a typical adult reading speed, eye movements at true size">Full speed</button><button type="button" data-slow="1" aria-pressed="false" title="Slowed down and magnified">Slow motion</button>
   </div>
   <button class="linkish" type="button" id="drift">Show eyes that drift inward</button>
 </div>

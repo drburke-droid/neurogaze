@@ -40,12 +40,14 @@ const st = {
   seq: null,             // running eye movements: { kind, i, ph, t, from, to, err, count, pause }
 };
 const drift = { R: 0, L: 0 }; // each eye's drift toward rest, degrees outward (true size)
-let peekShown = 0;            // 0..1, how far the X-ray window has opened
+let peekShown = 0, peekT = 0; // 0..1, how far the X-ray window has opened (eased), and its progress
+const PEEK_OPEN = 1.0, PEEK_CLOSE = 0.35; // seconds
 let sleepT = 0;               // seconds into the sleep step: lids close, then the X-ray view appears
 let wakeT = 0, fromSleep = false; // seconds into the waking step: the lids open, then the eyes straighten
 let turnK = 0;                // 0..1: the head turning from facing us to its profile, for the steps inside the head
 let sideBox = null;           // how the camera frames the profile (eases between steps)
-let nerveMode = null;         // draw the nerve this way instead of as the step says (for rendering the still diagram)
+let nerveMode = null;         // draw the nerve this way instead of as the step says (for the still diagram and the video)
+let nerveReveal = null;       // for the video: when each pain spot appears in the 'pain' drawing (seconds into it)
 let nerveT = 0, nerveShow = 0, nerveOn = false, frameDt = 0; // seconds into a step inside the head; the nerve drawing fading in
 let selfShow = 0;             // 0..1: the face dimmed behind the red dot, for the visitor's own cover test
 let pullT = 0, pull = 1;      // the target pulling back from the face toward the viewer (step 2): 0 near the face, 1 far
@@ -85,7 +87,7 @@ const STEPS = [
   { id: 'mirrorEyes', say: () => "To really drive this home, look at yourself in a mirror and glance from one of your eyes to the other, and back. Notice you can't see your eyes move?", scene: 'mirror', input: true },
   { id: 'camera', say: () => "Now try it while filming yourself with your phone's front camera. You'll definitely see your eyes move. In the mirror you don't, because your brain switches off your eyes' input during saccades.", scene: 'mirror', input: true },
   { id: 'landing', say: () => `And remember: an eye whose input is switched off heads for its resting position. So during every saccade both eyes start to drift ${way()}, and they land slightly out of line until the brain switches them back on and pulls them together.`, scene: 'saccades', slow: true, input: true, rings: true },
-  { id: 'read', say: () => 'Reading is a long chain of saccades: word, to word, to word, with both eyes turned in to meet on the page. Here is someone reading at full speed, about 150 words a minute. Looks normal.', scene: 'reading', input: true, rings: true },
+  { id: 'read', say: () => 'Reading is a long chain of saccades: word, to word, to word, with both eyes turned in to meet on the page. Here is someone reading at full speed, about 250 words a minute, a typical adult reading speed. Looks normal.', scene: 'reading', input: true, rings: true },
   { id: 'readSlow', say: () => `Now the same reading, slowed down and magnified. After each jump the eyes land slightly out of line, and the brain pulls them back together. That small miss is called fixation disparity${st.drift === 'exo' ? ". For eyes that rest outward it's usually bigger up close, where they must turn in the most" : ". For eyes that rest inward it can be the reverse: distance is sometimes harder, as the eyes must keep straightening out"}.`, scene: 'reading', slow: true, input: true, rings: true },
   { id: 'report', say: () => "It happens with every word, thousands of times a day. And the eye muscles don't just move the eyes: they also report back to the brain. Let's look inside.", scene: 'reading', alternate: true, input: true, rings: true },
   { id: 'sense', say: () => 'Your brain keeps track of where each eye is pointing, and tiny sensors in the eye muscles, called proprioceptors, help it: many times a second, they report how stretched each muscle is and how hard it is working.', scene: 'nerve', nerve: 'sense' },
@@ -282,10 +284,10 @@ function wordGaze(i) {
 // ═══════════════════════════════════════════════════════════════
 // Repeated eye movements: across the room, between your eyes in a mirror, and reading
 // ═══════════════════════════════════════════════════════════════
-// Real seconds at full speed; reading at 0.4 s a word is 150 words a minute
+// Real seconds at full speed; reading at 0.24 s a word (jump, land, correct, hold) is 250 words a minute, a typical adult pace
 const PHASES = ['saccade', 'land', 'correct', 'fixate'];
 const DUR = { saccade: 0.035, land: 0.05, correct: 0.1 };
-const FIXATE = { saccades: 0.6, mirror: 0.9, reading: 0.215 };
+const FIXATE = { saccades: 0.6, mirror: 0.9, reading: 0.055 };
 const REACH = { saccades: 30, mirror: 3 }; // degrees either side: across the room, or between your eyes in a mirror
 
 function startSeq(kind) {
@@ -437,16 +439,16 @@ function tick(now) {
   sleepT = sleeping ? sleepT + dt : 0;
   wakeT = waking ? wakeT + dt : 0;
   let close = 0, xray = 0;
-  if (sleeping) { close = ease(clamp((sleepT - 0.3) / 0.8, 0, 1)); xray = ease(clamp((sleepT - 1.6) / 0.6, 0, 1)); }
+  if (sleeping) { close = ease(clamp((sleepT - 0.3) / 1.0, 0, 1)); xray = ease(clamp((sleepT - 2.6) / 0.8, 0, 1)); } // close, pause, then X-ray
   if (waking) { close = 1 - ease(clamp((wakeT - 0.5) / 0.6, 0, 1)); xray = fromSleep ? 1 - ease(clamp(wakeT / 0.5, 0, 1)) : 0; }
   if (close !== lids.close || xray !== lids.xray) { lids.close = close; lids.xray = xray; head.setLids(lids); lastAim = ''; }
-  if ((sleeping && sleepT < 2.4) || (waking && wakeT < 2.6)) active = true;
+  if ((sleeping && sleepT < 3.6) || (waking && wakeT < 2.6)) active = true;
 
   // Inside the head: swing round to the profile (framed beside or below the story), then draw the nerve in
   const side = step().scene === 'nerve';
   let moved = false;
   if (side) {
-    const goal = sideFrame(step().nerve);
+    const goal = sideFrame(nerveMode || step().nerve);
     if (!sideBox || turnK === 0) sideBox = goal;
     for (const c of ['w', 'h', 'y', 'z']) {
       const d = goal[c] - sideBox[c];
@@ -467,8 +469,11 @@ function tick(now) {
     if (Math.abs(goal - drift[e]) > 1e-3) active = true;
   }
   const peekGoal = st.peek && !paddle.hidden ? 1 : 0;
-  peekShown += (peekGoal - peekShown) * (1 - Math.exp(-dt / 0.15));
-  if (Math.abs(peekGoal - peekShown) > 0.005) active = true; else peekShown = peekGoal;
+  if (peekT !== peekGoal) {
+    peekT = peekGoal ? Math.min(1, peekT + dt / PEEK_OPEN) : Math.max(0, peekT - dt / PEEK_CLOSE);
+    active = true;
+  }
+  peekShown = ease(peekT);
 
   draw();
   if (active && inView) request(); else last = 0;
@@ -540,7 +545,7 @@ function draw() {
     const XP = 0.17; // the drawing lies in the plane of the near eye
     const project = ([z, y]) => head.projectXYZ(XP, y, z);
     const a = project([0, 0]), b = project([0, 0.1]);
-    nerves.draw({ project, k: Math.hypot(b.x - a.x, b.y - a.y) / 0.1, mode: nerveMode || s.nerve, t: nerveT, dt: frameDt, show: nerveShow });
+    nerves.draw({ project, k: Math.hypot(b.x - a.x, b.y - a.y) / 0.1, mode: nerveMode || s.nerve, t: nerveT, dt: frameDt, show: nerveShow, reveal: nerveReveal });
     nerveOn = true;
   } else if (nerveOn) { nerves.hide(); nerveOn = false; }
   frameDt = 0;
@@ -551,6 +556,10 @@ function draw() {
   // The paddle's X-ray window, and what the callout invites
   const r = (33 * peekShown).toFixed(2); // the window's rim stays clear of the X-RAY label above it
   for (const id of ['peek-cut', 'peek-glass', 'peek-rim']) $(id).setAttribute('r', r);
+  // As it opens, a green scan line sweeps down the paddle, so it's clear the paddle is turning see-through
+  const sweep = $('peek-sweep'), opening = st.peek && peekT < 1, y = 44 - 33 + 66 * peekT, half = Math.sqrt(Math.max(0, 33 * 33 - (y - 44) ** 2));
+  sweep.setAttribute('opacity', opening ? '1' : '0');
+  if (opening) { sweep.setAttribute('y1', y.toFixed(2)); sweep.setAttribute('y2', y.toFixed(2)); sweep.setAttribute('x1', (50 - half).toFixed(2)); sweep.setAttribute('x2', (50 + half).toFixed(2)); }
   paddle.classList.toggle('peeking', peekShown > 0.5);
   const call = $('callout');
   const text = paddle.hidden ? '' : st.cover && !st.peek ? 'Click to peek behind the paddle' : !st.cover && s.task ? 'Drag me over an eye' : '';
@@ -634,7 +643,18 @@ refresh();
 // Small hook for automated checks
 window.__nl = {
   st, drift, goStep, next, paddleOver, get geo() { return geo; }, get peek() { return peekShown; },
-  set nerveMode(m) { nerveMode = m; request(); }, goNerve: (m) => goStep(STEPS.findIndex((s) => s.nerve === m)),
+  set nerveMode(m) { nerveMode = m; nerveT = 0; request(); }, goNerve: (m) => goStep(STEPS.findIndex((s) => s.nerve === m)),
+  set nerveReveal(r) { nerveReveal = r; },
+  // Cut straight to how the current step looks, without the head turning or the drawing fading in
+  snap() {
+    const side = step().scene === 'nerve';
+    turnK = side ? 1 : 0;
+    if (side) sideBox = sideFrame(nerveMode || step().nerve);
+    head.setTurn(ease(turnK), sideBox || undefined);
+    nerveShow = side ? 1 : 0;
+    lastAim = '';
+    request();
+  },
   // For the video (video.js)
   go(id) { const i = STEPS.findIndex((s) => s.id === id); if (i < 0) throw new Error(`No story step ${id}`); goStep(i); },
   set caption(text) { captionOverride = text; refresh(); },
