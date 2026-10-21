@@ -192,7 +192,7 @@ const LABELS = {
   symNeck: [{ text: 'Neck and shoulder pain', at: [-0.56, -0.5], side: 'r', sym: true }],
   calm: [{ text: 'Less extra traffic', at: [-0.13, -0.03], side: 't', hot: true }],
   pain: [
-    { text: 'Sore, strained eyes', at: [0.22, 0.0], side: 'l', sym: true, g: 'gEye' },
+    { text: 'Strained, tired eyes', at: [0.22, 0.0], side: 'l', sym: true, g: 'gEye' },
     { text: 'Headaches', at: [0.23, 0.31], side: 'l', sym: true, g: 'gHead' },
     { text: 'Tight jaw', at: [-0.09, -0.36], side: 'b', sym: true, g: 'gJaw' },
     { text: 'Stiff neck', at: [-0.58, -0.43], side: 'r', sym: true, g: 'gNeck' },

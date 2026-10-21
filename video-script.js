@@ -27,9 +27,9 @@ export const TAIL = 0.7;       // seconds after the voice ends before the next s
 export const SHOTS = [
   // ── Hook: the symptoms, then the eye behind the paddle ─────────────────────
   { ch: 'Sore eyes, headaches, a stiff neck?', mood: 'hook', step: 'route', nerve: 'pain', cut: true, min: 6.5,
-    reveal: { gEye: '@Sore', gHead: '@Headaches', gJaw: '@A tight', gNeck: '@A stiff' },
-    vo: 'Sore… strained… tired eyes by the end of the day. Headaches. A tight jaw. A stiff neck.',
-    cap: 'Sore, strained, tired eyes by the end of the day?' },
+    reveal: { gEye: '@Strained', gHead: '@Headaches', gJaw: '@A tight', gNeck: '@A stiff' },
+    vo: 'Strained and tired eyes by the end of the day. Headaches. A tight jaw. A stiff neck.',
+    cap: 'Strained, tired eyes by the end of the day?' },
   { step: 'mirror', overlay: 'chart', min: 4.5,
     vo: 'Yet you see 20/20, and your eyes are healthy.',
     cap: '20/20 vision. Healthy eyes.' },
