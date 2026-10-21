@@ -34,12 +34,12 @@ button { font: inherit; color: inherit; }
 
 .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
 section { padding: 28px 0; }
-.lead { color: var(--muted); font-size: 19px; margin-top: 8px; max-width: 760px; }
+.lead { color: var(--muted); font-size: 19px; margin-top: 8px; }
 /* The page title at the top of each embed, with its subtitle */
 .title { margin: 0; font: 700 clamp(30px, 4.6vw, 46px)/1.12 var(--head); letter-spacing: -.02em; text-wrap: balance; }
 .subtitle { margin-top: 6px; font: 600 clamp(19px, 2.3vw, 24px)/1.3 var(--head); color: var(--accent); }
 .subtitle + .lead { margin-top: 10px; }
-.intro { margin-top: 14px; max-width: 780px; font-size: 20px; line-height: 1.55; }
+.intro { margin-top: 14px; font-size: 20px; line-height: 1.55; }
 .intro + .subtitle { margin-top: 26px; }
 
 /* ── Demo ─────────────────────────────────────── */
@@ -179,12 +179,12 @@ section { padding: 28px 0; }
 .step a.more::after, .options a.more::after { content: " ›"; }
 
 /* What BVD can feel like: a checklist */
-.signs { list-style: none; margin: 14px 0 18px; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 24px; max-width: 900px; }
+.signs { list-style: none; margin: 14px 0 18px; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 24px; }
 .signs li { position: relative; padding-left: 34px; color: #34405a; font-size: 17.5px; line-height: 1.45; }
 .signs li::before { content: ""; position: absolute; left: 0; top: 2px; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); }
 .signs li::after { content: ""; position: absolute; left: 7px; top: 7px; width: 8px; height: 5px; border-left: 2.5px solid #fff; border-bottom: 2.5px solid #fff; transform: rotate(-45deg); }
 
-.also { color: #34405a; font-size: 17.5px; max-width: 900px; }
+.also { color: #34405a; font-size: 17.5px; }
 
 /* Ways to treat it */
 .options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 14px; }
