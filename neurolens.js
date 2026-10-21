@@ -61,7 +61,7 @@ const way = () => (st.drift === 'exo' ? 'outward' : 'inward');
 // (nerve: what it shows, see nerves.js).
 // task: what the visitor is asked to do.
 const STEPS = [
-  { say: () => 'This is what your eyes might look like in the mirror. Looking straight, right?', scene: 'still' },
+  { say: () => 'This is what your eyes might look like in the mirror. They look straight, right?', scene: 'still' },
   { say: () => 'When both eyes are in use, your brain keeps them straight. It is constantly working to keep the two streams of information, one from each eye, lined up on top of each other.', scene: 'still', rings: true, stick: true, labels: true },
   { say: () => "But when an eye isn't being used, for example when it's covered, the information from that eye stops. The brain gives that eye a break and lets it drift to its resting position.", scene: 'still', rings: true, stick: true, paddle: true },
   { say: () => 'Where that resting position is, and how well your brain and eye muscles cope with it, is the essence of binocular vision dysfunction (BVD).', scene: 'still', rings: true, stick: true, paddle: true },
