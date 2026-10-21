@@ -30,8 +30,9 @@ PHONEME_FIXES = [
 
 
 def pause_after(text):
-    """Seconds of silence after a sentence: a little longer after a question, or a short punchy one."""
-    pause = 0.42 if text.rstrip('"”\'').endswith(('?', '!')) else 0.32
+    """Seconds of silence after a sentence: longer after an ellipsis (a deliberate pause), a question, or a short punchy one."""
+    end = text.rstrip('"”\'')
+    pause = 0.6 if end.endswith(('…', '...')) else 0.42 if end.endswith(('?', '!')) else 0.32
     return pause + (0.15 if len(text.split()) <= 3 else 0)
 
 

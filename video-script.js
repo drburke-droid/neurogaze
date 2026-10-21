@@ -28,8 +28,8 @@ export const SHOTS = [
   // ── Hook: the symptoms, then the eye behind the paddle ─────────────────────
   { ch: 'Sore eyes, headaches, a stiff neck?', mood: 'hook', step: 'route', nerve: 'pain', cut: true, min: 6.5,
     reveal: { gEye: '@Sore', gHead: '@Headaches', gJaw: '@A tight', gNeck: '@A stiff' },
-    vo: 'Sore, strained eyes by the end of the day. Headaches. A tight jaw. A stiff neck.',
-    cap: 'Sore, strained eyes by the end of the day?' },
+    vo: 'Sore… strained… tired eyes by the end of the day. Headaches. A tight jaw. A stiff neck.',
+    cap: 'Sore, strained, tired eyes by the end of the day?' },
   { step: 'mirror', overlay: 'chart', min: 4.5,
     vo: 'Yet you see 20/20, and your eyes are healthy.',
     cap: '20/20 vision. Healthy eyes.' },
@@ -42,10 +42,10 @@ export const SHOTS = [
 
   // ── How your eyes stay straight ──────────────────────────────────────────
   { ch: 'How your eyes stay straight', mood: 'explain', step: 'mirror', view: 'story', min: 3.5,
-    vo: 'In the mirror, your eyes look straight, right?',
-    cap: 'They look straight, right?' },
+    vo: 'In the mirror, your eyes look straight ahead.',
+    cap: 'They look straight ahead.' },
   { step: 'pull', min: 7,
-    vo: 'When both eyes are in use, your brain keeps them lined up, so the picture from each eye lands right on top of the other. As this target pulls back toward you, both eyes straighten to follow it.',
+    vo: 'When both eyes are in use, your brain keeps them lined up, so the picture from each eye lands right on top of the other… As this target pulls back toward you, both eyes straighten to follow it.',
     cap: 'Your brain keeps them lined up.' },
   { step: 'rest', min: 4,
     vo: "But when an eye isn't being used, for example when it's covered, the brain lets it relax to its resting position.",
@@ -57,10 +57,10 @@ export const SHOTS = [
   // ── The cover test: an ordinary paddle first, then see-through ───────────
   { ch: 'The cover test', step: 'peek', view: 'eyes', min: 10,
     at: [[0.4, 'cover', 'R'], [2.3, 'cover', 'L'], [4.2, 'cover', 'R'], [6.1, 'cover', 'L'], [8.0, 'cover', 'R']],
-    vo: 'This is a cover test. The paddle moves from eye to eye. Watch each eye just as the paddle leaves it: it makes a small movement back into line.',
+    vo: 'This is called the cover test. The paddle moves from eye to eye. Watch each eye just as the paddle leaves it: it makes a small movement back into line.',
     cap: 'Watch each eye as the paddle leaves it.' },
   { min: 5.5, at: [['@see-through', 'peek', true]],
-    vo: "So where was it? Let's make the paddle see-through and look behind it. The covered eye has drifted outward, to its resting position.",
+    vo: "So where was the eye? Let's make the paddle see-through and look behind it. The covered eye has drifted outward, to its resting position.",
     cap: 'Behind the paddle, it drifts outward.' },
   { min: 7, at: [['@other', 'cover', 'L']],
     vo: 'Now move it to the other eye. The newly covered eye drifts out, and the uncovered eye straightens. These eyes rest slightly outward, which is called exophoria.',
@@ -74,7 +74,7 @@ export const SHOTS = [
 
   // ── Try it yourself ──────────────────────────────────────────────────────
   { ch: 'Try it yourself', step: 'self', view: 'story', min: 9,
-    vo: 'Now try it yourself. Look at the red dot. Cover one eye with your hand, then quickly move your hand across to the other eye. Go back and forth a few times. Pause the video if you need to.',
+    vo: 'Now try it yourself. Look at the red dot. Cover one eye with your hand, then quickly move your hand across to the other eye… Go back and forth a few times. Pause the video if you need to.',
     cap: 'Look at the red dot. Cover one eye, then the other.' },
   { step: 'selfJump', min: 5,
     vo: "Did the dot jump? If it did, your eye wasn't quite straight while it was behind your hand, and your brain had to pull it back onto the dot. A small jump is common.",
@@ -82,27 +82,27 @@ export const SHOTS = [
 
   // ── The switch-off you never notice ──────────────────────────────────────
   { ch: 'The switch-off you never notice', step: 'saccade', min: 6,
-    vo: "What most people don't realize is that every time your eyes jump, called a saccade, your brain switches off their input for a split second, so you don't see a blur.",
+    vo: "What most people don't realize is that every time your eyes jump, which is called a saccade, your brain switches off their input for a split second, so you don't see a blur.",
     cap: 'During every jump, the brain switches off the input.' },
   { step: 'mirrorEyes', min: 4.5,
-    vo: "Try it in a mirror: glance from one of your eyes to the other. You can't see them move.",
+    vo: "Try it in a mirror… glance from one of your eyes to the other. You can't see them move.",
     cap: "In a mirror, you can't see your eyes move…" },
   { step: 'camera', min: 3.5,
-    vo: "On your phone's front camera, you can.",
+    vo: "However, on your phone's front camera, you can see the movement.",
     cap: '…on a phone camera, you can.' },
   { step: 'landing', min: 6,
-    vo: 'And while the input is off, each eye heads for its resting position. So after every jump, the eyes land slightly out of line, and the brain pulls them back together.',
+    vo: "And remember, while the eye's input is turned off, each eye heads for its resting position. So after every jump, the eyes land slightly out of line, and the brain pulls them back together.",
     cap: 'After every jump, the eyes land slightly out of line.' },
 
   // ── Reading ──────────────────────────────────────────────────────────────
   { ch: 'Reading', step: 'read', min: 6, at: [[0, 'slow', false]],
-    vo: 'Reading is jump after jump, with both eyes turned in to the page. This is a typical reading speed, about 250 words a minute. It looks normal.',
+    vo: 'Reading is jump after jump, with both eyes slightly turned in to see the closely held page. This is a typical reading speed, about 250 words a minute. It looks normal.',
     cap: 'Reading at 250 words a minute looks normal…' },
   { step: 'readSlow', min: 9, at: [[0, 'slow', true]],
-    vo: "Slow it down and magnify it, and you can see the miss after every word. That's called fixation disparity. For eyes that rest outward, it's usually bigger up close.",
+    vo: "Slow it down and magnify it, and you can see the miss after every word. That's called fixation disparity. For eyes that tend to rest outward, this disparity is usually larger when looking at things up close.",
     cap: '…slowed down, you can see the miss: fixation disparity.' },
   { step: 'report', min: 4.5, at: [[0, 'slow', false]],
-    vo: "It happens with every word, thousands of times a day. And your eye muscles don't just move your eyes. They report back.",
+    vo: "It happens with every word, thousands of times a day. And your eye muscles don't just move your eyes, they also report position updates back to the brain.",
     cap: 'Thousands of times a day.' },
 
   // ── Inside your head ─────────────────────────────────────────────────────
@@ -116,7 +116,7 @@ export const SHOTS = [
     vo: 'The same nerve carries feeling from your forehead, face and jaw, works your chewing muscles, supplies the covering of your brain, and meets the nerves from the back of your head and neck.',
     cap: 'The same nerve serves your face, jaw, brain covering and neck.' },
   { step: 'pulse', min: 10,
-    vo: 'Every jump sends normal signals; that happens for everyone. When the eyes land out of line, each correction adds an extra burst. An hour of reading is about 15,000 jumps, and 15,000 extra bursts.',
+    vo: "Every jump sends signals; that's normal and happens for everyone. When the eyes land out of line, each correction adds an extra burst. An hour of reading is about 15,000 jumps, and therefore 15,000 extra bursts.",
     cap: 'An hour of reading: about 15,000 extra bursts.' },
 
   // ── It's not tired muscles ───────────────────────────────────────────────
@@ -124,12 +124,12 @@ export const SHOTS = [
     vo: 'Your eye weighs about 7.5 grams, about one and a half credit cards, and the muscles that move it are far stronger than they need to be.',
     cap: 'Each eye: about 7.5 grams.' },
   { step: 'built', min: 5.5,
-    vo: "They're built not to tire, with their own kind of myosin, packed with mitochondria, and a rich blood supply. So it probably isn't the muscles giving out.",
+    vo: "They're built not to tire, with their own kind of myosin, packed with mitochondria, and a rich blood supply… So it probably isn't the muscles giving out when your eyes feel tired.",
     cap: 'Built not to tire.' },
 
   // ── A bandwidth problem ──────────────────────────────────────────────────
   { ch: 'A bandwidth problem', step: 'stream', min: 6.5,
-    vo: "What gets overloaded is the information. Everyone's eye sensors send normal traffic. Eyes that rest out of line add extra, from being held in line all day and corrected after every jump.",
+    vo: "What does get overloaded is the information… Everyone's eye sensors send normal traffic. Eyes that rest out of line add extra, from being held in line all day and corrected after every jump.",
     cap: 'Normal traffic, plus extra.' },
   { step: 'shared', min: 6,
     vo: 'And it all runs through one shared nerve.',
@@ -173,7 +173,7 @@ export const speakable = (text) => SAY.reduce((t, [a, b]) => t.split(a).join(b),
 
 // The narration split into sentences, each with where it starts and ends in the text
 export function sentences(text) {
-  const out = [], re = /\S.*?(?:[.?!]+["”']?(?=\s|$)|$)/g; // ends at . ? or ! before a space (so not in "7.5" or ".com")
+  const out = [], re = /\S.*?(?:[.?!…]+["”']?(?=\s|$)|$)/g; // ends at . ? ! or … before a space (so not in "7.5" or ".com")
   let m;
   while ((m = re.exec(text))) out.push({ text: m[0], from: m.index, to: m.index + m[0].length });
   return out;
