@@ -35,7 +35,8 @@ const browser = await chromium.launch({
   ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}),
   args: ['--ignore-gpu-blocklist', ...(process.env.SWIFTSHADER ? ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] : [])],
 });
-const page = await browser.newPage({ viewport: vertical ? { width: 720, height: 1280 } : { width: 1280, height: 720 }, deviceScaleFactor: 1.5 });
+const VIEW = vertical ? { width: 720, height: 1280 } : { width: 1280, height: 720 }, SCALE = 1.5; // 1.5 × 1280×720 = 1080p
+const page = await browser.newPage({ viewport: VIEW, deviceScaleFactor: SCALE });
 page.on('pageerror', (e) => console.error('Page error:', e.message));
 
 // The page's clock: real time while it loads, then moved on only by __clock.tick(ms)
@@ -108,7 +109,7 @@ await page.evaluate(() => { window.__clock.manual(); window.__video.start(); });
 const frames = Math.round((END - START) * FPS), began = Date.now();
 for (let k = 0; k < frames; k++) {
   await page.evaluate((ms) => window.__clock.tick(ms), k === 0 ? 0 : 1000 / FPS);
-  const { data } = await cdp.send('Page.captureScreenshot', { format: 'jpeg', quality: 92 });
+  const { data } = await cdp.send('Page.captureScreenshot', { format: 'jpeg', quality: 92, clip: { x: 0, y: 0, ...VIEW, scale: SCALE } }); // at full resolution
   writeFileSync(join(dir, `${String(k).padStart(6, '0')}.jpg`), Buffer.from(data, 'base64'));
   if (k % 60 === 0) process.stdout.write(`\r${(k / FPS).toFixed(0)} / ${(frames / FPS).toFixed(0)} s of video, ${((Date.now() - began) / 60000).toFixed(1)} min`);
 }
