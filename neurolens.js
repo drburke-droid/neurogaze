@@ -87,7 +87,7 @@ const STEPS = [
   { id: 'swap', say: () => `Now the eye that isn't being used has drifted ${way()}, and the other eye, which the brain is calling on again, has straightened out.`, scene: 'still', rings: true, stick: true, paddle: true, need: 'other' },
   { id: 'self', say: () => "Now it's your turn. Look at the red dot below. Cover one of your eyes with your hand, then quickly move your hand across to cover the other eye. Switch back and forth a few times, watching the dot.", scene: 'self' },
   { id: 'selfJump', say: () => "Did the dot jump a little as you switched? If it did, you've just discovered that your eye's resting position, while it was behind your hand, wasn't exactly straight. When you uncovered it, your brain had to pull it back onto the dot. A small jump is common.", scene: 'self' },
-  { id: 'sleep', say: () => "So when an eye isn't being used, it moves to its resting position. When you sleep and neither eye is being used, both go to their resting position. Try turning the X-ray off, or opening the eyelids, to see how far out they've turned.", scene: 'sleep' },
+  { id: 'sleep', say: () => "So when an eye isn't being used, it moves to its resting position. When you sleep and neither eye is being used, both go to their resting position. Try the buttons: turn the X-ray off and on, or wake the person up and watch the eyes straighten.", scene: 'sleep' },
   { id: 'wake', say: () => "But when both eyes are open and your brain is paying attention to both of them, they're straight again, lined up on the same target.", scene: 'wake', rings: true, stick: true },
   { id: 'saccade', say: () => "Here's what most people don't realize: when you make a fast eye movement, called a saccade, your brain briefly switches off the input from your eyes to avoid a smeared, jittery view, then switches it back on once you reach your target.", scene: 'saccades', slow: true, mag: 1, input: true, rings: true },
   { id: 'room', say: () => "Try it yourself: look at something across the room, then quickly look at something on the other side. Notice you don't see a streak of blur, like you would if you swung a video camera too fast?", scene: 'saccades', input: true, rings: true },
@@ -147,8 +147,9 @@ function goStep(n) {
   if (s.scene === 'wake') { // waking up: start with the lids shut and both eyes at rest
     fromSleep = STEPS[st.step - 1]?.scene === 'sleep' && back === false;
     wakeFrom = fromSleep ? { close: lids.close, xray: lids.xray } : { close: 1, xray: 0 }; // carry on from however the sleep card left them
-    wakeT = 0;
-    drift.R = drift.L = coveredOffset(posture());
+    const awake = fromSleep && st.sleepOpen; // already woken on the sleep card: the eyes are straight, nothing to replay
+    wakeT = awake ? 3 : 0;
+    if (!awake) drift.R = drift.L = coveredOffset(posture());
   }
   // Put the paddle where this part of the story needs it
   if (st.step < 4 || (st.step === 4 && back)) { st.peek = false; st.firstEye = null; parkPaddle(); }
@@ -499,7 +500,8 @@ function tick(now) {
   if (selfShow !== selfGoal) { selfShow = Math.abs(selfGoal - selfShow) < 0.01 ? selfGoal : selfShow + (selfGoal - selfShow) * (1 - Math.exp(-dt / 0.25)); active = true; }
   frameDt = dt;
   for (const e of EYES) {
-    const covered = st.cover === e || (sleeping && sleepT > 0.5) || (waking && wakeT < 1.5);
+    // Asleep, both eyes rest; woken on the sleep card (lids fully open), the brain pulls them straight
+    const covered = st.cover === e || (sleeping && sleepT > 0.5 && sleepOpenK < 1) || (waking && wakeT < 1.5);
     hold[e] = covered ? REFIX_DELAY : Math.max(0, hold[e] - dt);
     const goal = covered ? coveredOffset(posture()) : hold[e] > 0 ? drift[e] : 0; // just uncovered: a moment to react, then back into line
     drift[e] += (goal - drift[e]) * (1 - Math.exp(-dt / (goal ? 0.6 : 0.3)));

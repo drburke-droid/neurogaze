@@ -59,7 +59,7 @@ export const STAGE_HTML = `
   <div class="input-chip" id="input-chip" hidden><i></i><span></span></div>
   <div class="sleep-ctl" id="sleep-ctl" hidden>
     <div class="seg" role="group" aria-label="X-ray view through the eyelids"><span>X-ray</span><button type="button" data-xray="1">On</button><button type="button" data-xray="0">Off</button></div>
-    <div class="seg" role="group" aria-label="Eyelids"><span>Eyelids</span><button type="button" data-open="0">Closed</button><button type="button" data-open="1">Open</button></div>
+    <div class="seg" role="group" aria-label="Asleep or awake"><button type="button" data-open="0">Asleep</button><button type="button" data-open="1">Awake</button></div>
   </div>
   <div class="story" id="story">
     <p id="story-text" aria-live="polite"></p>
