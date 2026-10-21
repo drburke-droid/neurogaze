@@ -1,10 +1,14 @@
-// Neurolens page: a click-through story of resting position, saccades and fixation disparity
+// The story pages (neurolens.html, bvd.html): a click-through story of resting position, saccades,
+// fixation disparity and the trigeminal nerve. Each page sets <body data-page="..."> and gets the same stage.
 // Created by Dr Robert Burke
 import { createHead } from './head3d.js';
+import { STAGE_HTML } from './story-stage.js';
 import { NEAR_CONVERGENCE, RESTING, landingOffset, coveredOffset } from './fixation.js';
 import { createNerves } from './nerves.js';
 
 const $ = (id) => document.getElementById(id);
+$('demo').innerHTML = STAGE_HTML; // the stage and its controls, shared by every story page
+const PAGE = document.body.dataset.page || 'neurolens'; // 'neurolens' or 'bvd': only the closing card differs
 const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 const DEG = Math.PI / 180;
 const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t));
@@ -97,7 +101,9 @@ const STEPS = [
   { say: () => 'That can mean headaches, often across the forehead or temples, and eye strain: eyes that feel tired, sore or dry by the end of the day.', scene: 'nerve', nerve: 'symHead' },
   { say: () => 'It can mean jaw tension or clenching, through the chewing muscles this nerve controls.', scene: 'nerve', nerve: 'symJaw' },
   { say: () => 'And it can mean neck and shoulder pain, because the trigeminal nerve meets the neck nerves at the top of the spinal cord.', scene: 'nerve', nerve: 'symNeck' },
-  { say: () => "That's the idea behind Neurolens: if the eyes need less holding and correcting, there's less extra traffic on the trigeminal nerve, and less to set off these symptoms. The normal traffic carries on as it should. Read on to see how it works.", scene: 'nerve', nerve: 'calm' },
+  { say: () => (PAGE === 'bvd'
+    ? "That's why treating BVD aims to help the eyes line up with less holding and correcting, for example with prism glasses, so there's less extra traffic on the trigeminal nerve and less to set off these symptoms. The normal traffic carries on as it should. Read on to see how we check for it."
+    : "That's the idea behind Neurolens: if the eyes need less holding and correcting, there's less extra traffic on the trigeminal nerve, and less to set off these symptoms. The normal traffic carries on as it should. Read on to see how it works."), scene: 'nerve', nerve: 'calm' },
 ];
 const step = () => STEPS[st.step];
 
@@ -572,7 +578,7 @@ function drawStick(p, r) {
 // A neurologist's view: click to play, streamed from the clinic's Squarespace video library
 // ═══════════════════════════════════════════════════════════════
 const NEURO_VIDEO = 'https://video.squarespace-cdn.com/content/v1/588ea900e6f2e152d3ecbe0b/a30e13a5-e5e4-42e6-bf7c-8af3440bda39/';
-{
+if ($('neuro-video')) {
   const box = $('neuro-video'), poster = $('neuro-poster');
   poster.addEventListener('error', () => poster.remove()); // the button reads well without a picture
   poster.src = `${NEURO_VIDEO}thumbnail`;

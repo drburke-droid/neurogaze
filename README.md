@@ -30,6 +30,10 @@ Created by **Dr Robert Burke**, optometrist, Calgary Vision Centre.
 
 Below the demonstration are the cause, effect and solution, a neurologist's view (a click-to-play video streamed from the clinic's Squarespace video library), a call to action and the clinic's Neurolens articles. Eye movements are exaggerated; `fixation.js` holds the model (tests in `tests/fixation.test.mjs`), `head3d.js` loads the shared 3D head and `nerves.js` draws the trigeminal nerve. The still diagram on the page (`img/trigeminal.webp`) is rendered from the same drawing by `tools/trigeminal-figure.mjs`.
 
+### The BVD page
+
+`bvd.html` tells the same story for a binocular vision dysfunction (BVD) page (setup in `docs/bvd-page.md`), with BVD first and Neurolens as one way to treat it: what BVD can feel like, why small misalignments can cause symptoms, how the clinic checks for it, ways to treat it, a call to action and the articles. Both pages mount the same stage (`story-stage.js`) and styles (`story.css`) and run the same story engine (`neurolens.js`); `<body data-page="bvd">` changes only the closing card.
+
 ## The model, honestly
 
 This is a qualitative teaching model, not a biomechanical simulation (`engine.js`).
@@ -70,7 +74,9 @@ Then open the printed address. Run the model tests with `npm test` (Node 18 or l
 | `pupil.js` | The pupil model: light and near reflexes, kinetics and drops (pure functions, no 3D) |
 | `cases.js` | Case presets, teaching cards, usual causes and scripted pupil tests |
 | `diagnose.js` | Motility chart matcher: candidate conditions, scoring, plain-language findings |
-| `neurolens.html`, `neurolens.js` | Patient-facing embed for the clinic's Neurolens page |
+| `neurolens.html` | Patient-facing embed for the clinic's Neurolens page (layout and embed code in `docs/neurolens-embed.md`) |
+| `bvd.html` | Patient-facing embed for a binocular vision dysfunction (BVD) page: the same story, BVD first (setup in `docs/bvd-page.md`) |
+| `neurolens.js`, `story-stage.js`, `story.css` | The story engine, its stage markup and the styles, shared by both pages |
 | `fixation.js` | Resting position and fixation disparity model for that page (pure functions) |
 | `head3d.js` | The 3D head as a reusable module, used by the Neurolens page |
 | `nerves.js` | The trigeminal nerve drawn over the head in profile, for that page |
