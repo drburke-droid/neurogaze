@@ -39,6 +39,8 @@ section { padding: 28px 0; }
 .title { margin: 0; font: 700 clamp(30px, 4.6vw, 46px)/1.12 var(--head); letter-spacing: -.02em; text-wrap: balance; }
 .subtitle { margin-top: 6px; font: 600 clamp(19px, 2.3vw, 24px)/1.3 var(--head); color: var(--accent); }
 .subtitle + .lead { margin-top: 10px; }
+.intro { margin-top: 14px; max-width: 780px; font-size: 20px; line-height: 1.55; }
+.intro + .subtitle { margin-top: 26px; }
 
 /* ── Demo ─────────────────────────────────────── */
 .demo { margin-top: 20px; display: grid; gap: 14px; }
@@ -235,6 +237,7 @@ section { padding: 28px 0; }
   .posts { grid-template-columns: 1fr; }
   .signs, .options { grid-template-columns: 1fr; }
   .credit { font-size: 12px; }
+  .intro { font-size: 18px; }
   .video-icon { width: 60px; height: 60px; margin: -30px 0 0 -30px; }
   .video-icon::after { left: 24px; top: 18px; border-left-width: 19px; border-top-width: 12px; border-bottom-width: 12px; }
   .video-title, .video-time { font-size: 13px; bottom: 10px; }

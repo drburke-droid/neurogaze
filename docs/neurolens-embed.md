@@ -2,7 +2,7 @@
 
 `neurolens.html` replaces most of the Neurolens page (`calgaryvisioncentre.com/neurolens-calgary`) with a single, patient-friendly embed:
 
-1. **How Neurolens works** (the embed's title), with the subtitle *See what your eyes are doing*: a click-through story on a 3D face, 34 short steps, each written across the forehead with its Back / Next buttons right there on the face:
+1. **How Neurolens works** (the embed's title), then a short introduction to what Neurolens is for someone who has just arrived, then *See what your eyes are doing*: a click-through story on a 3D face, 34 short steps, each written across the forehead with its Back / Next buttons right there on the face:
    - Eyes look straight because the brain keeps the two eyes' information lined up. The target is a white ball on a vertical stick: it starts small, close to the face with the eyes turned in, then pulls back toward the viewer, dropping a little below the eye line, as the eyes straighten, so it's clear they are now looking far away. Then the visitor can drag the ball (or use the up and down arrow keys) closer to the face and back out, and watch both eyes turn in and straighten to follow it. A ring on the ball shows where each eye is aiming. An eye that isn't used drifts to its resting position; where that is, and how well we cope with it, is the essence of BVD.
    - **Cover test, hands on:** the visitor drags a solid paddle over an eye, then clicks it to open an X-ray window and peek behind it: the covered eye has drifted (exophoric). They then cover the other eye and see the roles swap. On these steps Next becomes **Show me**, which does it for them.
    - **Try it yourself:** the face dims behind a red dot. The visitor keeps looking at it while covering one eye with a hand, then the other, back and forth. If the dot jumps, they've found that their own eye's resting position, behind the hand, wasn't exactly straight (a small jump is common).
@@ -32,11 +32,9 @@
 
 **The neurologist video doesn't need to be on Squarespace.** The embed plays its own copy, so you can delete the Video block. (It used to stream from Squarespace's video library, which doesn't let other websites, like the embed's, play its videos.)
 
-Suggested intro text block (keeps the page's main words in the page itself, which search engines weigh most):
+The embed opens with its own title and an introduction to Neurolens, so the page doesn't need a text block above it. Optional, for search engines (they weigh text in the page itself most): a short text block *below* the embed, for example:
 
-> # What is Neurolens®?
->
-> Neurolens® glasses add a small, precisely measured amount of contoured prism to your prescription to help your eyes line up. They're designed for people whose eyes rest slightly out of line, which can contribute to headaches, neck pain, eye strain and a dry-eye feeling, especially after screen time.
+> Neurolens® in Calgary: Calgary Vision Centre is a certified Neurolens provider. Neurolens glasses add a small, precisely measured amount of contoured prism to your prescription to help your eyes line up, for people whose eyes rest slightly out of line, which can contribute to headaches, neck pain, eye strain and a dry-eye feeling, especially after screen time.
 
 ## Embed code
 
