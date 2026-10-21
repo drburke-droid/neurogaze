@@ -82,7 +82,7 @@ const STEPS = [
   { say: () => "Now try it while filming yourself with your phone's front camera. You'll definitely see your eyes move. In the mirror you don't, because your brain switches off your eyes' input during saccades.", scene: 'mirror', input: true },
   { say: () => `And remember: an eye whose input is switched off heads for its resting position. So during every saccade both eyes start to drift ${way()}, and they land slightly out of line until the brain switches them back on and pulls them together.`, scene: 'saccades', slow: true, input: true, rings: true },
   { say: () => 'Reading is a long chain of saccades: word, to word, to word, with both eyes turned in to meet on the page. Here is someone reading at full speed, about 150 words a minute. Looks normal.', scene: 'reading', input: true, rings: true },
-  { say: () => `Now the same reading, slowed down and magnified. After each jump the eyes land slightly out of line, and the brain has to pull them back together. That small miss is called fixation disparity${st.drift === 'exo' ? ". For eyes that rest outward it's usually bigger up close, where they have to turn in the furthest from where they'd rest" : ". For eyes that rest inward, focusing up close can pull them in further still"}.`, scene: 'reading', slow: true, input: true, rings: true },
+  { say: () => `Now the same reading, slowed down and magnified. After each jump the eyes land slightly out of line, and the brain pulls them back together. That small miss is called fixation disparity${st.drift === 'exo' ? ". For eyes that rest outward it's usually bigger up close, where they must turn in the most" : ". For eyes that rest inward it can be the reverse: distance is sometimes harder, as the eyes must keep straightening out"}.`, scene: 'reading', slow: true, input: true, rings: true },
   { say: () => "It happens with every word, thousands of times a day. And the eye muscles don't just move the eyes: they also report back to the brain. Let's look inside.", scene: 'reading', alternate: true, input: true, rings: true },
   { say: () => 'Your brain keeps track of where each eye is pointing, and tiny sensors in the eye muscles, called proprioceptors, help it: many times a second, they report how stretched each muscle is and how hard it is working.', scene: 'nerve', nerve: 'sense' },
   { say: () => 'Those answers travel to the brain along the trigeminal nerve, the main sensory nerve of the face.', scene: 'nerve', nerve: 'route' },
@@ -179,7 +179,9 @@ $('speed').addEventListener('click', (e) => {
 // Text and controls for the current step
 function refresh() {
   const s = step();
-  $('story-text').textContent = s.say();
+  const say = s.say();
+  $('story-text').textContent = say;
+  $('story').classList.toggle('long', say.length > 220); // phones: a little smaller, to stay clear of the eyes
   $('progress').textContent = `${st.step + 1} / ${STEPS.length}`;
   $('back').disabled = st.step === 0;
   const done = taskDone();
