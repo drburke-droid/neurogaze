@@ -20,8 +20,8 @@ from kokoro_onnx import Kokoro
 
 ROOT = Path(__file__).resolve().parent.parent
 
-# Words the voice gets wrong, fixed in its phonemes: SACK-ade -> sa-KAHD
-PHONEME_FIXES = [('sˈækeɪd', 'sækˈɑːd'), ('bɹˈeɪnstəm', 'bɹˈeɪnstˌɛm')]
+# Words the voice gets wrong, fixed in its phonemes: SACK-ade -> sa-KAHD (American, then British), and brain-stem
+PHONEME_FIXES = [('sˈækeɪd', 'sækˈɑːd'), ('sˈakeɪd', 'sakˈɑːd'), ('bɹˈeɪnstəm', 'bɹˈeɪnstˌɛm')]
 
 
 def pause_after(text):
