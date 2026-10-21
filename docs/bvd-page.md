@@ -4,7 +4,7 @@
 
 ## What's in the embed
 
-1. **Binocular vision dysfunction (BVD), explained** (the embed's title), with the subtitle *See what your eyes are doing*: the 34-step story on the 3D face. Its last card reads "That's why treating BVD aims to help the eyes line up with less holding and correcting, for example with prism glasses… Read on to see how we check for it."
+1. **Binocular vision dysfunction (BVD), explained** (the embed's title), a short introduction to what BVD is for someone who has just arrived, then *See what your eyes are doing*: the 34-step story on the 3D face. Its last card reads "That's why treating BVD aims to help the eyes line up with less holding and correcting, for example with prism glasses… Read on to see how we check for it."
 2. **What BVD can feel like:** a checklist of the symptoms people most often describe, then the less common ones (dizziness, motion sickness, feeling overwhelmed in busy places), with a reminder that these have many causes.
 3. **Why small misalignments can cause symptoms:** the cause, the effect, and the numbered trigeminal nerve diagram with its key.
 4. **How we check for BVD:** the questionnaire, measuring how the eyes line up far and near, and a plan.
@@ -22,11 +22,10 @@ Like the condition pages for the eye movement simulator, the BVD page lives in *
    - SEO title: *Binocular Vision Dysfunction (BVD) in Calgary* (the site adds its own name after it, so it isn't repeated here)
    - SEO description: *Headaches, eye strain or neck pain after reading or screens? See how eyes that rest slightly out of line can cause BVD symptoms, and how we check for it.* (152 characters; Google shows about 155)
    - **Social Image** (Page settings → Social Image): upload `docs/social/bvd-share.jpg` (1200×630), the picture shown when the page is shared.
-4. **Page content,** top to bottom:
-   - A heading (Heading 1): *Binocular vision dysfunction (BVD) in Calgary*. The embed has its own title just below, so this one names the place rather than repeating it.
-   - The intro text block below. Text in the page itself counts most with search engines.
-   - A Code block with the embed code below.
-   - Optional: the questions and answers below, as a text block or an accordion.
+4. **Page content,** top to bottom (the same layout as the Neurolens page):
+   - A Code block with the embed code below. The embed opens with the page's title and an introduction to BVD, so nothing needs to go above it.
+   - A text block with the "BVD in Calgary" text below. Text typed into the page itself counts most with search engines.
+   - The questions and answers below, as a text block or an Accordion block.
 5. **A short address for videos and social posts:** in Settings, open URL Mappings (under Advanced or Developer Tools, depending on your Squarespace version), add this line, then save:
 
    ```
@@ -35,9 +34,13 @@ Like the condition pages for the eye movement simulator, the BVD page lives in *
 
    `calgaryvisioncentre.com/bvd` then works in YouTube and TikTok descriptions and is easy to say out loud.
 
-### Intro text block
+### "BVD in Calgary" text block (below the embed)
 
-> Binocular vision dysfunction (BVD) is a common name for eyes that don't quite line up as a team. When your eyes rest slightly out of line, they have to be held in line and corrected all day, and that extra work is thought to contribute to headaches, eye strain, neck pain and trouble reading. At Calgary Vision Centre we measure how your eyes line up, far and near, and explain what would help.
+> ## Binocular vision dysfunction (BVD) in Calgary
+>
+> At Calgary Vision Centre, in Gulf Canada Square on the +15 level in downtown Calgary, we check for BVD by measuring how your eyes line up, far and near, and explain what we find and what would help. If headaches, eye strain, neck pain or tired eyes after reading or screen time sound familiar, book an appointment online or call 403-237-0505.
+
+Link "book an appointment online" to `https://calgaryvisioncentre.visualbook.ca/booknow` and the phone number to `tel:4032370505`.
 
 ### Embed code
 
@@ -71,16 +74,16 @@ Like the condition pages for the eye movement simulator, the BVD page lives in *
 </script>
 ```
 
-### Optional questions and answers
+### Questions and answers
 
 > **Is BVD the same as a lazy eye or a squint?**
 > No. With BVD the eyes look straight to other people. The misalignment is small and hidden, because the brain keeps pulling the eyes into line; it shows up when the eyes are measured, for example when one eye is covered.
 >
-> **Can a routine eye exam find BVD?**
-> A routine eye exam checks how clearly you see and the health of your eyes. Small misalignments need specific tests of how your eyes line up, far away and up close.
+> **How do you check for BVD?**
+> Seeing 20/20 and having healthy eyes doesn't rule it out, because small misalignments are found with specific tests of how your eyes line up, far away and up close. We start with a short questionnaire about your symptoms, then measure your eye alignment.
 >
 > **How is BVD treated?**
-> Most often with glasses that include a small amount of prism, such as Neurolens. Depending on the type, an updated prescription or eye exercises can also help.
+> Often with glasses that include a small amount of prism, such as Neurolens. Depending on the type, an updated prescription or eye exercises can also help.
 >
 > **I saw BVD on social media. Is this the same thing?**
 > Yes, those videos describe the same idea: eyes that rest slightly out of line, linked to headaches, eye strain, dizziness and neck pain. Measuring your eye alignment is the way to know whether it applies to you.
@@ -89,7 +92,7 @@ Like the condition pages for the eye movement simulator, the BVD page lives in *
 
 Squarespace's sitemap includes Not Linked pages, so Google can find the page on its own, but pages that other pages link to rank better. Add a few links in the content instead of the menu:
 
-- **The Neurolens page:** a short text line near the top, for example *New to BVD? Start with [Binocular vision dysfunction, explained](/binocular-vision-dysfunction).* Put it in a Squarespace text block, not in the Neurolens embed.
+- **The Neurolens page:** a line in the text block below its embed, for example *Want the bigger picture? See [Binocular vision dysfunction (BVD), explained](/binocular-vision-dysfunction).*
 - **The BVD blog post:** a link near the top and again at the end.
 - Optionally the concussion and reading posts, and the footer.
 
