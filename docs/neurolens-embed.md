@@ -19,22 +19,33 @@
 4. **Could Neurolens help you?** Certified provider, questionnaire button, booking button and phone number.
 5. **Learn more from Dr Burke:** the four blog articles as cards.
 
-## What to keep on the page
+## Squarespace settings, step by step
 
-| Keep | Remove (now inside the embed) |
-|---|---|
-| The top video | "Neurolens utilizes patented technology…" heading |
-| A short intro text block (below), for search engines | The intro paragraphs, and the 82% and "Flip your symptoms" images |
-| The code block with the embed | The cause, the effect and the solution, with their images |
-| | The certified-provider line and the questionnaire button |
-| | "Want to learn more", the logo, and the four article blocks |
-| | The neurologist video and its caption on this page (it plays inside the embed) |
+**Page settings → General**
+- Page title: *How Neurolens Works*
+- Navigation title: *neurolens®* (as now)
+- URL slug: keep `neurolens-calgary`. The page's search ranking belongs to this address. If you rebuild the page as a new page instead of editing it, delete the old one first and give the new one the same slug.
 
-**The neurologist video doesn't need to be on Squarespace.** The embed plays its own copy, so you can delete the Video block. (It used to stream from Squarespace's video library, which doesn't let other websites, like the embed's, play its videos.)
+**Page settings → SEO**
+- SEO title: *Neurolens Calgary: Prism Glasses for Headaches & Eye Strain* (59 characters). The site adds " | Discover Clear Vision — Book Now — Calgary Vision Centre" after every page's title, and Google shows only about 60 characters, so the words that matter come first.
+- SEO description: *Headaches, eye strain or neck pain after screen time? See in 3D how eyes that rest slightly out of line may cause it, and how Neurolens prism glasses work.* (155 characters)
+- Leave "Hide page from search results" off.
 
-The embed opens with its own title and an introduction to Neurolens, so the page doesn't need a text block above it. Optional, for search engines (they weigh text in the page itself most): a short text block *below* the embed, for example:
+**Page settings → Social Image:** upload `docs/social/neurolens-share.jpg` (1200×630). It's the picture shown when the page is shared by text, email or social media; without it, the site's small logo is shown.
 
-> Neurolens® in Calgary: Calgary Vision Centre is a certified Neurolens provider. Neurolens glasses add a small, precisely measured amount of contoured prism to your prescription to help your eyes line up, for people whose eyes rest slightly out of line, which can contribute to headaches, neck pain, eye strain and a dry-eye feeling, especially after screen time.
+**Page content, top to bottom**
+1. A Code block with the embed code below (paste the current version; it's the same as before apart from the iframe's name). The embed starts with the page's title and an introduction, so nothing needs to go above it.
+2. Optional, for search engines (they weigh text typed into the page itself most): a text block below the embed, with a heading such as *Neurolens® in Calgary* and a sentence or two, for example: "Calgary Vision Centre is a certified Neurolens provider. Neurolens glasses add a small, precisely measured amount of contoured prism to your prescription to help your eyes line up, for people whose eyes rest slightly out of line, which can contribute to headaches, neck pain, eye strain and a dry-eye feeling, especially after screen time."
+3. Remove everything else from the old page: the intro paragraphs and images, the cause, effect and solution, the certified-provider line and questionnaire button, "Want to learn more", the logo, the article blocks, and both videos. If you'd like to keep the old top video, put it below the embed so the page still opens with its title.
+
+**The neurologist video doesn't need to be on Squarespace.** The embed plays its own copy, so you can delete its Video block (now on "New Page3"). (It used to stream from Squarespace's video library, which doesn't let other websites, like the embed's, play its videos.)
+
+**After publishing**
+- In Google Search Console, inspect `https://calgaryvisioncentre.com/neurolens-calgary` and click **Request indexing**, so Google picks up the new page sooner.
+- Check the sharing preview: Facebook's Sharing Debugger (developers.facebook.com/tools/debug) shows it and refreshes Facebook's copy.
+- "New Page3" (`/new-page-1`) is public and searchable under that name. If it's a scratch page, delete it or turn on "Hide page from search results" in its SEO settings.
+
+**Site-wide, optional:** the long " | Discover Clear Vision — Book Now — Calgary Vision Centre" ending is added to every page title. In Marketing → SEO → Search appearance, a shorter page title format such as `%p | Calgary Vision Centre` leaves more room for each page's own words.
 
 ## Embed code
 
@@ -50,7 +61,7 @@ Paste into a **Code block**. The embed sizes itself, so the page does all the sc
 
     var iframe = document.createElement("iframe");
     iframe.src = APP + "?embed=1&parent=" + encodeURIComponent(location.origin + location.pathname);
-    iframe.title = "Neurolens: see what your eyes are doing";
+    iframe.title = "How Neurolens works";
     iframe.scrolling = "no";
     iframe.setAttribute("allow", "fullscreen"); // so the video can go full screen
     iframe.setAttribute("allowfullscreen", "");

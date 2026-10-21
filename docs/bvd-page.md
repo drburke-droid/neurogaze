@@ -19,8 +19,9 @@ Like the condition pages for the eye movement simulator, the BVD page lives in *
 1. **Pages → Not Linked → +** → Blank page. Page title: *Binocular Vision Dysfunction (BVD)*.
 2. **Page settings → General → URL slug:** `binocular-vision-dysfunction`
 3. **Page settings → SEO:**
-   - SEO title: *Binocular Vision Dysfunction (BVD) in Calgary | Calgary Vision Centre*
-   - SEO description: *Headaches, eye strain or neck pain after reading or screens? See how eyes that rest slightly out of line can cause BVD symptoms, and how we check for it in Calgary.*
+   - SEO title: *Binocular Vision Dysfunction (BVD) in Calgary* (the site adds its own name after it, so it isn't repeated here)
+   - SEO description: *Headaches, eye strain or neck pain after reading or screens? See how eyes that rest slightly out of line can cause BVD symptoms, and how we check for it.* (152 characters; Google shows about 155)
+   - **Social Image** (Page settings → Social Image): upload `docs/social/bvd-share.jpg` (1200×630), the picture shown when the page is shared.
 4. **Page content,** top to bottom:
    - A heading (Heading 1): *Binocular vision dysfunction (BVD) in Calgary*. The embed has its own title just below, so this one names the place rather than repeating it.
    - The intro text block below. Text in the page itself counts most with search engines.
