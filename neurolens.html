@@ -175,6 +175,18 @@
     .tri-key li::before { content: counter(key); position: absolute; left: 0; top: -1px; width: 26px; height: 26px; border-radius: 50%; background: #ffcf5a; color: #1b2230; border: 2px solid #1b2230; display: grid; place-items: center; font: 800 13px/1 var(--body); }
     .aside { margin-top: 16px; color: var(--muted); font-size: 16px; }
 
+    /* A neurologist's view: click to play */
+    .video { position: relative; margin-top: 18px; max-width: 760px; aspect-ratio: 16 / 9; border-radius: var(--radius); overflow: hidden; background: radial-gradient(ellipse at 50% 40%, #222a38 0%, var(--stage) 75%); }
+    .video-start { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; background: none; color: #fff; cursor: pointer; }
+    .video-start img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .video-icon { position: absolute; left: 50%; top: 50%; width: 76px; height: 76px; margin: -38px 0 0 -38px; border-radius: 50%; background: rgba(255, 255, 255, .94); box-shadow: 0 6px 20px rgba(0, 0, 0, .35); transition: background-color .15s, transform .15s; }
+    .video-icon::after { content: ""; position: absolute; left: 30px; top: 23px; border-left: 24px solid var(--ink); border-top: 15px solid transparent; border-bottom: 15px solid transparent; }
+    .video-start:hover .video-icon, .video-start:focus-visible .video-icon { background: #ffd25a; transform: scale(1.06); }
+    .video-title, .video-time { position: absolute; bottom: 14px; background: rgba(12, 18, 28, .82); border-radius: 99px; padding: 5px 12px; font: 600 15px var(--body); }
+    .video-title { left: 14px; }
+    .video-time { right: 14px; font-variant-numeric: tabular-nums; }
+    .video video { display: block; width: 100%; height: 100%; background: #000; }
+    .video-msg { position: absolute; inset: 0; display: grid; place-items: center; padding: 20px; color: #e9edf4; text-align: center; }
     .cta { background: linear-gradient(135deg, #eaf2fd, #f4f8ff); border-radius: var(--radius); padding: 26px; display: grid; gap: 14px; }
     .cta .buttons { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
     .cta .call { color: var(--muted); font-size: 16px; }
@@ -207,6 +219,11 @@
       .linkish { margin-left: 0; }
       .posts { grid-template-columns: 1fr; }
       .credit { font-size: 12px; }
+      .video-icon { width: 60px; height: 60px; margin: -30px 0 0 -30px; }
+      .video-icon::after { left: 24px; top: 18px; border-left-width: 19px; border-top-width: 12px; border-bottom-width: 12px; }
+      .video-title, .video-time { font-size: 13px; bottom: 10px; }
+      .video-title { left: 10px; }
+      .video-time { right: 10px; }
       .nv-label { font-size: 11.5px; padding: 3px 8px; }
       .nv-clock { font-size: 12px; left: 8px; bottom: 42px; padding: 5px 10px; }
       .nv-meter { left: 8px; bottom: 8px; width: 160px; font-size: 12px; padding: 6px 10px 8px; }
@@ -322,6 +339,21 @@
         </figcaption>
       </figure>
       <p class="aside"><strong>What about blue-light filters or the 20-20-20 rule?</strong> They can make screen time more comfortable, and newer lens designs can make screens sharper, but none of them change how well your eyes line up.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="neuro-title">
+    <div class="wrap">
+      <h2 id="neuro-title">A neurologist's view</h2>
+      <p class="lead">Dr. Carol Nelson is a neurologist who treats people with chronic headaches. Here she shares how Neurolens has helped her patients, especially those with eye strain, neck pain and tension from screen time, and why she now recommends it in her practice.</p>
+      <div class="video" id="neuro-video">
+        <button type="button" class="video-start" id="neuro-play" aria-label="Play the video: Dr. Carol Nelson, neurologist, on Neurolens (54 seconds)">
+          <img id="neuro-poster" alt="" decoding="async">
+          <span class="video-icon" aria-hidden="true"></span>
+          <span class="video-title" aria-hidden="true">Dr. Carol Nelson, neurologist</span>
+          <span class="video-time" aria-hidden="true">0:54</span>
+        </button>
+      </div>
     </div>
   </section>
 

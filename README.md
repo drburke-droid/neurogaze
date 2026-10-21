@@ -28,7 +28,7 @@ Created by **Dr Robert Burke**, optometrist, Calgary Vision Centre.
 - **Reading:** a chain of saccades across a see-through card, at full speed (150 words a minute, true size) where it looks normal, and slowed and magnified where the miss after each jump (fixation disparity) shows.
 - **Inside the head:** the head turns to its profile and the trigeminal nerve is drawn over it. Position sensors in the eye muscles report along the nerve to the brainstem; the nerve's other territories light up (forehead, cheeks, jaw and chewing muscles, the covering of the brain), and the upper neck nerves meet it at the top of the spinal cord. An hour of reading in time-lapse makes the nerve almost pulse. The eye muscles are light work for strong, tireless muscles, so the problem is framed as bandwidth: normal traffic from every eye movement, plus the extra from holding misaligned eyes in line and correcting them (a "Trigeminal traffic" meter shows both, a shared line, a download that never stops), and the symptoms thought to follow an overloaded nerve light up one area at a time.
 
-Below the demonstration are the cause, effect and solution, a call to action and the clinic's Neurolens articles. Eye movements are exaggerated; `fixation.js` holds the model (tests in `tests/fixation.test.mjs`), `head3d.js` loads the shared 3D head and `nerves.js` draws the trigeminal nerve. The still diagram on the page (`img/trigeminal.webp`) is rendered from the same drawing by `tools/trigeminal-figure.mjs`.
+Below the demonstration are the cause, effect and solution, a neurologist's view (a click-to-play video streamed from the clinic's Squarespace video library), a call to action and the clinic's Neurolens articles. Eye movements are exaggerated; `fixation.js` holds the model (tests in `tests/fixation.test.mjs`), `head3d.js` loads the shared 3D head and `nerves.js` draws the trigeminal nerve. The still diagram on the page (`img/trigeminal.webp`) is rendered from the same drawing by `tools/trigeminal-figure.mjs`.
 
 ## The model, honestly
 
@@ -75,6 +75,7 @@ Then open the printed address. Run the model tests with `npm test` (Node 18 or l
 | `head3d.js` | The 3D head as a reusable module, used by the Neurolens page |
 | `nerves.js` | The trigeminal nerve drawn over the head in profile, for that page |
 | `img/trigeminal.webp`, `tools/trigeminal-figure.mjs` | The still trigeminal nerve diagram on that page, and the script that renders it |
+| `vendor/hls/` | hls.js (light build), loaded only to play the Neurolens page's video in browsers that can't play the stream themselves (Apache-2.0 licence) |
 | `vendor/fonts/` | Poppins and Urbanist for the Neurolens page, matching the clinic site (SIL Open Font Licence) |
 | `head_eyes_v2.glb` | Head and eye model (meshopt geometry, WebP textures, 320 KB) |
 | `vendor/three/` | three.js r160 and the add-ons used, served locally (MIT licence) |
