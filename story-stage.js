@@ -28,6 +28,8 @@ export const STAGE_HTML = `
   <span class="ring-label od" id="label-R" hidden>right eye</span>
   <span class="ring-label os" id="label-L" hidden>left eye</span>
   <span class="tag stick-tag" id="stick-tag" hidden></span>
+  <div class="stick-grab" id="stick-grab" role="slider" tabindex="0" aria-label="How far the ball is from the face. Drag it up toward the face or down toward you." aria-valuemin="0" aria-valuemax="100" hidden></div>
+  <span class="stick-hint" id="stick-hint" hidden>Drag me closer or further</span>
   <div class="paddle" id="paddle" tabindex="0" role="button" aria-label="Cover paddle. Drag it over an eye; click it to peek behind it." hidden>
     <svg viewBox="0 0 100 200" aria-hidden="true">
       <defs>

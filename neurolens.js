@@ -54,6 +54,8 @@ const REFIX_DELAY = 0.2;      // seconds an uncovered eye takes to react before 
 const hold = { R: 0, L: 0 };  // each eye's reaction time left
 let selfShow = 0;             // 0..1: the face dimmed behind the red dot, for the visitor's own cover test
 let pullT = 0, pull = 1;      // the target pulling back from the face toward the viewer (step 2): 0 near the face, 1 far
+let pullHand = null;          // step 2: where the visitor has dragged the ball (0 near the face, 1 far), once they have
+let stickDrag = null;         // the drag in progress: { y, from } (where the pointer went down, and the ball's distance then)
 let convShown = 0;            // degrees each eye is shown turned in for a near target (eases between steps)
 const NEAR_SHOWN = 2 * NEAR_CONVERGENCE; // turned in for the reading card: doubled, so it can be seen
 const NEAR_EXO = 1.4;         // eyes that rest outward miss by more up close, where they turn in the furthest
@@ -74,7 +76,7 @@ const way = () => (st.drift === 'exo' ? 'outward' : 'inward');
 // task: what the visitor is asked to do. id: a short name, for the video script (video-script.js).
 const STEPS = [
   { id: 'mirror', say: () => 'This is what your eyes might look like in the mirror. They look straight, right?', scene: 'still' },
-  { id: 'pull', say: () => 'When both eyes are in use, your brain keeps them straight. It is constantly working to keep the two streams of information, one from each eye, lined up on top of each other.', scene: 'still', rings: true, stick: true, labels: true },
+  { id: 'pull', say: () => 'When both eyes are in use, your brain keeps them straight. It is constantly working to keep the two streams of information, one from each eye, lined up on top of each other. Try it: drag the ball closer to the face and back out, and watch both eyes follow it.', scene: 'still', rings: true, stick: true, labels: true },
   { id: 'rest', say: () => "But when an eye isn't being used, for example when it's covered, the information from that eye stops. The brain gives that eye a break and lets it drift to its resting position.", scene: 'still', rings: true, stick: true, paddle: true },
   { id: 'bvd', say: () => 'Where that resting position is, and how well your brain and eye muscles cope with it, is the essence of binocular vision dysfunction (BVD).', scene: 'still', rings: true, stick: true, paddle: true },
   { id: 'peek', say: () => 'Go ahead: grab the paddle in the corner and cover one of the eyes. Once it is covered, click the paddle to peek behind it and see where the eye went.', scene: 'still', rings: true, stick: true, paddle: true, task: 'peek' },
@@ -137,7 +139,7 @@ function goStep(n) {
   st.step = clamp(n, 0, STEPS.length - 1);
   const s = step();
   clearTimeout(showTimer);
-  if (st.step === 1) pullT = 0; // the target starts close to the face and pulls back toward the viewer
+  if (st.step === 1) { pullT = 0; pullHand = null; } // the target starts close to the face and pulls back toward the viewer
   nerveT = 0;
   if (s.scene === 'wake') { // waking up: start with the lids shut and both eyes at rest
     fromSleep = STEPS[st.step - 1]?.scene === 'sleep' && back === false && lids.xray > 0.5;
@@ -429,8 +431,8 @@ function tick(now) {
   // Step 2: the target starts close to the face (eyes converged), then pulls back toward the viewer
   // and grows as it nears us, while the eyes relax to straight ahead
   pullT = st.step === 1 ? pullT + dt : 0;
-  pull = st.step === 1 ? ease(clamp((pullT - 0.9) / 2.4, 0, 1)) : 1;
-  if (st.step === 1 && pullT < 3.4) active = true;
+  pull = st.step === 1 ? pullHand ?? ease(clamp((pullT - 0.9) / 2.4, 0, 1)) : 1; // then the visitor can drag it
+  if (st.step === 1 && pullT < 3.4 && pullHand === null) active = true;
 
   // Near targets: the eyes turn in (the stick close to the face, the reading card), easing between steps
   const s = step(), convGoal = s.scene === 'reading' ? NEAR_SHOWN : s.stick ? STICK_NEAR * (1 - pull) : 0;
@@ -521,8 +523,26 @@ function draw() {
   const tag = $('stick-tag');
   tag.hidden = !s.labels;
   if (s.labels) {
-    tag.textContent = pull < 1 ? 'The target pulls back, away from the face and toward you' : 'Far from the face now, so the eyes look straight ahead';
+    tag.textContent = pullHand === null
+      ? (pull < 1 ? 'The target pulls back, away from the face and toward you' : 'Far from the face now, so the eyes look straight ahead')
+      : pull < 0.15 ? 'Close to the face: both eyes turn in a lot' : pull > 0.9 ? 'Far away: the eyes look almost straight ahead' : 'The closer the target, the more both eyes turn in';
     Object.assign(tag.style, { left: `${p.x}px`, top: `${geo.o.y - 0.13 * geo.u - 12}px`, transform: 'translate(-50%, -100%)' }); // stays above the eyes
+  }
+  // Step 2: the ball can be dragged nearer the face or out toward us, with a hint until it has been
+  const hint = $('stick-hint');
+  grab.hidden = st.step !== 1;
+  hint.hidden = grab.hidden || pullHand !== null || pull < 1;
+  if (!grab.hidden) {
+    const size = Math.max(44, 2.8 * discR); // easy to catch with a finger
+    Object.assign(grab.style, { left: `${p.x}px`, top: `${p.y}px`, width: `${size}px`, height: `${size}px` });
+    grab.setAttribute('aria-valuenow', Math.round(pull * 100));
+    grab.setAttribute('aria-valuetext', pull < 0.15 ? 'Close to the face' : pull > 0.9 ? 'Far from the face' : 'Part way');
+    if (!hint.hidden) { // beside the ball, on whichever side has room
+      const W = stage.clientWidth;
+      hint.textContent = W < 560 ? 'Drag me' : 'Drag me closer or further';
+      const w = hint.offsetWidth, right = p.x + discR + 12;
+      Object.assign(hint.style, { left: `${right + w < W - 8 ? right : p.x - discR - 12 - w}px`, top: `${p.y}px` });
+    }
   }
   tgt.hidden = !s.rings || reading || !!s.stick;
   Object.assign(tgt.style, { left: `${p.x}px`, top: `${p.y}px` });
@@ -578,6 +598,40 @@ function draw() {
     Object.assign(call.style, { left: `${clamp(h.x, 110, stage.clientWidth - 110)}px`, top: `${h.y - 0.5 * h.w}px` });
   }
 }
+
+// Step 2: drag the ball nearer the face (up, toward eye level) or out toward us (down); arrow keys too
+const grab = $('stick-grab');
+// The ball itself only moves a little up and down (it rises toward eye level as it nears the face), so a drag
+// covers a longer stretch than that: at least 150 px from the face to out toward us
+function dragSpan() {
+  const g = gazeNow(), at = (k) => gazeToScreen(g.H, g.V - Math.atan((STICK_DROP * geo.u * k) / geo.D) / DEG).y;
+  return Math.max(150, 2.5 * (at(1) - at(0)));
+}
+grab.addEventListener('pointerdown', (e) => {
+  if (!geo || !e.isPrimary) return;
+  e.preventDefault();
+  grab.setPointerCapture(e.pointerId);
+  grab.classList.add('dragging');
+  stickDrag = { y: e.clientY, from: pull };
+  pullHand = pull;
+  request();
+});
+grab.addEventListener('pointermove', (e) => {
+  if (!stickDrag) return;
+  pullHand = clamp(stickDrag.from + (e.clientY - stickDrag.y) / dragSpan(), 0, 1); // down: out toward us; up: toward the face
+  request();
+});
+const dropStick = () => { stickDrag = null; grab.classList.remove('dragging'); };
+grab.addEventListener('pointerup', dropStick);
+grab.addEventListener('pointercancel', dropStick);
+grab.addEventListener('keydown', (e) => {
+  const now = pullHand ?? pull, to = { ArrowUp: now - 0.1, ArrowDown: now + 0.1, Home: 0, End: 1 }[e.key];
+  if (to === undefined) return;
+  e.preventDefault();
+  e.stopPropagation();
+  pullHand = clamp(to, 0, 1);
+  request();
+});
 
 // The fixation target: a white ball on a vertical stick, held up from below the frame
 function drawStick(p, r) {

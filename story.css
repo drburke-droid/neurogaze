@@ -108,6 +108,14 @@ section { padding: 28px 0; }
 .fixstick { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; overflow: visible; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .45)); }
 .fixstick[hidden], .xray[hidden], .stick-tag[hidden] { display: none; }
 .stick-tag { z-index: 6; }
+/* Step 2: an invisible handle over the ball, and a hint beside it until it has been dragged */
+.stick-grab { position: absolute; z-index: 6; transform: translate(-50%, -50%); border-radius: 50%; cursor: grab; touch-action: none; }
+.stick-grab.dragging { cursor: grabbing; }
+.stick-grab:focus-visible { outline: 3px solid #ffd25a; outline-offset: 2px; }
+.stick-grab[hidden], .stick-hint[hidden] { display: none; }
+.stick-hint { position: absolute; z-index: 7; transform: translate(0, -50%); background: #ffd25a; color: #1b2230; font: 700 14px/1.2 var(--body); padding: 7px 12px; border-radius: 99px; box-shadow: 0 4px 12px rgba(0,0,0,.35); white-space: nowrap; pointer-events: none; animation: nudge 1.6s ease-in-out infinite; }
+.stick-hint::before { content: "↕ "; }
+@keyframes nudge { 0%, 100% { margin-top: -4px; } 50% { margin-top: 4px; } }
 /* Sleeping: an X-ray band across the closed eyelids */
 .xray { position: absolute; z-index: 4; left: 0; right: 0; border-top: 2px solid rgba(92, 255, 138, .8); border-bottom: 2px solid rgba(92, 255, 138, .8); background: repeating-linear-gradient(rgba(92, 255, 138, .16) 0 1px, transparent 1px 4px); pointer-events: none; transition: opacity .5s; }
 .xray span { position: absolute; left: 50%; bottom: -2px; transform: translate(-50%, 100%); background: var(--xray); color: #06240f; font: 800 12px var(--body); letter-spacing: .06em; padding: 4px 10px; border-radius: 0 0 8px 8px; white-space: nowrap; }
@@ -236,4 +244,4 @@ section { padding: 28px 0; }
   .nv-clock { font-size: 12px; left: 8px; bottom: 42px; padding: 5px 10px; }
   .nv-meter { left: 8px; bottom: 8px; width: 160px; font-size: 12px; padding: 6px 10px 8px; }
 }
-@media (prefers-reduced-motion: reduce) { .paddle, .post, .card-text span, .xray { transition: none; } .callout, .story-nav .next.ready { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .paddle, .post, .card-text span, .xray { transition: none; } .callout, .stick-hint, .story-nav .next.ready { animation: none; } }
