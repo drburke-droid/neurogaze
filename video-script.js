@@ -26,7 +26,7 @@ export const TAIL = 0.7;       // seconds after the voice ends before the next s
 
 export const SHOTS = [
   // ── Hook: the symptoms, then the eye behind the paddle ─────────────────────
-  { ch: 'Sore eyes, headaches, a stiff neck?', mood: 'hook', step: 'route', nerve: 'pain', cut: true, min: 6.5,
+  { ch: 'Tired eyes, headaches, a stiff neck?', mood: 'hook', step: 'route', nerve: 'pain', cut: true, min: 6.5,
     reveal: { gEye: '@Strained', gHead: '@Headaches', gJaw: '@A tight', gNeck: '@A stiff' },
     vo: 'Strained and tired eyes by the end of the day. Headaches. A tight jaw. A stiff neck.',
     cap: 'Strained, tired eyes by the end of the day?' },
