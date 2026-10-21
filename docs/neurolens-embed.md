@@ -35,7 +35,15 @@
 
 **Page content, top to bottom**
 1. A Code block with the embed code below (paste the current version; it's the same as before apart from the iframe's name). The embed starts with the page's title and an introduction, so nothing needs to go above it.
-2. Optional, for search engines (they weigh text typed into the page itself most): a text block below the embed, with a heading such as *Neurolens® in Calgary* and a sentence or two, for example: "Calgary Vision Centre is a certified Neurolens provider. Neurolens glasses add a small, precisely measured amount of contoured prism to your prescription to help your eyes line up, for people whose eyes rest slightly out of line, which can contribute to headaches, neck pain, eye strain and a dry-eye feeling, especially after screen time."
+2. A text block below the embed, for search engines (they weigh text typed into the page itself most):
+
+   > ## Neurolens® in Calgary
+   >
+   > Calgary Vision Centre is a certified Neurolens provider in downtown Calgary, in Gulf Canada Square on the +15 level. Neurolens glasses have a small, precisely measured amount of contoured prism built into the lenses to help your eyes line up. They're designed for people whose eyes rest slightly out of line, which can contribute to headaches, neck pain, eye strain and a dry-eye feeling, especially after reading or screen time.
+   >
+   > To find out whether Neurolens could help you, we measure how your eyes line up, far and near, as part of an eye exam, and explain what we find. Book an appointment online or call 403-237-0505.
+
+   Link "Book an appointment online" to `https://calgaryvisioncentre.visualbook.ca/booknow` and the phone number to `tel:4032370505`.
 3. Remove everything else from the old page: the intro paragraphs and images, the cause, effect and solution, the certified-provider line and questionnaire button, "Want to learn more", the logo, the article blocks, and both videos. If you'd like to keep the old top video, put it below the embed so the page still opens with its title.
 
 **The neurologist video doesn't need to be on Squarespace.** The embed plays its own copy, so you can delete its Video block (now on "New Page3"). (It used to stream from Squarespace's video library, which doesn't let other websites, like the embed's, play its videos.)
