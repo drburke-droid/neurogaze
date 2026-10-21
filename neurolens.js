@@ -505,16 +505,17 @@ function draw() {
   const land = landingError();
   const turn = (e) => clamp(drift[e] * MAG + land * magJump, -MAX_TURN, MAX_TURN);
   const conv = convShown;
-  // As the ball comes toward us it drops a little below our sightline, and the eyes follow it slightly down
+  // As the ball comes toward us it is drawn a little lower, below our sightline, so it reads as coming toward us.
+  // That drop is only perspective: the ball stays at the eyes' height, so they don't look up or down, only turn in and out.
   const V = s.stick ? g.V - Math.atan((STICK_DROP * geo.u * pull) / geo.D) / DEG : g.V;
   const aimR = g.H - conv + turn('R'), aimL = -g.H - conv + turn('L');
-  head.aim('R', aimR, V);
-  head.aim('L', aimL, V);
+  head.aim('R', aimR, g.V);
+  head.aim('L', aimL, g.V);
   const box = sideBox ? `${sideBox.w.toFixed(4)},${sideBox.h.toFixed(4)},${sideBox.y.toFixed(4)},${sideBox.z.toFixed(4)}` : '';
-  const key = `${aimR.toFixed(3)}|${aimL.toFixed(3)}|${V.toFixed(3)}|${lids.close.toFixed(3)}|${lids.xray.toFixed(3)}|${turnK.toFixed(4)}|${box}`;
+  const key = `${aimR.toFixed(3)}|${aimL.toFixed(3)}|${g.V.toFixed(3)}|${lids.close.toFixed(3)}|${lids.xray.toFixed(3)}|${turnK.toFixed(4)}|${box}`;
   if (key !== lastAim) { head.render(); lastAim = key; }
 
-  // The target, and where each eye is aiming relative to it
+  // The target (drawn with that drop), and where each eye is aiming relative to it
   const p = gazeToScreen(g.H, V);
   const tgt = $('target'), tgtB = $('target-b');
   const discR = geo.u * (0.13 + 0.07 * pull); // a little larger as it nears us
