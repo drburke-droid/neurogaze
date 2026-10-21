@@ -533,7 +533,7 @@ function draw() {
   chip.lastChild.textContent = off ? 'Input switched off during the jump' : 'Both eyes switched on';
 
   // The paddle's X-ray window, and what the callout invites
-  const r = (36 * peekShown).toFixed(2);
+  const r = (33 * peekShown).toFixed(2); // the window's rim stays clear of the X-RAY label above it
   for (const id of ['peek-cut', 'peek-glass', 'peek-rim']) $(id).setAttribute('r', r);
   paddle.classList.toggle('peeking', peekShown > 0.5);
   const call = $('callout');
