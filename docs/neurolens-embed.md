@@ -2,7 +2,7 @@
 
 `neurolens.html` replaces most of the Neurolens page (`calgaryvisioncentre.com/neurolens-calgary`) with a single, patient-friendly embed:
 
-1. **See what your eyes are doing.** A click-through story on a 3D face, 34 short steps, each written across the forehead with its Back / Next buttons right there on the face:
+1. **How Neurolens works** (the embed's title), with the subtitle *See what your eyes are doing*: a click-through story on a 3D face, 34 short steps, each written across the forehead with its Back / Next buttons right there on the face:
    - Eyes look straight because the brain keeps the two eyes' information lined up. The target is a white ball on a vertical stick: it starts small, close to the face with the eyes turned in, then pulls back toward the viewer, dropping a little below the eye line, as the eyes straighten, so it's clear they are now looking far away. A ring on the ball shows where each eye is aiming. An eye that isn't used drifts to its resting position; where that is, and how well we cope with it, is the essence of BVD.
    - **Cover test, hands on:** the visitor drags a solid paddle over an eye, then clicks it to open an X-ray window and peek behind it: the covered eye has drifted (exophoric). They then cover the other eye and see the roles swap. On these steps Next becomes **Show me**, which does it for them.
    - **Try it yourself:** the face dims behind a red dot. The visitor keeps looking at it while covering one eye with a hand, then the other, back and forth. If the dot jumps, they've found that their own eye's resting position, behind the hand, wasn't exactly straight (a small jump is common).

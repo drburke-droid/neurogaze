@@ -35,6 +35,10 @@ button { font: inherit; color: inherit; }
 .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
 section { padding: 28px 0; }
 .lead { color: var(--muted); font-size: 19px; margin-top: 8px; max-width: 760px; }
+/* The page title at the top of each embed, with its subtitle */
+.title { margin: 0; font: 700 clamp(30px, 4.6vw, 46px)/1.12 var(--head); letter-spacing: -.02em; text-wrap: balance; }
+.subtitle { margin-top: 6px; font: 600 clamp(19px, 2.3vw, 24px)/1.3 var(--head); color: var(--accent); }
+.subtitle + .lead { margin-top: 10px; }
 
 /* ── Demo ─────────────────────────────────────── */
 .demo { margin-top: 20px; display: grid; gap: 14px; }

@@ -4,7 +4,7 @@
 
 ## What's in the embed
 
-1. **Binocular vision dysfunction (BVD), explained:** the 34-step story on the 3D face. Its last card reads "That's why treating BVD aims to help the eyes line up with less holding and correcting, for example with prism glasses… Read on to see how we check for it."
+1. **Binocular vision dysfunction (BVD), explained** (the embed's title), with the subtitle *See what your eyes are doing*: the 34-step story on the 3D face. Its last card reads "That's why treating BVD aims to help the eyes line up with less holding and correcting, for example with prism glasses… Read on to see how we check for it."
 2. **What BVD can feel like:** a checklist of the symptoms people most often describe, then the less common ones (dizziness, motion sickness, feeling overwhelmed in busy places), with a reminder that these have many causes.
 3. **Why small misalignments can cause symptoms:** the cause, the effect, and the numbered trigeminal nerve diagram with its key.
 4. **How we check for BVD:** the questionnaire, measuring how the eyes line up far and near, and a plan.
@@ -22,7 +22,7 @@ Like the condition pages for the eye movement simulator, the BVD page lives in *
    - SEO title: *Binocular Vision Dysfunction (BVD) in Calgary | Calgary Vision Centre*
    - SEO description: *Headaches, eye strain or neck pain after reading or screens? See how eyes that rest slightly out of line can cause BVD symptoms, and how we check for it in Calgary.*
 4. **Page content,** top to bottom:
-   - A heading (Heading 1): *Binocular vision dysfunction (BVD)*
+   - A heading (Heading 1): *Binocular vision dysfunction (BVD) in Calgary*. The embed has its own title just below, so this one names the place rather than repeating it.
    - The intro text block below. Text in the page itself counts most with search engines.
    - A Code block with the embed code below.
    - Optional: the questions and answers below, as a text block or an accordion.
