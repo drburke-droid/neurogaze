@@ -11,6 +11,10 @@ const TRIG = '#ffcf5a'; // the trigeminal nerve
 const NECK = '#7cc4ff'; // the upper neck nerves
 const DURA = '#ffe39a'; // the trigeminal nerve's branches over the covering of the brain
 const EXTRA = '#ffa630'; // extra signals, from holding misaligned eyes in line and correcting them
+// Moving dots glow with a soft gradient (a blur filter on each is too slow to draw): colour → gradient id.
+// A dot's circle is HALO times its core radius.
+const DOT_GLOWS = { '#fff6cf': 'n', [EXTRA]: 'x', '#dcecff': 'b', '#ff4d5e': 'r', '#fff1b0': 's' };
+const HALO = 2.6;
 const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 const f = (v) => v.toFixed(1);
 
@@ -223,14 +227,19 @@ export function createNerves(svg, host) {
   const defs = el('defs', {}, svg);
   defs.innerHTML = `
     <filter id="nv-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    ${Object.entries(DOT_GLOWS).map(([color, id]) => `<radialGradient id="nv-dot-${id}"><stop offset=".36" stop-color="${color}"/><stop offset=".55" stop-color="${color}" stop-opacity=".45"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></radialGradient>`).join('')}
     <filter id="nv-soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5"/></filter>
     <radialGradient id="nv-brain" cx="45%" cy="40%" r="65%"><stop offset="0" stop-color="#f3c9cf" stop-opacity=".2"/><stop offset="1" stop-color="#c98c99" stop-opacity=".1"/></radialGradient>
     <radialGradient id="nv-hot" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ff5a3c" stop-opacity=".75"/><stop offset=".55" stop-color="#ff7a3c" stop-opacity=".28"/><stop offset="1" stop-color="#ff7a3c" stop-opacity="0"/></radialGradient>
     <pattern id="nv-scan" width="6" height="3" patternUnits="userSpaceOnUse"><rect width="6" height="1" fill="rgba(92, 255, 138, .32)"/></pattern>`;
-  const layer = (cls) => el('g', { class: cls }, svg);
+  // Two layers: a still one (brain, muscles, the blurred nerves), redrawn only as parts fade in and out,
+  // and a live one on top for everything that moves, so the blurred nerves aren't redrawn every frame
+  const live = el('svg', { class: svg.getAttribute('class'), 'aria-hidden': 'true', hidden: '' });
+  svg.after(live);
+  const layer = (cls, parent = svg) => el('g', { class: cls }, parent);
   const L = {
-    brain: layer('nv-brain'), jaw: layer('nv-jaw'), neckm: layer('nv-neckm'), glow: layer('nv-glows'), stem: layer('nv-stem'),
-    nerves: layer('nv-nerves'), eye: layer('nv-eye'), dots: layer('nv-dots'),
+    brain: layer('nv-brain'), jaw: layer('nv-jaw'), neckm: layer('nv-neckm'), stem: layer('nv-stem'), nerves: layer('nv-nerves'),
+    glow: layer('nv-glows', live), hot: layer('nv-hot', live), marks: layer('nv-marks', live), eye: layer('nv-eye', live), dots: layer('nv-dots', live),
   };
   const brain = { fill: el('path', { fill: 'url(#nv-brain)' }, L.brain), sulci: SULCI.map(() => el('path', { fill: 'none', stroke: 'rgba(255, 235, 240, .22)', 'stroke-linecap': 'round' }, L.brain)), dura: el('path', { fill: 'none', 'stroke-linejoin': 'round' }, L.brain) };
   // Muscles: a translucent body with its fibres drawn in
@@ -246,14 +255,17 @@ export function createNerves(svg, host) {
   for (const g of ['mening', 'neck', 'v3', 'v2', 'v1', 'route']) groups[g] = el('g', { class: `nv-${g}`, filter: 'url(#nv-glow)' }, L.nerves);
   const nerves = NERVES.map((n) => ({ ...n, path: el('path', { fill: 'none', stroke: n.g === 'neck' ? NECK : n.g === 'mening' ? DURA : TRIG, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, groups[n.g]) }));
   const ganglion = el('ellipse', { fill: TRIG }, groups.route);
-  const junction = el('circle', { fill: 'none', stroke: TRIG, 'stroke-width': 2 }, groups.neck);
+  // Live highlights: the eye-signal route brightening with each burst, and the covering of the brain pulsing
+  const routeHot = el('path', { fill: 'none', stroke: '#ffe6a0', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, L.hot);
+  const duraHot = el('path', { fill: 'none', stroke: TRIG, 'stroke-linejoin': 'round' }, L.hot);
+  const junction = el('circle', { fill: 'none', stroke: TRIG, 'stroke-width': 2 }, L.marks);
   const eye = {
     optic: el('path', { fill: 'none', stroke: 'rgba(235, 225, 200, .6)', 'stroke-linecap': 'round' }, L.eye),
     globe: el('circle', { fill: 'rgba(8, 20, 12, .55)', stroke: '#5cff8a', 'stroke-width': 1.5 }, L.eye),
     scan: el('circle', { fill: 'url(#nv-scan)' }, L.eye),
     cornea: el('path', { fill: 'none', stroke: '#5cff8a', 'stroke-width': 1.5 }, L.eye),
     muscles: MUSCLES.map((m) => ({ ...m, path: el('path', { fill: 'rgba(222, 82, 92, .72)', stroke: 'rgba(255, 160, 160, .8)', 'stroke-width': 0.8 }, L.eye) })),
-    sensors: MUSCLES.flatMap((m) => m.sensors.map((at) => ({ at, e: el('circle', { fill: '#fff1b0', filter: 'url(#nv-glow)' }, L.eye) }))),
+    sensors: MUSCLES.flatMap((m) => m.sensors.map((at) => ({ at, e: el('circle', { fill: 'url(#nv-dot-s)' }, L.eye) }))),
     mito: el('g', {}, L.eye), // energy-producing mitochondria, scattered through the muscles
   };
   const mito = MUSCLES.flatMap((m) => Array.from({ length: 9 }, (_, i) => ({ m, t: 0.14 + 0.09 * i, side: (i % 2 ? 1 : -1) * (0.15 + 0.2 * ((i * 7) % 3) / 2), e: el('circle', { fill: '#ffb347' }, eye.mito) })));
@@ -264,7 +276,7 @@ export function createNerves(svg, host) {
   const routes = [...ROUTES.map((p) => route(p, 'eye')), ...SHORT.map((p) => route(p, 'short')), ...BRANCH_ROUTES.map((p) => route(p, 'branch')), ...MUSCLES.map((m) => route([m.from, m.to], 'blood'))];
   const byKind = (kind) => routes.filter((r) => r.kind === kind);
   const POOL = 140;
-  const dots = Array.from({ length: POOL }, () => ({ e: el('circle', { fill: '#fff6cf', filter: 'url(#nv-glow)', r: 0 }, L.dots), on: false, s: 0, r: null, v: 1 }));
+  const dots = Array.from({ length: POOL }, () => ({ e: el('circle', { fill: 'url(#nv-dot-n)', r: 0 }, L.dots), on: false, s: 0, r: null, v: 1 }));
 
   // Labels (HTML, so they stay crisp and readable) and the reading clock
   const labelBox = document.createElement('div');
@@ -289,6 +301,9 @@ export function createNerves(svg, host) {
     const P = (pts) => pts.map(proj);
     brain.fill.setAttribute('d', smooth(P(BRAIN), true));
     brain.dura.setAttribute('d', smooth(P(BRAIN), true));
+    duraHot.setAttribute('d', brain.dura.getAttribute('d'));
+    routeHot.setAttribute('d', smooth(P(TRUNK)));
+    routeHot.setAttribute('stroke-width', f(clamp(0.0085 * k * 1.5, 1.1, 9)));
     SULCI.forEach((s, i) => { brain.sulci[i].setAttribute('d', smooth(P(s))); brain.sulci[i].setAttribute('stroke-width', f(Math.max(0.8, 0.005 * k))); });
     for (const m of muscles) {
       m.body.setAttribute('d', smooth(P(m.pts), true));
@@ -365,7 +380,7 @@ export function createNerves(svg, host) {
     const d = dots.find((p) => !p.on);
     if (!d) return;
     Object.assign(d, { on: true, s: 0, r: route, v });
-    d.e.setAttribute('fill', fill);
+    d.e.setAttribute('fill', `url(#nv-dot-${DOT_GLOWS[fill]})`);
   }
   const pickOf = (list) => list[Math.floor(Math.random() * list.length)];
 
@@ -373,8 +388,10 @@ export function createNerves(svg, host) {
     draw({ project, k: scale, mode, t, dt, show }) {
       proj = project; k = scale;
       svg.toggleAttribute('hidden', false); // an SVG element has no .hidden property
+      live.toggleAttribute('hidden', false);
       labelBox.hidden = false;
-      svg.style.opacity = labelBox.style.opacity = show.toFixed(3);
+      const o = show.toFixed(3);
+      if (svg.style.opacity !== o) svg.style.opacity = live.style.opacity = labelBox.style.opacity = o;
       // Reshape when the view moves or resizes
       const a = project([0, 0]), b = project([0.3, 0.3]);
       const nk = `${f(a.x)},${f(a.y)},${f(b.x)},${f(b.y)},${host.clientWidth}`;
@@ -440,26 +457,27 @@ export function createNerves(svg, host) {
       if (Math.abs(flex - flexed) > 0.002) { flexed = flex; shapeMuscles(flex); }
 
       // Apply
-      const vis = (e, v) => { e.style.opacity = v.toFixed(3); e.style.display = v < 0.01 ? 'none' : ''; };
+      const vis = (e, v) => { const o = v.toFixed(2); if (e._o !== o) { e._o = o; e.style.opacity = o; e.style.display = v < 0.01 ? 'none' : ''; } };
+      const attr = (e, name, value) => { if (e.getAttribute(name) !== value) e.setAttribute(name, value); };
       const pulse = 0.5 + 0.5 * Math.sin(t * 6);
       vis(L.brain, level.brain + 0.25 * level.mening);
-      brain.dura.setAttribute('stroke', level.mening > 0.05 ? TRIG : 'rgba(255, 235, 240, .45)');
-      brain.dura.setAttribute('stroke-width', f(1 + 1.6 * level.mening + 1.5 * level.gHead * pulse));
+      attr(brain.dura, 'stroke', level.mening > 0.05 ? TRIG : 'rgba(255, 235, 240, .45)');
+      attr(brain.dura, 'stroke-width', f(1 + 1.6 * level.mening));
+      vis(duraHot, level.gHead);
+      if (level.gHead > 0.01) duraHot.setAttribute('stroke-width', f(1 + 1.6 * level.mening + 1.5 * level.gHead * pulse));
       vis(L.jaw, level.jaw); vis(L.neckm, Math.max(level.neck, level.jaw) * 0.6);
       for (const g of glows) vis(g.e, level[g.g] * (0.55 + 0.45 * pulse));
       vis(eye.mito, level.built);
       vis(L.stem, Math.max(level.route, level.neck, 0.15 * level.brain));
-      for (const g of Object.keys(groups)) vis(groups[g], g === 'route' ? Math.min(1, level.route + 0.45 * buzz) : level[g]);
-      ganglion.setAttribute('filter', buzz > 0.3 || busy ? 'url(#nv-glow)' : '');
+      for (const g of Object.keys(groups)) vis(groups[g], level[g]);
+      routeHot.style.opacity = clamp(0.5 * buzz * level.route, 0, 0.7).toFixed(3);
+      attr(ganglion, 'filter', buzz > 0.3 || busy ? 'url(#nv-glow)' : '');
       junction.setAttribute('r', f(clamp((0.02 + 0.012 * pulse) * k, 4, 14)));
       vis(junction, level.neck);
       vis(L.eye, Math.max(level.eye, 0.25 * level.route));
       const blink = mode === 'sense' || busy ? 0.5 + 0.5 * Math.sin(t * 9) : 0.6;
-      for (const [i, s] of eye.sensors.entries()) s.e.setAttribute('r', f(clamp((0.006 + 0.004 * (i % 2 ? 1 - blink : blink)) * k, 1.5, 7)));
-      for (const [, lab] of labels) {
-        const v = lab.g ? level[lab.g] : 1;
-        lab.e.style.opacity = lab.dot.style.opacity = v.toFixed(3);
-      }
+      for (const [i, s] of eye.sensors.entries()) s.e.setAttribute('r', f(HALO * clamp((0.006 + 0.004 * (i % 2 ? 1 - blink : blink)) * k, 1.5, 7)));
+      for (const [, lab] of labels) { vis(lab.e, lab.g ? level[lab.g] : 1); vis(lab.dot, lab.g ? level[lab.g] : 1); }
 
       // Move the signals
       const speed = busy ? 1.4 : 1;
@@ -471,11 +489,12 @@ export function createNerves(svg, host) {
         const p = d.r.path.getPointAtLength(d.s * d.r.len);
         d.e.setAttribute('cx', f(p.x)); d.e.setAttribute('cy', f(p.y));
         const fade = kind === 'short' ? 1 - d.s : d.s > 0.9 ? (1 - d.s) * 10 : d.s < 0.1 ? d.s * 10 : 1;
-        d.e.setAttribute('r', f(clamp((kind === 'blood' ? 0.006 : 0.011) * k, 1.2, 5) * (0.4 + 0.6 * fade)));
+        d.e.setAttribute('r', f(HALO * clamp((kind === 'blood' ? 0.006 : 0.011) * k, 1.2, 5) * (0.4 + 0.6 * fade)));
       }
     },
     hide() {
       svg.toggleAttribute('hidden', true);
+      live.toggleAttribute('hidden', true);
       labelBox.hidden = clock.hidden = meter.hidden = true;
       lastMode = '';
       for (const d of dots) { d.on = false; d.e.setAttribute('r', 0); }

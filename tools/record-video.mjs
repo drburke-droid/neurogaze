@@ -5,7 +5,7 @@
 //   node tools/record-video.mjs --url http://localhost:8080/video.html --out bvd-video.mp4
 //   node tools/record-video.mjs --url ... --out hook.mp4 --from 0 --to 4        (shots 0 to 3 only)
 //   node tools/record-video.mjs --url ... --out short.mp4 --format 9x16
-// Options: --rate (default 0.08) slows the page down while recording; lower it if the video stutters.
+// Options: --rate (default 0.06) slows the page down while recording; lower it if the video stutters.
 // Needs Playwright with Chromium (set PLAYWRIGHT_MODULE to its path if it isn't installed here; set
 // CHROMIUM to a Chromium binary, and SWIFTSHADER=1 on machines without a GPU) and ffmpeg.
 //
@@ -21,7 +21,7 @@ const arg = (name, d) => { const i = process.argv.indexOf(`--${name}`); return i
 const URL_ = arg('url', 'http://localhost:8080/video.html');
 const OUT = resolve(arg('out', 'bvd-video.mp4'));
 const FORMAT = arg('format', '16x9');
-const RATE = Number(arg('rate', 0.08));
+const RATE = Number(arg('rate', 0.06));
 const FPS = 30;
 const { shots } = timeline();
 const FROM = Number(arg('from', 0)), TO = Number(arg('to', shots.length));

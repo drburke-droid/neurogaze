@@ -34,6 +34,7 @@ stage = $('stage');
 story = $('story');
 buildOverlays();
 setUp(FROM);
+await new Promise((resolve) => setTimeout(resolve, 2500)); // let the head turn and the drawing settle before playing
 window.__video.ready = true;
 if (!window.__REC) { const b = $('play'); b.hidden = false; b.onclick = () => { b.hidden = true; start(); }; }
 

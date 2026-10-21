@@ -111,7 +111,7 @@ section { padding: 28px 0; }
 .veil { position: absolute; inset: 0; z-index: 2; background: radial-gradient(ellipse at 50% 60%, rgba(8, 11, 16, .42), rgba(8, 11, 16, .62)); pointer-events: none; }
 .veil.deep { background: rgba(8, 11, 16, .9); }
 .veil[hidden], .nerves[hidden], .nv-labels[hidden], .nv-clock[hidden] { display: none; }
-.nerves { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; overflow: visible; }
+.nerves { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; overflow: visible; will-change: transform; } /* own layers: the still nerves aren't redrawn as the signals move */
 .nv-labels { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
 .nv-label { position: absolute; white-space: nowrap; background: rgba(12, 18, 28, .86); color: #f1f4f9; font: 700 13px/1.2 var(--body); padding: 4px 10px; border-radius: 99px; border: 1px solid rgba(255, 207, 90, .45); transition: opacity .3s; }
 .nv-label.hot { background: #ffcf5a; color: #1b2230; border-color: #ffcf5a; }
