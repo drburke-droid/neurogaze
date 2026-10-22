@@ -155,9 +155,11 @@ The music is generated from scratch by `tools/make-audio.py`, so there is nothin
 >
 > Narrated with an AI voice. Music: original. This video is for education and isn't medical advice. Eye movements are exaggerated so they're easy to see. If you have symptoms, see an eye care professional.
 
-**Tags:** binocular vision dysfunction, BVD, eye strain, sore eyes, headaches, fixation disparity, cover test, eye alignment, trigeminal nerve, convergence insufficiency, Neurolens, Calgary optometrist.
+**Tags:** binocular vision dysfunction, BVD, eye strain, tired eyes, headaches, eye alignment, cover test, fixation disparity, saccades, trigeminal nerve, prism glasses, convergence insufficiency, Calgary optometrist, Calgary Vision Centre. (Only words the video covers: it mentions prism glasses but not Neurolens by name, and YouTube treats unrelated tags as misleading.)
 
-**Also:** upload the `.srt` file as English captions; set the category to Education; add an end screen in the last 12 seconds (the end card leaves the right side clear for it); pin a comment such as *"Did the dot jump when you tried the test at 1:40? Tell me below."*
+**Also:** upload the `.srt` file as English captions; set the category to Education; add an end screen in the last 10 seconds (the end card leaves the right side clear for it).
+
+**Comments:** turning them off doesn't meaningfully hurt a video; YouTube recommends mostly on clicks and watch time. A middle way is **Hold all comments for review**, with a blocked-words list (doesn't work, scam, snake oil, quack, pseudoscience), so only the genuine questions appear. For a clinic, avoid giving advice to individuals in replies, and check the College's advertising standard before approving or pinning comments that praise the clinic, which can read as testimonials.
 
 **Which version to post:** the AI-voice version on YouTube (people searching YouTube usually listen). The version without a voice suits places where video plays muted: the website, Facebook and Instagram feeds, or a waiting-room screen.
 
