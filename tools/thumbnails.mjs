@@ -43,6 +43,7 @@ for (const o of OPTIONS) {
     nl.go(o.step);
     nl.nerveReveal = o.nerve === 'pain' ? { gEye: 0, gHead: 0, gJaw: 0, gNeck: 0 } : null; // every pain spot at once
     nl.nerveMode = o.nerve || null;
+    if (o.nerve) nl.snap(); // straight to the profile, with the drawing in
     if (o.cover) nl.paddleOver(o.cover, false);
     if (o.peek) nl.setPeek(true);
     nl.caption = '';
