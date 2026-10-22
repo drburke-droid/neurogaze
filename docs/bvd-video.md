@@ -143,7 +143,7 @@ The music is generated from scratch by `tools/make-audio.py`, so there is nothin
 - *Why Your Eyes Hurt by the End of the Day: BVD Explained in 3D*
 - *The Hidden Eye Problem Behind Sore Eyes and Headaches (BVD)*
 
-**Thumbnails:** three options are made by `tools/thumbnails.mjs`: the X-ray paddle with "20/20 · But your eyes still hurt?", the head in profile with the pain spots and "Eyes sore by 3 PM? Could it be BVD?", and the trigeminal nerve with "A hidden cause of sore eyes?". Upload all three with YouTube's **Test & Compare**, and YouTube picks the one people click most.
+**Thumbnails:** four options are made by `tools/thumbnails.mjs`: the red dot with one eye covered and "Did it jump? Try this 10-second eye test", the X-ray paddle with "20/20 · But your eyes still hurt?", the head in profile with the pain spots and "Eyes sore by 3 PM? Could it be BVD?", and the trigeminal nerve with "A hidden cause of sore eyes?". YouTube's **Test & Compare** takes up to three; start with the red dot, the X-ray paddle and the profile, and YouTube picks the one people click most. The red dot promises something to do, which tends to get more clicks from people who weren't searching for BVD.
 
 **Description:**
 
@@ -161,15 +161,25 @@ The music is generated from scratch by `tools/make-audio.py`, so there is nothin
 
 **Which version to post:** the AI-voice version on YouTube (people searching YouTube usually listen). The version without a voice suits places where video plays muted: the website, Facebook and Instagram feeds, or a waiting-room screen.
 
-## Short vertical clips (Shorts, TikTok, Reels)
+## Shorts (YouTube Shorts, TikTok, Instagram Reels)
 
-The same page records vertically (`--format 9x16`). Good stand-alone moments, each with its own opening line:
+Four vertical clips of 30 to 45 seconds, each with a hook in the first second, a banner that says what it is, large captions for people watching with the sound off, and an end card with calgaryvisioncentre.com/bvd. Their scripts are `SHORTS` in `video-script.js`.
 
-- **The cover test** (shots 8–10): "Your eyes look straight. Watch what happens when one is covered."
-- **Mirror versus phone camera** (shots 16–17): "Look at your eyes in a mirror and glance from one to the other. Now try it on your phone's camera."
-- **Try it yourself** (shots 13–14): "Look at this red dot and cover one eye, then the other. Did it jump?"
+| Short | Length | Banner | What happens |
+|---|---|---|---|
+| `red-dot` | 43 s | Try this 10-second eye test | The viewer does the cover test on a red dot; then the X-ray shows what the covered eye did |
+| `x-ray` | 38 s | What your eye does when it's covered | The paddle covers one eye, turns see-through, and swaps |
+| `asleep` | 32 s | What your eyes do when you fall asleep | The lids close, both eyes drift out, then straighten on waking |
+| `mirror` | 32 s | Why you can't see your eyes move in a mirror | Mirror versus phone camera, and the switch-off during eye jumps |
 
-The vertical layout hasn't been tuned yet; ask for it when you're ready to make the clips.
+**Posting:** on YouTube, add the long video as the Short's **Related video**, so a tap takes people to the full explainer; that's how Shorts bring viewers to it. Post one Short every few days rather than all at once. Titles and descriptions to start from:
+
+- **red-dot:** *Try this 10-second eye test 👁️ Did the dot jump? #shorts #eyetest #BVD* · "Cover one eye, then the other, while looking at the red dot. If it jumps, your eyes don't rest perfectly straight. That's common, and when it causes headaches or tired eyes it's often called binocular vision dysfunction (BVD). Full explainer: calgaryvisioncentre.com/bvd"
+- **x-ray:** *What your eye does when you cover it #shorts #eyes #BVD* · "An X-ray view of the cover test: the covered eye drifts to its resting position. Most people's eyes rest slightly out of line, and the brain corrects them all day. More: calgaryvisioncentre.com/bvd"
+- **asleep:** *What your eyes do when you fall asleep #shorts #eyes #sleep* · "Behind closed lids, both eyes drift outward to their resting position. Awake, the brain holds them straight all day. More: calgaryvisioncentre.com/bvd"
+- **mirror:** *Why you can't see your own eyes move in a mirror #shorts #brain #eyes* · "Try it: in a mirror you can't see your eyes jump, but on your phone's front camera you can. Your brain switches off the input during every jump. More: calgaryvisioncentre.com/bvd"
+
+Add the same line as the long video to each: *Narrated with an AI voice. For education, not medical advice. Eye movements are exaggerated so they're easy to see.*
 
 ## Making it again
 
@@ -189,9 +199,14 @@ python tools/make-audio.py --timeline build/bvd-text.timeline.json --video build
 
 # Thumbnails
 node tools/thumbnails.mjs --url http://localhost:8080/ --out thumbs/
+
+# A Short (red-dot, x-ray, asleep or mirror): its own voice, then the vertical picture, then the sound
+python tools/voiceover.py --models path/to/kokoro --out build/vo-red-dot --voice bf_lily --speed 1.1 --short red-dot
+node tools/record-video.mjs --url http://localhost:8080/video.html --format 9x16 --short red-dot --voice build/vo-red-dot/voice.json --out build/red-dot.mp4
+python tools/make-audio.py --timeline build/red-dot.timeline.json --voice build/vo-red-dot --video build/red-dot.mp4 --out short-red-dot.mp4
 ```
 
-The recorder also writes the captions (`.srt`) and chapters (`.chapters.txt`) beside the video. `--from` and `--to` record part of the video (shots by number, `--to` not included), and `--format 9x16` records vertically. It records one exact frame at a time, so the motion is smooth however slow the computer: with a graphics card that takes a few minutes; without one, set `SWIFTSHADER=1` and allow about an hour for each version. To preview without recording, open `video.html` in a browser and press **Play** (add `?mode=text` for the version without a voice); it plays in real time, without sound.
+The recorder also writes the captions (`.srt`) and chapters (`.chapters.txt`) beside the video. `--from` and `--to` record part of the video (shots by number, `--to` not included), and `--format 9x16` records vertically. It records one exact frame at a time, so the motion is smooth however slow the computer: with a graphics card that takes a few minutes; without one, set `SWIFTSHADER=1` and allow about an hour for each version. To preview without recording, open `video.html` in a browser and press **Play** (add `?mode=text` for the version without a voice, or `?format=9x16&short=red-dot` for a Short); it plays in real time, without sound.
 
 If you change the narration in `video-script.js`, make the voice again before recording, so the timing matches.
 

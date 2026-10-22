@@ -161,6 +161,75 @@ export const SHOTS = [
     cap: '' },
 ];
 
+// ── Vertical Shorts (YouTube Shorts, TikTok, Instagram Reels) ─────────────────
+// 30 to 45 seconds each, with a hook in the first second, made from the same story. Record one with
+// --format 9x16 --short <name>. Each has a banner shown at the top throughout, and its own shots (as above;
+// view 'close' is a tighter close-up for the vertical frame). The narration is shown a sentence at a time in
+// large captions, for people watching with the sound off.
+const SHORT_END = { overlay: 'end', mood: 'resolve', min: 5, vo: 'Learn more at calgaryvisioncentre.com/bvd.' };
+export const SHORTS = {
+  'red-dot': {
+    title: 'Try this 10-second eye test',
+    shots: [
+      { mood: 'hook', step: 'self', view: 'story', cut: true, min: 4,
+        vo: 'Look at this red dot. Now cover one eye with your hand.' },
+      { min: 7,
+        vo: 'Quickly move your hand across to cover the other eye, then back again. Keep switching, and watch the dot.' },
+      { mood: 'explain', step: 'selfJump', min: 6,
+        vo: "Did the dot jump? If it did, your eye wasn't quite straight while it was covered, and your brain had to pull it back into line." },
+      { step: 'peek', view: 'close', min: 7, at: [[0.3, 'cover', 'R'], ['@Behind', 'peek', true]],
+        vo: "Here's what's happening. Behind the cover, your eye drifts to its resting position." },
+      { min: 8,
+        vo: "A small jump is common. When eyes rest out of line and it causes headaches or tired eyes, it's often called binocular vision dysfunction, or BVD." },
+      SHORT_END,
+    ],
+  },
+  'x-ray': {
+    title: "What your eye does when it's covered",
+    shots: [
+      { mood: 'hook', step: 'mirror', view: 'close', cut: true, min: 3,
+        vo: 'Your eyes look straight, right? Watch this.' },
+      { step: 'peek', min: 6, at: [[0.2, 'cover', 'R'], ['@see-through+0.2', 'peek', true]],
+        vo: 'Cover one eye, and make the paddle see-through.' },
+      { mood: 'explain', min: 5,
+        vo: 'The covered eye has drifted out of line, to its resting position.' },
+      { min: 7, at: [['@other', 'cover', 'L']],
+        vo: 'Cover the other eye, and they swap. The uncovered eye straightens, because your brain pulls it back into line.' },
+      { min: 8,
+        vo: "Most people's eyes rest slightly out of line, and the brain corrects them all day. When that takes a lot of work, it's thought to contribute to headaches and eye strain." },
+      SHORT_END,
+    ],
+  },
+  asleep: {
+    title: 'What your eyes do when you fall asleep',
+    shots: [
+      { mood: 'hook', step: 'mirror', view: 'close', cut: true, min: 3,
+        vo: 'This is what your eyes do when you fall asleep.' },
+      { step: 'sleep', min: 7.5,
+        vo: 'The eyelids close… and behind them, both eyes drift outward, to their resting position.' },
+      { mood: 'explain', step: 'wake', min: 5,
+        vo: 'When you wake up, your brain pulls them straight again, and keeps them there all day.' },
+      { min: 8,
+        vo: "For eyes that rest further out of line, that's a lot of correcting. It's thought to contribute to tired eyes and headaches, and it's often called binocular vision dysfunction, or BVD." },
+      SHORT_END,
+    ],
+  },
+  mirror: {
+    title: "Why you can't see your eyes move in a mirror",
+    shots: [
+      { mood: 'hook', step: 'mirrorEyes', view: 'close', cut: true, min: 6,
+        vo: "Look in a mirror and glance from one of your eyes to the other. You can't see them move." },
+      { step: 'camera', min: 4,
+        vo: "Now try it on your phone's front camera. You can!" },
+      { mood: 'explain', step: 'saccade', view: 'story', min: 7,
+        vo: "Every time your eyes jump, your brain switches off their input for a split second, so you don't see a blur." },
+      { step: 'landing', min: 8,
+        vo: 'While the input is off, eyes that rest slightly out of line start to drift. So after every jump, the brain has to pull them back together.' },
+      SHORT_END,
+    ],
+  },
+};
+
 // How the voice says what the screen shows
 export const SAY = [
   ['calgaryvisioncentre.com/bvd', 'Calgary Vision Centre dot com, slash B V D'],
@@ -203,10 +272,15 @@ const when = (t, parts, text) => (typeof t === 'number' ? t : wordTime(t, parts,
 
 // How long each shot lasts, when each starts, and every timed action resolved to seconds.
 // mode 'voice': the narration is spoken (voice: tools/voiceover.py's measurements, indexed by shot);
-// mode 'text': it is shown on screen to read, with music only.
-export function timeline({ mode = 'voice', voice = null } = {}) {
+// mode 'text': it is shown on screen to read, with music only. short: one of SHORTS by name, in place of the video.
+export const shotList = (short) => {
+  if (!short) return SHOTS;
+  if (!SHORTS[short]) throw new Error(`No short called ${short}: ${Object.keys(SHORTS).join(', ')}`);
+  return SHORTS[short].shots;
+};
+export function timeline({ mode = 'voice', voice = null, short = null } = {}) {
   let t = 0;
-  const shots = SHOTS.map((s, i) => {
+  const shots = shotList(short).map((s, i) => {
     const { secs: said, parts } = speech(s, mode, voice?.[i]);
     const secs = Math.max(s.min || 0, LEAD + said + (mode === 'text' ? 1.2 : TAIL));
     const shot = {

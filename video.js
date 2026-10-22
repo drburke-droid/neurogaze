@@ -1,9 +1,10 @@
 // The BVD video: plays the shot list (video-script.js) over the story, on a timeline.
 // Open video.html and press Play to watch it in real time; tools/record-video.mjs records it frame by frame.
 // ?mode=text shows the full narration on screen (the version without a voice); ?format=9x16 for vertical;
-// ?from=N&to=M plays shots N to M-1 only. The recorder passes the voice timings in window.__VIDEO_OPTS.
+// ?from=N&to=M plays shots N to M-1 only; ?short=<name>&format=9x16 plays one of the vertical Shorts.
+// The recorder passes the voice timings in window.__VIDEO_OPTS.
 // Created by Dr Robert Burke
-import { timeline } from './video-script.js';
+import { SHORTS, timeline } from './video-script.js';
 
 const $ = (id) => document.getElementById(id);
 const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
@@ -11,13 +12,14 @@ const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t));
 const QS = new URLSearchParams(location.search);
 const OPTS = window.__VIDEO_OPTS || {};
 const MODE = OPTS.mode || (QS.get('mode') === 'text' ? 'text' : 'voice');
-const { shots } = timeline({ mode: MODE, voice: OPTS.voice });
+const SHORT = OPTS.short || QS.get('short') || null;
+const { shots } = timeline({ mode: MODE, voice: OPTS.voice, short: SHORT });
 const int = (v, lo, hi, d) => (v === null || v === '' || Number.isNaN(+v) ? d : clamp(Math.round(+v), lo, hi));
 const FROM = int(QS.get('from'), 0, shots.length - 1, 0);
 const TO = int(QS.get('to'), FROM + 1, shots.length, shots.length); // plays shots FROM .. TO-1
 const START = shots[FROM].start, END = shots[TO - 1].start + shots[TO - 1].secs;
 
-let nl = null, stage = null, story = null, t0 = 0, current = -1, done = false;
+let nl = null, stage = null, story = null, t0 = 0, current = -1, done = false, said = null;
 const fired = new Set();
 const ov = {}; // overlay elements by name
 
@@ -37,6 +39,7 @@ nl = window.__nl;
 stage = $('stage');
 story = $('story');
 document.documentElement.classList.toggle('text-mode', MODE === 'text');
+document.documentElement.classList.toggle('short', !!SHORT);
 buildOverlays();
 setUp(FROM);
 await new Promise((resolve) => setTimeout(resolve, 2500)); // let the head turn and the drawing settle before playing
@@ -82,8 +85,10 @@ function show(s) {
   if (s.cut) nl.snap();
 }
 
-// The voice version shows a short caption; the text version shows the whole narration
+// The voice version shows a short caption; the text version shows the whole narration.
+// The Shorts show the narration instead, a sentence at a time (drawOverlays), in large type.
 function caption(s) {
+  if (SHORT) { nl.caption = ''; story.classList.add('empty'); return; }
   const text = s.overlay === 'end' || (s.overlay === 'title' && MODE === 'text') ? '' : MODE === 'text' ? s.vo : s.cap; // those cards have their own words
   nl.caption = text;
   story.classList.toggle('empty', !text);
@@ -122,6 +127,14 @@ function buildOverlays() {
     <div style="font-size:20px">L P E D</div><div style="font-size:14px">P E C F D</div>
     <div class="ok">20/20 ✓</div><div class="ok">Healthy eyes ✓</div>`);
   ov.title = el('title', '<h1>Binocular Vision<br>Dysfunction <span>(BVD)</span></h1><p></p>');
+  if (SHORT) {
+    ov.banner = el('banner', `<span>${SHORTS[SHORT].title}</span>`);
+    ov.say = el('say');
+    ov.endShort = el('end-short', `<h2>Binocular vision dysfunction <span>(BVD)</span></h2>
+      <p>The full explainer, and how we check for it:</p>
+      <span class="url">calgaryvisioncentre.com/bvd</span>
+      <small>Calgary Vision Centre · The animation is a simplified illustration.</small>`);
+  }
   ov.end = el('end', `<h2>Have your eye alignment measured, far and near.</h2>
     <p>If this sounds like you, an eye exam that measures how your eyes line up is the way to find out.</p>
     <span class="url">calgaryvisioncentre.com/bvd</span>
@@ -136,5 +149,13 @@ function drawOverlays(s, local) {
   set(ov.title, title);
   story.style.opacity = title ? (1 - title).toFixed(3) : ''; // the caption gives way to the title
   ov.title.style.scale = s.overlay === 'title' ? (0.96 + 0.04 * fadeIn(0.6)).toFixed(3) : '1';
-  set(ov.end, s.overlay === 'end' ? fadeIn(0.6) : 0);
+  if (!SHORT) { set(ov.end, s.overlay === 'end' ? fadeIn(0.6) : 0); return; }
+  const end = s.overlay === 'end' ? fadeIn(0.5) : 0;
+  set(ov.endShort, end);
+  set(ov.banner, 1 - end);
+  // The sentence being said (from the start of the shot until the next one starts)
+  let p = s.parts[0];
+  for (const q of s.parts) if (local >= q.start - 0.1) p = q;
+  if (p !== said) { said = p; ov.say.textContent = p ? p.text : ''; }
+  set(ov.say, p && !end ? 1 : 0);
 }

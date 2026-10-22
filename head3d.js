@@ -20,6 +20,7 @@ const FRAMES = {
   mid: (m) => ({ w: 0.8, h: 0.68, y: m.y - 0.12 }),   // eyes to mouth
   story: (m) => ({ w: 0.8, h: 0.8, y: m.y - 0.02 }), // eyes a little below centre, room for a title above
   eyes: (m) => ({ w: 0.62, h: 0.55, y: m.y - 0.02 }),
+  close: (m) => ({ w: 0.56, h: 0.5, y: m.y - 0.02 }),  // closer still, for the vertical Shorts
   // In profile: the whole head and upper neck, low in the frame to leave room for a title above
   side: (m) => ({ w: 1.5, h: 1.95, y: m.y + 0.1, z: m.z - 0.25 }),
 };
@@ -30,7 +31,7 @@ const SIDE_YAW = 78; // degrees the camera swings round to the patient's left si
  *   head.ready            Promise, resolves once the model is loaded
  *   head.aim(eye, h, v)   degrees; h + = abduction, v + = up
  *   head.setLids({ close, xray })  0..1: close both upper lids; make them see-through (X-ray)
- *   head.setView(v)       'face' | 'mid' | 'story' | 'eyes'
+ *   head.setView(v)       'face' | 'mid' | 'story' | 'eyes' | 'close'
  *   head.setTurn(k, box)  0..1: swing round from the view above (0) to the patient's left side in profile (1);
  *                         box { w, h, y, z } (world units) frames the profile, default FRAMES.side
  *   head.project(eye)     { x, y } in host pixels of the eye centre (also accepts a world Vector3)

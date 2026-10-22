@@ -5,7 +5,8 @@
 //   node tools/record-video.mjs --url http://localhost:8080/video.html --mode voice --voice build/vo/voice.json --out build/bvd-voice.mp4
 //   node tools/record-video.mjs --url ... --mode text --out build/bvd-text.mp4      (narration on screen, no voice)
 //   node tools/record-video.mjs --url ... --out hook.mp4 --from 0 --to 4             (shots 0 to 3 only)
-//   node tools/record-video.mjs --url ... --out short.mp4 --format 9x16
+//   node tools/record-video.mjs --url ... --out vertical.mp4 --format 9x16
+//   node tools/record-video.mjs --url ... --out red-dot.mp4 --format 9x16 --short red-dot --voice build/vo-red-dot/voice.json
 // --voice is the measurements file from tools/voiceover.py; without it the voice timing is estimated.
 // Needs Playwright with Chromium (set PLAYWRIGHT_MODULE to its path if it isn't installed here; set
 // CHROMIUM to a Chromium binary, and SWIFTSHADER=1 on machines without a GPU) and ffmpeg.
@@ -25,8 +26,9 @@ const OUT = resolve(arg('out', 'bvd-video.mp4'));
 const FORMAT = arg('format', '16x9');
 const MODE = arg('mode', 'voice');
 const VOICE = arg('voice', null) ? JSON.parse(readFileSync(arg('voice'), 'utf8')).shots : null;
+const SHORT = arg('short', null); // one of the vertical Shorts in video-script.js
 const FPS = 30;
-const { shots } = timeline({ mode: MODE, voice: VOICE });
+const { shots } = timeline({ mode: MODE, voice: VOICE, short: SHORT });
 const FROM = Number(arg('from', 0)), TO = Number(arg('to', shots.length));
 const vertical = FORMAT === '9x16';
 
@@ -94,9 +96,9 @@ await page.addInitScript((opts) => {
       return new Promise((done) => realRaf(() => { for (const cb of due.values()) cb(now); holdAnimations(); done(); }));
     },
   };
-}, { mode: MODE, voice: VOICE });
+}, { mode: MODE, voice: VOICE, short: SHORT });
 
-await page.goto(`${URL_}?format=${FORMAT}&from=${FROM}&to=${TO}`);
+await page.goto(`${URL_}?format=${FORMAT}&from=${FROM}&to=${TO}${SHORT ? `&short=${SHORT}` : ''}`);
 await page.waitForFunction(() => window.__video?.ready, null, { timeout: 180000 });
 const { start_s: START, end_s: END } = await page.evaluate(() => window.__video);
 const cdp = await page.context().newCDPSession(page);

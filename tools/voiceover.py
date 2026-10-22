@@ -42,9 +42,11 @@ def main():
     ap.add_argument('--out', required=True, help='folder for the narration')
     ap.add_argument('--voice', default='af_heart')
     ap.add_argument('--speed', type=float, default=1.0)
+    ap.add_argument('--short', help='one of the vertical Shorts in video-script.js, in place of the video')
     args = ap.parse_args()
 
-    plan = json.loads(subprocess.run(['node', str(ROOT / 'tools' / 'video-plan.mjs')], check=True, capture_output=True, text=True).stdout)
+    plan_cmd = ['node', str(ROOT / 'tools' / 'video-plan.mjs')] + (['--short', args.short] if args.short else [])
+    plan = json.loads(subprocess.run(plan_cmd, check=True, capture_output=True, text=True).stdout)
     models = Path(args.models)
     model = models / 'kokoro-v1.0.onnx'
     if not model.exists():
